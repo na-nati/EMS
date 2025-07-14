@@ -9,9 +9,12 @@ import Dashboard from "./pages/Dashboard";
 import LeaveManagement from "./pages/LeaveManagement";
 import Employees from "./pages/Employees";
 import NotFound from "./pages/NotFound";
-import Payroll from "./pages/payroll";
+import Payroll from "./pages/Payroll";
 import AttendanceDashboard from "./pages/Attendance";
 import PerformanceDashboard from "./pages/performance";
+import TrainingDashboard from "./pages/Training";
+import AssetsDashboard from "./pages/Assets";
+import Report from "./pages/Report";
 const queryClient = new QueryClient();
 
 const App = () => (
@@ -49,11 +52,12 @@ const App = () => (
             <Route
               path="/payroll"
               element={
-                <ProtectedRoute allowedRoles={['super_admin', 'hr', 'employee']}>
+                <ProtectedRoute>
                   <Payroll />
                 </ProtectedRoute>
               }
-            />
+            />``
+            
             <Route
               path="/attendance"
               element={
@@ -74,7 +78,7 @@ const App = () => (
               path="/training"
               element={
                 <ProtectedRoute allowedRoles={['super_admin', 'hr', 'employee']}>
-                  <PlaceholderPage title="Training & Education" />
+                  <TrainingDashboard />
                 </ProtectedRoute>
               }
             />
@@ -82,7 +86,7 @@ const App = () => (
               path="/assets"
               element={
                 <ProtectedRoute allowedRoles={['super_admin', 'hr', 'employee']}>
-                  <PlaceholderPage title="Asset Management" />
+                  <AssetsDashboard />
                 </ProtectedRoute>
               }
             />
@@ -98,7 +102,7 @@ const App = () => (
               path="/reports"
               element={
                 <ProtectedRoute allowedRoles={['super_admin', 'hr', 'manager']}>
-                  <PlaceholderPage title="Reports & Analytics" />
+                  <Report />
                 </ProtectedRoute>
               }
             />
@@ -114,11 +118,17 @@ interface PlaceholderPageProps {
   title: string;
 }
 
+
 const PlaceholderPage = ({ title }: PlaceholderPageProps) => (
-  <div style={{ textAlign: "center", padding: "3rem" }}>
-    <h1 style={{ fontSize: "1.5rem", fontWeight: "bold" }}>{title}</h1>
-    <p style={{ color: "#6b7280", marginTop: "0.5rem" }}>Coming soon...</p>
+  <div className="flex items-center justify-center min-h-[calc(100vh-4rem)] bg-gray-50">
+    <div className="text-center p-8 bg-white rounded-lg shadow-lg">
+      <h1 className="text-3xl font-extrabold text-gray-800 mb-4">{title}</h1>
+      <p className="text-lg text-gray-600">This page is under development. Please check back later!</p>
+      <div className="mt-6">
+        {/* Simple loading animation */}
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-gray-900 mx-auto"></div>
+      </div>
+    </div>
   </div>
 );
-
 export default App;

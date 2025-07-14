@@ -16,12 +16,12 @@ import {
 
 const navigation = [
   { name: 'Dashboard', href: '/dashboard', icon: LayoutDashboard, roles: ['super_admin', 'hr', 'manager', 'employee'] },
-  { name: 'Employees', href: '/employees', icon: Users, roles: ['super_admin', 'hr', 'manager'] },
+  { name: 'Employees', href: '/employees', icon: Users, roles: [ 'hr', 'manager'] },
   { name: 'Payroll', href: '/payroll', icon: DollarSign, roles: ['super_admin', 'hr', 'employee'] },
-  { name: 'Attendance', href: '/attendance', icon: Calendar, roles: ['super_admin', 'hr', 'manager', 'employee'] },
-  { name: 'Leave Management', href: '/leave', icon: FileText, roles: ['super_admin', 'hr', 'manager', 'employee'] },
+  { name: 'Attendance', href: '/attendance', icon: Calendar, roles: [ 'hr', 'manager', 'employee'] },
+  { name: 'Leave Management', href: '/leave', icon: FileText, roles: [ 'hr', 'manager', 'employee'] },
   { name: 'Performance', href: '/performance', icon: ClipboardCheck, roles: ['super_admin', 'hr', 'manager', 'employee'] },
-  { name: 'Training', href: '/training', icon: GraduationCap, roles: ['super_admin', 'hr', 'employee'] },
+  { name: 'Training', href: '/training', icon: GraduationCap, roles: ['hr', 'employee'] },
   { name: 'Assets', href: '/assets', icon: Monitor, roles: ['super_admin', 'hr', 'employee'] },
   { name: 'Recruitment', href: '/recruitment', icon: Building, roles: ['super_admin', 'hr', 'manager'] },
   { name: 'Reports', href: '/reports', icon: BarChart3, roles: ['super_admin', 'hr', 'manager'] },
