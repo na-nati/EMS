@@ -1,0 +1,119 @@
+@import "tailwindcss";
+
+@layer base {
+  :root {
+    --background: 0 0% 6%;
+    --foreground: 0 0% 98%;
+
+    --card: 0 0% 8%;
+    --card-foreground: 0 0% 95%;
+
+    --popover: 0 0% 8%;
+    --popover-foreground: 0 0% 95%;
+
+    --primary: 142 76% 36%;
+    --primary-foreground: 0 0% 98%;
+
+    --secondary: 0 0% 12%;
+    --secondary-foreground: 0 0% 85%;
+
+    --muted: 0 0% 10%;
+    --muted-foreground: 0 0% 65%;
+
+    --accent: 142 76% 36%;
+    /* Often same as primary for consistency */
+    --accent-foreground: 0 0% 98%;
+
+    --destructive: 0 84.2% 60.2%;
+    --destructive-foreground: 0 0% 98%;
+
+    --border: 0 0% 15%;
+    --input: 0 0% 12%;
+    --ring: 142 76% 36%;
+    /* Often same as primary for consistency */
+
+    --radius: 0.5rem;
+    /* This sets the base border-radius */
+
+    /* Sidebar specific variables, if they are meant to be different */
+    --sidebar-background: 0 0% 4%;
+    --sidebar-foreground: 0 0% 85%;
+    --sidebar-primary: 142 76% 36%;
+    --sidebar-primary-foreground: 0 0% 98%;
+    --sidebar-accent: 0 0% 8%;
+    --sidebar-accent-foreground: 0 0% 95%;
+    --sidebar-border: 0 0% 12%;
+    --sidebar-ring: 142 76% 36%;
+  }
+
+  /*
+    Apply base styles to html/body.
+    Tailwind's base layer already handles many resets.
+    Ensure 'body' only gets essential global styles.
+  */
+  html {
+    /* Optional: Smooth scrolling for anchor links */
+    scroll-behavior: smooth;
+  }
+
+  body {
+    background-color: hsl(var(--background));
+    color: hsl(var(--foreground));
+    /* Font feature settings are good for typography */
+    font-feature-settings: "rlig" 1, "calt" 1;
+    /* Prevent text selection, useful for some apps */
+    -webkit-tap-highlight-color: transparent;
+  }
+
+  /*
+    Consider if a universal border is truly desired.
+    This can be very aggressive and apply borders to unexpected elements.
+    If it's for debug, remove it for production.
+    If it's for a specific design pattern, apply via Tailwind classes or a utility class.
+  */
+  /* * {
+    border-color: hsl(var(--border));
+    border-width: 1px;
+    border-style: solid;
+  } */
+
+  /* If you need a default border for some elements, create a utility */
+  .default-border {
+    border: 1px solid hsl(var(--border));
+  }
+}
+
+/* Custom scrollbar - excellent addition for consistent UI */
+::-webkit-scrollbar {
+  width: 6px;
+  /* Adjust as needed */
+  height: 6px;
+  /* For horizontal scrollbars */
+}
+
+::-webkit-scrollbar-track {
+  background: hsl(var(--muted));
+  /* Or a slightly darker muted for better contrast */
+  border-radius: 3px;
+  /* Match thumb radius */
+}
+
+::-webkit-scrollbar-thumb {
+  background: hsl(var(--border));
+  /* Default thumb color */
+  border-radius: 3px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: hsl(var(--accent));
+  /* Hover effect */
+}
+
+/* Optional: For Firefox scrollbar styling */
+/* The scrollbar-color property sets the color of the scrollbar thumb and track */
+* {
+  scrollbar-color: hsl(var(--border)) hsl(var(--muted));
+  /* thumb track */
+  scrollbar-width: thin;
+  /* auto | thin | none */
+}
