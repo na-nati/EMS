@@ -35,7 +35,7 @@ export default function EmployeePayroll() {
             --card-foreground: 0 0% 98%;
             --popover: 0 0% 6%;
             --popover-foreground: 0 0% 98%;
-            --primary: 142 76% 36%;
+          
             --primary-foreground: 0 0% 98%;
             --secondary: 0 0% 14.9%;
             --secondary-foreground: 0 0% 98%;
@@ -67,7 +67,7 @@ export default function EmployeePayroll() {
 
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-3xl font-bold text-foreground">My Payroll</h1>
+          <h1 className="text-3xl font-bold text-foreground text-amber-200">My Payroll</h1>
           <p className="text-muted-foreground mt-2">View your salary slips and payroll history.</p>
         </div>
         <div className="flex space-x-3">

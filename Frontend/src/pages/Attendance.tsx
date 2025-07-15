@@ -1,460 +1,487 @@
-import { useState, useMemo } from "react"
-import { Clock, Users, CheckCircle, XCircle, Edit, Download, Search, CalendarDays } from "lucide-react"
-import { Button } from "../components/ui/button" // Assuming these paths are correct relative to the component
-import { Badge } from "../components/ui/badge"
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "../components/ui/select"
-import { Input } from "../components/ui/input" // Assuming you have an Input component
+import { useState } from 'react';
+import { useAuth } from '../contexts/AuthContext';
+import { Clock, Users, CheckCircle, XCircle, Edit, Download, Plus, Search, Eye, BarChart3, } from 'lucide-react';
+import { Button } from '../components/ui/button';
+import { Card, CardContent, CardHeader, CardTitle } from '../components/ui/card';
+import { Badge } from '../components/ui/badge';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '../components/ui/tabs';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '../components/ui/dialog';
+import { Input } from '../components/ui/input';
+import { Label } from '../components/ui/lable';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../components/ui/select';
 
-const attendanceStats = [
-  { name: "Present Today", value: "1,156", icon: CheckCircle, color: "text-green-500" },
-  { name: "Absent Today", value: "42", icon: XCircle, color: "text-red-500" },
-  { name: "Late Arrivals", value: "23", icon: Clock, color: "text-orange-500" },
-  { name: "Attendance Rate", value: "96.5%", icon: Users, color: "text-blue-500" },
-  { name: "Pending Requests", value: "7", icon: Edit, color: "text-purple-500" }, // Added a new stat
-]
+interface AttendanceRecord {
+  id: string;
+  employeeName: string;
+  employeeId: string;
+  date: string;
+  checkIn: string;
+  checkOut: string;
+  totalHours: number;
+  status: 'present' | 'absent' | 'late' | 'partial';
+  department: string;
+}
 
-const initialTodaysAttendance = [
-  {
-    id: "emp001",
-    name: "John Smith",
-    department: "Engineering",
-    checkIn: "09:00 AM",
-    checkOut: "-",
-    status: "Present",
-    hours: "8.0",
-  },
-  {
-    id: "emp002",
-    name: "Sarah Connor",
-    department: "Marketing",
-    checkIn: "08:45 AM",
-    checkOut: "05:30 PM",
-    status: "Present",
-    hours: "8.5",
-  },
-  { id: "emp003", name: "Mike Johnson", department: "Sales", checkIn: "09:15 AM", checkOut: "-", status: "Late", hours: "7.5" },
-  { id: "emp004", name: "Emily Davis", department: "HR", checkIn: "-", checkOut: "-", status: "Absent", hours: "0.0" },
-  {
-    id: "emp005",
-    name: "Robert Wilson",
-    department: "Finance",
-    checkIn: "08:30 AM",
-    checkOut: "05:00 PM",
-    status: "Present",
-    hours: "8.5",
-  },
-  {
-    id: "emp006",
-    name: "Linda Brown",
-    department: "Engineering",
-    checkIn: "09:30 AM",
-    checkOut: "-",
-    status: "Late",
-    hours: "7.0",
-  },
-  {
-    id: "emp007",
-    name: "Chris Evans",
-    department: "Marketing",
-    checkIn: "08:50 AM",
-    checkOut: "05:20 PM",
-    status: "Present",
-    hours: "8.5",
-  },
-  { id: "emp008", name: "Patricia Green", department: "HR", checkIn: "-", checkOut: "-", status: "Absent", hours: "0.0" },
-]
+const mockAttendanceData: AttendanceRecord[] = [
+  { id: '1', employeeName: 'John Doe', employeeId: 'EMP001', date: '2024-01-15', checkIn: '09:00', checkOut: '17:30', totalHours: 8.5, status: 'present', department: 'Engineering' },
+  { id: '2', employeeName: 'Jane Smith', employeeId: 'EMP002', date: '2024-01-15', checkIn: '09:15', checkOut: '17:30', totalHours: 8.25, status: 'late', department: 'Design' },
+  { id: '3', employeeName: 'Mike Johnson', employeeId: 'EMP003', date: '2024-01-15', checkIn: '', checkOut: '', totalHours: 0, status: 'absent', department: 'Marketing' },
+  { id: '4', employeeName: 'Sarah Wilson', employeeId: 'EMP004', date: '2024-01-15', checkIn: '09:00', checkOut: '15:00', totalHours: 6, status: 'partial', department: 'HR' },
+  { id: '5', employeeName: 'Team Manager', employeeId: 'EMP005', date: '2024-01-15', checkIn: '08:45', checkOut: '17:15', totalHours: 8.5, status: 'present', department: 'Engineering' },
+  { id: '6', employeeName: 'HR Manager', employeeId: 'EMP006', date: '2024-01-15', checkIn: '09:00', checkOut: '18:00', totalHours: 9, status: 'present', department: 'Human Resources' },
+  { id: '7', employeeName: 'John Doe', employeeId: 'EMP007', date: '2024-01-15', checkIn: '08:30', checkOut: '17:00', totalHours: 8.5, status: 'present', department: 'Engineering' },
+];
 
-const departmentStats = [
-  { department: "Engineering", present: 445, absent: 5, rate: "98.9%" },
-  { department: "Sales", present: 275, absent: 5, rate: "98.2%" },
-  { department: "Marketing", present: 118, absent: 2, rate: "98.3%" },
-  { department: "HR", present: 43, absent: 2, rate: "95.6%" },
-  { department: "Finance", present: 34, absent: 1, rate: "97.1%" },
-]
+const Attendance = () => {
+  const { user } = useAuth();
+  const [selectedTab, setSelectedTab] = useState('overview');
+  const [searchTerm, setSearchTerm] = useState('');
+  const [showMarkAttendance, setShowMarkAttendance] = useState(false);
+  const [showCorrectAttendance, setShowCorrectAttendance] = useState(false);
+  const [selectedDate, setSelectedDate] = useState(new Date().toISOString().split('T')[0]);
 
-const initialLeaveRequests = [
-  {
-    id: "req001",
-    employeeName: "Alice Wonderland",
-    department: "Marketing",
-    type: "Sick Leave",
-    startDate: "2025-07-15",
-    endDate: "2025-07-15",
-    status: "Pending",
-  },
-  {
-    id: "req002",
-    employeeName: "Bob The Builder",
-    department: "Engineering",
-    type: "Annual Leave",
-    startDate: "2025-07-20",
-    endDate: "2025-07-25",
-    status: "Pending",
-  },
-  {
-    id: "req003",
-    employeeName: "Charlie Chaplin",
-    department: "Sales",
-    type: "Early Exit",
-    startDate: "2025-07-14",
-    endDate: "2025-07-14",
-    status: "Pending",
-  },
-]
+  // Role-based data filtering
+  const getFilteredData = () => {
+    if (user?.role === 'employee') {
+      // Employee can only see their own attendance
+      return mockAttendanceData.filter(record => record.employeeName === `${user.firstName} ${user.lastName}`);
+    } else if (user?.role === 'manager') {
+      // Manager can see their team's attendance (same department)
+      return mockAttendanceData.filter(record => record.department === user.department);
+    }
+    // HR and Super Admin can see all records
+    return mockAttendanceData;
+  };
 
-export default function AttendanceDashboard() {
-  const [selectedDate, setSelectedDate] = useState("Today")
-  const [selectedDepartment, setSelectedDepartment] = useState("All Departments")
-  const [filterStatus, setFilterStatus] = useState("All")
-  const [searchTerm, setSearchTerm] = useState("")
-  const [leaveRequests, setLeaveRequests] = useState(initialLeaveRequests)
+  const filteredData = getFilteredData().filter(record =>
+    record.employeeName.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    record.employeeId.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    record.department.toLowerCase().includes(searchTerm.toLowerCase())
+  );
 
-  // Filtered attendance data based on selected filters and search term
-  const filteredAttendance = useMemo(() => {
-    return initialTodaysAttendance.filter((employee) => {
-      const matchesDepartment =
-        selectedDepartment === "All Departments" || employee.department === selectedDepartment
-      const matchesStatus = filterStatus === "All" || employee.status === filterStatus
-      const matchesSearch =
-        employee.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        employee.department.toLowerCase().includes(searchTerm.toLowerCase())
+  const getAttendanceStats = () => {
+    const data = getFilteredData();
+    const todayData = data.filter(r => r.date === selectedDate);
+    const totalEmployees = new Set(data.map(r => r.employeeId)).size;
+    const presentToday = todayData.filter(r => r.status === 'present').length;
+    const lateToday = todayData.filter(r => r.status === 'late').length;
+    const absentToday = todayData.filter(r => r.status === 'absent').length;
 
-      return matchesDepartment && matchesStatus && matchesSearch
-    })
-  }, [selectedDepartment, filterStatus, searchTerm]) // Dependencies are correct here
+    return [
+      { title: user?.role === 'employee' ? 'My Status' : 'Total Employees', value: user?.role === 'employee' ? 'Present' : totalEmployees.toString(), icon: Users, color: 'text-blue-500' },
+      { title: 'Present Today', value: presentToday.toString(), icon: CheckCircle, color: 'text-green-500' },
+      { title: 'Late Arrivals', value: lateToday.toString(), icon: Clock, color: 'text-orange-500' },
+      { title: 'Absent Today', value: absentToday.toString(), icon: XCircle, color: 'text-red-500' },
+    ];
+  };
 
-  const handleApproveRequest = (id: string) => {
-    setLeaveRequests((prevRequests) =>
-      prevRequests.map((req) => (req.id === id ? { ...req, status: "Approved" } : req))
-    )
-    // Replaced alert() with console.log() for better practice
-    console.log(`Request ${id} Approved!`);
-    // In a real app, you'd send this update to a backend
-  }
+  const getStatusBadge = (status: string) => {
+    const variants = {
+      present: 'bg-green-500/20 text-green-500',
+      late: 'bg-orange-500/20 text-orange-500',
+      absent: 'bg-red-500/20 text-red-500',
+      partial: 'bg-blue-500/20 text-blue-500',
+    };
+    return variants[status as keyof typeof variants] || variants.present;
+  };
 
-  const handleRejectRequest = (id: string) => {
-    setLeaveRequests((prevRequests) =>
-      prevRequests.map((req) => (req.id === id ? { ...req, status: "Rejected" } : req))
-    )
-    // Replaced alert() with console.log() for better practice
-    console.log(`Request ${id} Rejected!`);
-    // In a real app, you'd send this update to a backend
-  }
+  //const canMarkAttendance = user?.role === 'hr';
+  const canViewAnalytics = user?.role === 'super_admin' || user?.role === 'hr';
+  const canCorrectDiscrepancies = user?.role === 'hr';
+
+  const renderRoleSpecificActions = () => {
+    if (user?.role === 'employee') {
+      return (
+        <div className="flex space-x-2">
+          <Button variant="outline">
+            <Eye className="w-4 h-4 mr-2" />
+            View My History
+          </Button>
+        </div>
+      );
+    }
+
+    if (user?.role === 'manager') {
+      return (
+        <div className="flex space-x-2">
+          <Button variant="outline">
+            <BarChart3 className="w-4 h-4 mr-2" />
+            Team Report
+          </Button>
+          <Button variant="outline">
+            <Download className="w-4 h-4 mr-2" />
+            Export Data
+          </Button>
+        </div>
+      );
+    }
+
+    if (user?.role === 'hr') {
+      return (
+        <div className="flex space-x-2">
+          <Dialog open={showMarkAttendance} onOpenChange={setShowMarkAttendance}>
+            <DialogTrigger asChild>
+              <Button>
+                <Plus className="w-4 h-4 mr-2" />
+                Mark Attendance
+              </Button>
+            </DialogTrigger>
+            <DialogContent className="max-w-md">
+              <DialogHeader>
+                <DialogTitle>Mark Employee Attendance</DialogTitle>
+              </DialogHeader>
+              <div className="space-y-4">
+                <div>
+                  <Label htmlFor="employee">Employee</Label>
+                  <Select>
+                    <SelectTrigger>
+                      <SelectValue placeholder="Select employee" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {mockAttendanceData.map((record) => (
+                        <SelectItem key={record.employeeId} value={record.employeeId}>
+                          {record.employeeName} ({record.employeeId})
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div>
+                  <Label htmlFor="date">Date</Label>
+                  <Input id="date" type="date" defaultValue={selectedDate} />
+                </div>
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <Label htmlFor="checkIn">Check In</Label>
+                    <Input id="checkIn" type="time" />
+                  </div>
+                  <div>
+                    <Label htmlFor="checkOut">Check Out</Label>
+                    <Input id="checkOut" type="time" />
+                  </div>
+                </div>
+                <div className="flex space-x-2">
+                  <Button onClick={() => setShowMarkAttendance(false)} variant="outline" className="flex-1">
+                    Cancel
+                  </Button>
+                  <Button className="flex-1">Mark Attendance</Button>
+                </div>
+              </div>
+            </DialogContent>
+          </Dialog>
+          <Dialog open={showCorrectAttendance} onOpenChange={setShowCorrectAttendance}>
+            <DialogTrigger asChild>
+              <Button variant="outline">
+                <Edit className="w-4 h-4 mr-2" />
+                Correct Discrepancy
+              </Button>
+            </DialogTrigger>
+            <DialogContent className="max-w-md">
+              <DialogHeader>
+                <DialogTitle>Correct Attendance Discrepancy</DialogTitle>
+              </DialogHeader>
+              <div className="space-y-4">
+                <div>
+                  <Label htmlFor="employee">Employee</Label>
+                  <Select>
+                    <SelectTrigger>
+                      <SelectValue placeholder="Select employee" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {mockAttendanceData.map((record) => (
+                        <SelectItem key={record.employeeId} value={record.employeeId}>
+                          {record.employeeName} ({record.employeeId})
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div>
+                  <Label htmlFor="date">Date</Label>
+                  <Input id="date" type="date" defaultValue={selectedDate} />
+                </div>
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <Label htmlFor="newCheckIn">Corrected Check In</Label>
+                    <Input id="newCheckIn" type="time" />
+                  </div>
+                  <div>
+                    <Label htmlFor="newCheckOut">Corrected Check Out</Label>
+                    <Input id="newCheckOut" type="time" />
+                  </div>
+                </div>
+                <div>
+                  <Label htmlFor="reason">Correction Reason</Label>
+                  <Input id="reason" placeholder="Enter reason for correction..." />
+                </div>
+                <div className="flex space-x-2">
+                  <Button onClick={() => setShowCorrectAttendance(false)} variant="outline" className="flex-1">
+                    Cancel
+                  </Button>
+                  <Button className="flex-1">Apply Correction</Button>
+                </div>
+              </div>
+            </DialogContent>
+          </Dialog>
+        </div>
+      );
+    }
+
+    if (user?.role === 'super_admin') {
+      return (
+        <div className="flex space-x-2">
+          <Button variant="outline">
+            <BarChart3 className="w-4 h-4 mr-2" />
+            Analytics Dashboard
+          </Button>
+          <Button variant="outline">
+            <Download className="w-4 h-4 mr-2" />
+            System Reports
+          </Button>
+        </div>
+      );
+    }
+
+    return null;
+  };
+
+  const getTabsList = () => {
+    const tabs = [
+      { value: 'overview', label: user?.role === 'employee' ? 'My Attendance' : 'Daily Overview' },
+      { value: 'records', label: 'Attendance Records' },
+    ];
+
+    if (canViewAnalytics) {
+      tabs.push({ value: 'analytics', label: 'Analytics' });
+    }
+
+    return tabs;
+  };
 
   return (
-    <div className="space-y-8 p-6 bg-background min-h-screen text-foreground font-inter">
-      {/* Tailwind CSS configuration for custom colors and font */}
-      {/* In a real project, this would be in tailwind.config.js, not inline style */}
-      <style>
-        {`
-          @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
-          :root {
-            --background: 0 0% 3.9%;
-            --foreground: 0 0% 98%;
-            --card: 0 0% 6%;
-            --card-foreground: 0 0% 98%;
-            --popover: 0 0% 6%;
-            --popover-foreground: 0 0% 98%;
-            --primary: 142 76% 36%;
-            --primary-foreground: 0 0% 98%;
-            --secondary: 0 0% 14.9%;
-            --secondary-foreground: 0 0% 98%;
-            --muted: 0 0% 14.9%;
-            --muted-foreground: 0 0% 65%;
-            --accent: 0 0% 14.9%;
-            --accent-foreground: 0 0% 98%;
-            --destructive: 0 62.8% 30.6%;
-            --destructive-foreground: 0 0% 98%;
-            --border: 0 0% 15%;
-            --input: 0 0% 15%;
-            --ring: 142 76% 36%;
-          }
-          .bg-background { background-color: hsl(var(--background)); }
-          .text-foreground { color: hsl(var(--foreground)); }
-          .bg-card { background-color: hsl(var(--card)); }
-          .text-card-foreground { color: hsl(var(--card-foreground)); }
-          .bg-primary { background-color: hsl(var(--primary)); }
-          .text-primary { color: hsl(var(--primary)); }
-          .text-primary-foreground { color: hsl(var(--primary-foreground)); }
-          .bg-secondary { background-color: hsl(var(--secondary)); }
-          .text-secondary-foreground { color: hsl(var(--secondary-foreground)); }
-          .bg-muted { background-color: hsl(var(--muted)); }
-          .text-muted-foreground { color: hsl(var(--muted-foreground)); }
-          .border-border { border-color: hsl(var(--border)); }
-          .hover\\:bg-primary\\/80:hover { background-color: hsl(142 76% 36% / 0.8); }
-          .hover\\:bg-muted\\/50:hover { background-color: hsl(0 0% 14.9% / 0.5); }
-          .font-inter { font-family: 'Inter', sans-serif; }
-          .bg-green-500\\/20 { background-color: rgba(34, 197, 94, 0.2); }
-          .text-green-400 { color: #4ade80; }
-          .bg-orange-500\\/20 { background-color: rgba(249, 115, 22, 0.2); }
-          .text-orange-400 { color: #fb923c; }
-          .bg-red-500\\/20 { background-color: rgba(239, 68, 68, 0.2); }
-          .text-red-400 { color: #ef4444; }
-          .bg-purple-500\\/20 { background-color: rgba(168, 85, 247, 0.2); }
-          .text-purple-400 { color: #c084fc; }
-        `}
-      </style>
-
-      {/* Header Section with Actions */}
-      <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
+    <div className="space-y-8">
+      <div className="flex items-center justify-between">
         <div>
           <h1 className="text-3xl font-bold text-foreground">Attendance Management</h1>
-          <p className="text-muted-foreground mt-2">Track and manage employee attendance efficiently.</p>
+          <p className="text-muted-foreground mt-2">
+            {user?.role === 'employee' && 'View your attendance history'}
+            {user?.role === 'manager' && 'Monitor your team\'s attendance'}
+            {user?.role === 'hr' && 'Manage employee attendance records'}
+            {user?.role === 'super_admin' && 'System-wide attendance analytics'}
+          </p>
         </div>
-        <div className="flex flex-wrap gap-3">
-          <Button variant="outline" className="border-border hover:bg-muted/50 bg-transparent">
-            <Edit className="h-4 w-4 mr-2" />
-            Manual Check-in
-          </Button>
-          <Button variant="outline" className="border-border hover:bg-muted/50 bg-transparent">
-            <Download className="h-4 w-4 mr-2" />
-            Export Report
-          </Button>
-          <Button className="bg-primary hover:bg-primary/80">
-            <CalendarDays className="h-4 w-4 mr-2" />
-            Manage Shifts
-          </Button>
-        </div>
+        {renderRoleSpecificActions()}
       </div>
 
       {/* Attendance Stats */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-6">
-        {attendanceStats.map((stat) => {
-          const Icon = stat.icon
-          return (
-            <div key={stat.name} className="bg-card p-6 rounded-xl border border-border">
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+        {getAttendanceStats().map((stat) => (
+          <Card key={stat.title}>
+            <CardContent className="p-6">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-sm font-medium text-muted-foreground">{stat.name}</p>
-                  <p className="text-2xl font-bold text-foreground mt-2">{stat.value}</p>
+                  <p className="text-sm font-medium text-muted-foreground">{stat.title}</p>
+                  <p className="text-2xl font-bold text-foreground">{stat.value}</p>
                 </div>
-                <div className="h-12 w-12 bg-primary/10 rounded-lg flex items-center justify-center">
-                  <Icon className={`h-6 w-6 ${stat.color}`} />
-                </div>
+                <stat.icon className={`w-8 h-8 ${stat.color}`} />
               </div>
-            </div>
-          )
-        })}
+            </CardContent>
+          </Card>
+        ))}
       </div>
 
-      {/* Department Attendance Overview */}
-      <div className="bg-card p-6 rounded-xl border border-border">
-        <h3 className="text-lg font-semibold text-foreground mb-4">Department Attendance Overview</h3>
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4">
-          {departmentStats.map((dept, index) => (
-            <div key={index} className="p-4 bg-muted/30 rounded-lg">
-              <div className="text-center">
-                <h4 className="font-medium text-foreground">{dept.department}</h4>
-                <div className="mt-3 space-y-2">
-                  <div className="flex justify-between text-sm">
-                    <span className="text-muted-foreground">Present:</span>
-                    <span className="text-green-500 font-medium">{dept.present}</span>
-                  </div>
-                  <div className="flex justify-between text-sm">
-                    <span className="text-muted-foreground">Absent:</span>
-                    <span className="text-red-500 font-medium">{dept.absent}</span>
-                  </div>
-                  <div className="pt-2 border-t border-border mt-3">
-                    <Badge variant="default" className="w-full justify-center bg-primary/20 text-primary font-semibold">
-                      {dept.rate}
-                    </Badge>
-                  </div>
-                </div>
-              </div>
-            </div>
+      {/* Main Content Tabs */}
+      <Tabs value={selectedTab} onValueChange={setSelectedTab}>
+        <TabsList className={`grid w-full grid-cols-${getTabsList().length}`}>
+          {getTabsList().map((tab) => (
+            <TabsTrigger key={tab.value} value={tab.value}>
+              {tab.label}
+            </TabsTrigger>
           ))}
-        </div>
-      </div>
+        </TabsList>
 
-      {/* Today's Attendance Table with Filters and Search */}
-      <div className="bg-card p-6 rounded-xl border border-border">
-        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between mb-4 gap-4">
-          <h3 className="text-lg font-semibold text-foreground">Today's Attendance</h3>
-          <div className="flex flex-wrap gap-3 w-full sm:w-auto">
-            <div className="relative w-full sm:w-auto flex-grow sm:flex-grow-0">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+        {/* Overview Tab */}
+        <TabsContent value="overview" className="space-y-6">
+          <div className="flex items-center space-x-4">
+            <div>
+              <Label htmlFor="date">Select Date</Label>
               <Input
-                placeholder="Search employee..."
-                className="pl-9 bg-background border-border w-full"
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
+                id="date"
+                type="date"
+                value={selectedDate}
+                onChange={(e) => setSelectedDate(e.target.value)}
+                className="w-40"
               />
             </div>
-            <Select value={selectedDate} onValueChange={setSelectedDate}>
-              <SelectTrigger className="w-full sm:w-40 bg-background border-border">
-                <SelectValue placeholder="Select date" />
-              </SelectTrigger>
-              <SelectContent className="bg-card border-border">
-                <SelectItem value="Today" className="text-foreground hover:bg-muted/50">
-                  Today
-                </SelectItem>
-                <SelectItem value="Yesterday" className="text-foreground hover:bg-muted/50">
-                  Yesterday
-                </SelectItem>
-                <SelectItem value="This Week" className="text-foreground hover:bg-muted/50">
-                  This Week
-                </SelectItem>
-                <SelectItem value="This Month" className="text-foreground hover:bg-muted/50">
-                  This Month
-                </SelectItem>
-                <SelectItem value="Custom" className="text-foreground hover:bg-muted/50">
-                  Custom Range...
-                </SelectItem>
-              </SelectContent>
-            </Select>
-            <Select value={selectedDepartment} onValueChange={setSelectedDepartment}>
-              <SelectTrigger className="w-full sm:w-48 bg-background border-border">
-                <SelectValue placeholder="Select department" />
-              </SelectTrigger>
-              <SelectContent className="bg-card border-border">
-                <SelectItem value="All Departments" className="text-foreground hover:bg-muted/50">
-                  All Departments
-                </SelectItem>
-                <SelectItem value="Engineering" className="text-foreground hover:bg-muted/50">
-                  Engineering
-                </SelectItem>
-                <SelectItem value="Marketing" className="text-foreground hover:bg-muted/50">
-                  Marketing
-                </SelectItem>
-                <SelectItem value="Sales" className="text-foreground hover:bg-muted/50">
-                  Sales
-                </SelectItem>
-                <SelectItem value="HR" className="text-foreground hover:bg-muted/50">
-                  HR
-                </SelectItem>
-                <SelectItem value="Finance" className="text-foreground hover:bg-muted/50">
-                  Finance
-                </SelectItem>
-              </SelectContent>
-            </Select>
-            <Select value={filterStatus} onValueChange={setFilterStatus}>
-              <SelectTrigger className="w-full sm:w-40 bg-background border-border">
-                <SelectValue placeholder="Filter by status" />
-              </SelectTrigger>
-              <SelectContent className="bg-card border-border">
-                <SelectItem value="All" className="text-foreground hover:bg-muted/50">
-                  All Statuses
-                </SelectItem>
-                <SelectItem value="Present" className="text-foreground hover:bg-muted/50">
-                  Present
-                </SelectItem>
-                <SelectItem value="Late" className="text-foreground hover:bg-muted/50">
-                  Late
-                </SelectItem>
-                <SelectItem value="Absent" className="text-foreground hover:bg-muted/50">
-                  Absent
-                </SelectItem>
-              </SelectContent>
-            </Select>
-          </div>
-        </div>
-        <div className="space-y-4">
-          {filteredAttendance.length > 0 ? (
-            filteredAttendance.map((employee) => (
-              <div key={employee.id} className="flex flex-col sm:flex-row items-start sm:items-center justify-between p-4 bg-muted/30 rounded-lg border border-border">
-                <div className="flex items-center space-x-4 mb-3 sm:mb-0">
-                  <div className="w-12 h-12 bg-primary/10 rounded-full flex items-center justify-center flex-shrink-0">
-                    <span className="text-sm font-medium text-primary">
-                      {employee.name
-                        .split(" ")
-                        .map((n) => n[0])
-                        .join("")}
-                    </span>
-                  </div>
-                  <div>
-                    <p className="text-sm font-medium text-foreground">{employee.name}</p>
-                    <p className="text-xs text-muted-foreground">{employee.department}</p>
-                  </div>
-                </div>
-                <div className="flex flex-wrap justify-between sm:justify-end items-center gap-4 sm:gap-6 w-full sm:w-auto">
-                  <div className="text-center min-w-[70px]">
-                    <p className="text-xs text-muted-foreground">Check In</p>
-                    <p className="text-sm font-medium text-foreground">{employee.checkIn}</p>
-                  </div>
-                  <div className="text-center min-w-[70px]">
-                    <p className="text-xs text-muted-foreground">Check Out</p>
-                    <p className="text-sm font-medium text-foreground">{employee.checkOut}</p>
-                  </div>
-                  <div className="text-center min-w-[50px]">
-                    <p className="text-xs text-muted-foreground">Hours</p>
-                    <p className="text-sm font-medium text-foreground">{employee.hours}</p>
-                  </div>
-                  <Badge
-                    className={`
-                      ${employee.status === "Present" ? "bg-green-500/20 text-green-400" : ""}
-                      ${employee.status === "Late" ? "bg-orange-500/20 text-orange-400" : ""}
-                      ${employee.status === "Absent" ? "bg-red-500/20 text-red-400" : ""}
-                      w-20 justify-center
-                    `}
-                  >
-                    {employee.status}
-                  </Badge>
-                  <Button size="icon" variant="outline" className="border-border hover:bg-muted/50 bg-transparent flex-shrink-0">
-                    <Edit className="h-4 w-4" />
-                  </Button>
-                </div>
+            {(user?.role === 'manager' || user?.role === 'hr' || user?.role === 'super_admin') && (
+              <div className="relative">
+                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground w-4 h-4" />
+                <Input
+                  placeholder="Search employees..."
+                  value={searchTerm}
+                  onChange={(e) => setSearchTerm(e.target.value)}
+                  className="pl-10 w-80"
+                />
               </div>
-            ))
-          ) : (
-            <div className="text-center text-muted-foreground p-8">No attendance records found for the selected criteria.</div>
-          )}
-        </div>
-      </div>
-
-      {/* Pending Leave Requests Section */}
-      <div className="bg-card p-6 rounded-xl border border-border">
-        <h3 className="text-lg font-semibold text-foreground mb-4">Pending Leave & Correction Requests</h3>
-        {leaveRequests.filter(req => req.status === "Pending").length > 0 ? (
-          <div className="space-y-4">
-            {leaveRequests
-              .filter(req => req.status === "Pending")
-              .map((request) => (
-                <div key={request.id} className="flex flex-col sm:flex-row items-start sm:items-center justify-between p-4 bg-muted/30 rounded-lg border border-border">
-                  <div className="flex items-center space-x-4 mb-3 sm:mb-0">
-                    <div className="w-10 h-10 bg-purple-500/10 rounded-full flex items-center justify-center flex-shrink-0">
-                      <span className="text-xs font-medium text-purple-400">
-                        {request.employeeName
-                          .split(" ")
-                          .map((n) => n[0])
-                          .join("")}
-                      </span>
-                    </div>
-                    <div>
-                      <p className="text-sm font-medium text-foreground">{request.employeeName}</p>
-                      <p className="text-xs text-muted-foreground">{request.department}</p>
-                    </div>
-                  </div>
-                  <div className="flex flex-col sm:flex-row items-start sm:items-center gap-2 sm:gap-6 text-sm">
-                    <p className="text-muted-foreground">Type: <span className="font-medium text-foreground">{request.type}</span></p>
-                    <p className="text-muted-foreground">Period: <span className="font-medium text-foreground">{request.startDate} to {request.endDate}</span></p>
-                    <Badge className="bg-purple-500/20 text-purple-400 w-20 justify-center">
-                      {request.status}
-                    </Badge>
-                    <div className="flex gap-2 mt-2 sm:mt-0">
-                      <Button size="sm" variant="outline" className="border-border bg-green-700/20 text-green-400 hover:bg-green-700/30" onClick={() => handleApproveRequest(request.id)}>
-                        Approve
-                      </Button>
-                      <Button size="sm" variant="outline" className="border-border bg-red-700/20 text-red-400 hover:bg-red-700/30" onClick={() => handleRejectRequest(request.id)}>
-                        Reject
-                      </Button>
-                    </div>
-                  </div>
-                </div>
-              ))}
+            )}
           </div>
-        ) : (
-          <div className="text-center text-muted-foreground p-8">No pending leave or correction requests.</div>
-        )}
-      </div>
 
-      {/* Attendance Trend (Placeholder for a Chart) */}
-      <div className="bg-card p-6 rounded-xl border border-border">
-        <h3 className="text-lg font-semibold text-foreground mb-4">Monthly Attendance Trend</h3>
-        <div className="h-64 flex items-center justify-center bg-muted/30 rounded-lg text-muted-foreground">
-          {/* This would be replaced by a charting library like Recharts or Chart.js */}
-          <p>Chart displaying attendance trends over time (e.g., bar chart of daily present/absent counts).</p>
-        </div>
-      </div>
+          <Card>
+            <CardContent className="p-0">
+              <div className="overflow-x-auto">
+                <table className="w-full">
+                  <thead className="bg-muted/30">
+                    <tr>
+                      <th className="px-6 py-4 text-left text-xs font-medium text-muted-foreground uppercase">Employee</th>
+                      {(user?.role === 'hr' || user?.role === 'super_admin') && (
+                        <th className="px-6 py-4 text-left text-xs font-medium text-muted-foreground uppercase">Department</th>
+                      )}
+                      <th className="px-6 py-4 text-left text-xs font-medium text-muted-foreground uppercase">Check In</th>
+                      <th className="px-6 py-4 text-left text-xs font-medium text-muted-foreground uppercase">Check Out</th>
+                      <th className="px-6 py-4 text-left text-xs font-medium text-muted-foreground uppercase">Hours</th>
+                      <th className="px-6 py-4 text-left text-xs font-medium text-muted-foreground uppercase">Status</th>
+                      {canCorrectDiscrepancies && (
+                        <th className="px-6 py-4 text-left text-xs font-medium text-muted-foreground uppercase">Actions</th>
+                      )}
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-border">
+                    {filteredData
+                      .filter(record => record.date === selectedDate)
+                      .map((record) => (
+                        <tr key={record.id} className="hover:bg-muted/20">
+                          <td className="px-6 py-4">
+                            <div>
+                              <div className="text-sm font-medium text-foreground">{record.employeeName}</div>
+                              <div className="text-xs text-muted-foreground">{record.employeeId}</div>
+                            </div>
+                          </td>
+                          {(user?.role === 'hr' || user?.role === 'super_admin') && (
+                            <td className="px-6 py-4 text-sm text-foreground">{record.department}</td>
+                          )}
+                          <td className="px-6 py-4 text-sm text-foreground">{record.checkIn || '--'}</td>
+                          <td className="px-6 py-4 text-sm text-foreground">{record.checkOut || '--'}</td>
+                          <td className="px-6 py-4 text-sm text-foreground">{record.totalHours}h</td>
+                          <td className="px-6 py-4">
+                            <Badge className={`${getStatusBadge(record.status)} capitalize`}>
+                              {record.status}
+                            </Badge>
+                          </td>
+                          {canCorrectDiscrepancies && (
+                            <td className="px-6 py-4">
+                              <Button size="sm" variant="ghost" onClick={() => setShowCorrectAttendance(true)}>
+                                <Edit className="w-4 h-4" />
+                              </Button>
+                            </td>
+                          )}
+                        </tr>
+                      ))}
+                  </tbody>
+                </table>
+              </div>
+            </CardContent>
+          </Card>
+        </TabsContent>
+
+        {/* Records Tab */}
+        <TabsContent value="records" className="space-y-6">
+          <Card>
+            <CardHeader>
+              <CardTitle>
+                {user?.role === 'employee' ? 'My Attendance History' : 'Employee Attendance Records'}
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-4">
+                {filteredData.slice(0, 10).map((record) => (
+                  <div key={record.id} className="flex items-center justify-between p-4 border border-border rounded-lg">
+                    <div className="flex items-center space-x-4">
+                      <div>
+                        <p className="font-medium text-foreground">{record.employeeName}</p>
+                        <p className="text-sm text-muted-foreground">
+                          {new Date(record.date).toLocaleDateString()} • {record.employeeId}
+                          {(user?.role === 'hr' || user?.role === 'super_admin') && ` • ${record.department}`}
+                        </p>
+                      </div>
+                    </div>
+                    <div className="flex items-center space-x-4">
+                      <div className="text-right">
+                        <p className="text-sm font-medium">{record.checkIn} - {record.checkOut || 'Not checked out'}</p>
+                        <p className="text-xs text-muted-foreground">{record.totalHours} hours</p>
+                      </div>
+                      <Badge className={`${getStatusBadge(record.status)} capitalize`}>
+                        {record.status}
+                      </Badge>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </CardContent>
+          </Card>
+        </TabsContent>
+
+        {/* Analytics Tab (HR and Super Admin only) */}
+        {canViewAnalytics && (
+          <TabsContent value="analytics" className="space-y-6">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <Card>
+                <CardHeader>
+                  <CardTitle>Department-wise Attendance</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="space-y-4">
+                    {['Engineering', 'Design', 'Marketing', 'HR'].map((dept) => {
+                      const deptData = filteredData.filter(r => r.department === dept);
+                      const presentCount = deptData.filter(r => r.status === 'present').length;
+                      const totalCount = deptData.length;
+                      const percentage = totalCount > 0 ? (presentCount / totalCount) * 100 : 0;
+
+                      return (
+                        <div key={dept} className="space-y-2">
+                          <div className="flex justify-between text-sm">
+                            <span className="font-medium">{dept}</span>
+                            <span>{presentCount}/{totalCount} ({percentage.toFixed(1)}%)</span>
+                          </div>
+                          <div className="w-full bg-muted rounded-full h-2">
+                            <div
+                              className="bg-primary h-2 rounded-full"
+                              style={{ width: `${percentage}%` }}
+                            ></div>
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                </CardContent>
+              </Card>
+
+              <Card>
+                <CardHeader>
+                  <CardTitle>Attendance Trends</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="space-y-4">
+                    <div className="flex items-center justify-between p-3 bg-muted/30 rounded-lg">
+                      <span className="text-sm font-medium">Average Attendance Rate</span>
+                      <span className="text-lg font-bold text-green-500">94.2%</span>
+                    </div>
+                    <div className="flex items-center justify-between p-3 bg-muted/30 rounded-lg">
+                      <span className="text-sm font-medium">Late Arrivals This Week</span>
+                      <span className="text-lg font-bold text-orange-500">12</span>
+                    </div>
+                    <div className="flex items-center justify-between p-3 bg-muted/30 rounded-lg">
+                      <span className="text-sm font-medium">Perfect Attendance</span>
+                      <span className="text-lg font-bold text-blue-500">23 employees</span>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+            </div>
+          </TabsContent>
+        )}
+      </Tabs>
     </div>
-  )
-}
+  );
+};
+
+export default Attendance;
