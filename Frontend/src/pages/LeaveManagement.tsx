@@ -41,7 +41,7 @@ const mockLeaveRequests = [
 const LeaveManagement = () => {
   const { user } = useAuth();
   const [activeTab, setActiveTab] = useState('requests');
-  const [_showNewLeaveForm, setShowNewLeaveForm] = useState<boolean>(() => false);
+  const [showNewLeaveForm, setShowNewLeaveForm] = useState<boolean>(false);
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState('all');
   const [newLeave, setNewLeave] = useState({
@@ -56,13 +56,10 @@ const LeaveManagement = () => {
 
   const filteredRequests = mockLeaveRequests.filter(request => {
     const isEmployee = user?.role === 'employee' && request.employeeName === fullName;
-    const hasAccess =
-      isEmployee || canManageLeaves;
-
+    const hasAccess = isEmployee || canManageLeaves;
     const matchesSearch =
       request.employeeName.toLowerCase().includes(searchTerm.toLowerCase()) ||
       request.leaveType.toLowerCase().includes(searchTerm.toLowerCase());
-
     const matchesStatus = statusFilter === 'all' || request.status === statusFilter;
 
     return hasAccess && matchesSearch && matchesStatus;
@@ -257,7 +254,7 @@ const LeaveManagement = () => {
       )}
 
       {/* Apply for Leave Modal */}
-      {_showNewLeaveForm && user?.role === 'employee' && (
+      {showNewLeaveForm && user?.role === 'employee' && (
         <div className="fixed inset-0 bg-black/40 backdrop-blur-sm flex items-center justify-center z-50">
           <div className="bg-black/5 dark:bg-card p-6 rounded-xl w-full max-w-lg border border-border shadow-lg">
             <h2 className="text-xl font-semibold mb-4 text-foreground">Apply for Leave</h2>
@@ -269,7 +266,6 @@ const LeaveManagement = () => {
                   onChange={(e) => setNewLeave({ ...newLeave, leaveType: e.target.value })}
                   className="w-full border border-border rounded-lg px-3 py-2 bg-black/5 text-foreground"
                 >
-                  
                   <option value="Annual Leave">Annual Leave</option>
                   <option value="Sick Leave">Sick Leave</option>
                   <option value="Personal Leave">Personal Leave</option>
