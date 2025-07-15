@@ -41,17 +41,31 @@ const mockLeaveRequests = [
 const LeaveManagement = () => {
   const { user } = useAuth();
   const [activeTab, setActiveTab] = useState('requests');
-  const [showNewLeaveForm, setShowNewLeaveForm] = useState(false);
+  const [showNewLeaveForm, setShowNewLeaveForm] = useState<boolean>(() => false);
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState('all');
+  const [newLeave, setNewLeave] = useState({
+    leaveType: '',
+    startDate: '',
+    endDate: '',
+    reason: '',
+  });
 
   const canManageLeaves = user?.role === 'hr' || user?.role === 'manager' || user?.role === 'super_admin';
+  const fullName = `${user?.firstName} ${user?.lastName}`;
 
   const filteredRequests = mockLeaveRequests.filter(request => {
-    const matchesSearch = request.employeeName.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                         request.leaveType.toLowerCase().includes(searchTerm.toLowerCase());
+    const isEmployee = user?.role === 'employee' && request.employeeName === fullName;
+    const hasAccess =
+      isEmployee || canManageLeaves;
+
+    const matchesSearch =
+      request.employeeName.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      request.leaveType.toLowerCase().includes(searchTerm.toLowerCase());
+
     const matchesStatus = statusFilter === 'all' || request.status === statusFilter;
-    return matchesSearch && matchesStatus;
+
+    return hasAccess && matchesSearch && matchesStatus;
   });
 
   const getStatusColor = (status: string) => {
@@ -78,6 +92,7 @@ const LeaveManagement = () => {
 
   return (
     <div className="space-y-8">
+      {/* Header */}
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-3xl font-bold text-foreground">Leave Management</h1>
@@ -85,7 +100,6 @@ const LeaveManagement = () => {
             {canManageLeaves ? 'Manage team leave requests' : 'View and apply for leave'}
           </p>
         </div>
-        
         {user?.role === 'employee' && (
           <button
             onClick={() => setShowNewLeaveForm(true)}
@@ -97,7 +111,7 @@ const LeaveManagement = () => {
         )}
       </div>
 
-      {/* Tab Navigation */}
+      {/* Tabs */}
       <div className="border-b border-border">
         <nav className="flex space-x-8">
           {[
@@ -125,10 +139,9 @@ const LeaveManagement = () => {
         </nav>
       </div>
 
-      {/* Leave Requests Tab */}
+      {/* Requests Tab */}
       {activeTab === 'requests' && (
         <div className="space-y-6">
-          {/* Filters */}
           <div className="flex items-center space-x-4">
             <div className="relative flex-1 max-w-md">
               <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground w-4 h-4" />
@@ -140,7 +153,6 @@ const LeaveManagement = () => {
                 className="pl-10 pr-4 py-2 bg-input border border-border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-ring w-full"
               />
             </div>
-            
             <select
               value={statusFilter}
               onChange={(e) => setStatusFilter(e.target.value)}
@@ -153,58 +165,32 @@ const LeaveManagement = () => {
             </select>
           </div>
 
-          {/* Leave Requests List */}
+          {/* Table */}
           <div className="bg-card rounded-xl border border-border overflow-hidden">
             <div className="overflow-x-auto">
               <table className="w-full">
                 <thead className="bg-muted/30">
                   <tr>
-                    <th className="px-6 py-4 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">
-                      Employee
-                    </th>
-                    <th className="px-6 py-4 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">
-                      Leave Type
-                    </th>
-                    <th className="px-6 py-4 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">
-                      Dates
-                    </th>
-                    <th className="px-6 py-4 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">
-                      Days
-                    </th>
-                    <th className="px-6 py-4 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">
-                      Status
-                    </th>
-                    {canManageLeaves && (
-                      <th className="px-6 py-4 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">
-                        Actions
-                      </th>
-                    )}
+                    <th className="px-6 py-4 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">Employee</th>
+                    <th className="px-6 py-4">Leave Type</th>
+                    <th className="px-6 py-4">Dates</th>
+                    <th className="px-6 py-4">Days</th>
+                    <th className="px-6 py-4">Status</th>
+                    {canManageLeaves && <th className="px-6 py-4">Actions</th>}
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-border">
                   {filteredRequests.map((request) => (
                     <tr key={request.id} className="hover:bg-muted/20">
                       <td className="px-6 py-4">
-                        <div>
-                          <div className="text-sm font-medium text-foreground">
-                            {request.employeeName}
-                          </div>
-                          <div className="text-xs text-muted-foreground">
-                            Applied on {new Date(request.appliedOn).toLocaleDateString()}
-                          </div>
-                        </div>
+                        <div className="text-sm font-medium">{request.employeeName}</div>
+                        <div className="text-xs text-muted-foreground">Applied on {new Date(request.appliedOn).toLocaleDateString()}</div>
                       </td>
+                      <td className="px-6 py-4">{request.leaveType}</td>
                       <td className="px-6 py-4">
-                        <span className="text-sm text-foreground">{request.leaveType}</span>
+                        {new Date(request.startDate).toLocaleDateString()} - {new Date(request.endDate).toLocaleDateString()}
                       </td>
-                      <td className="px-6 py-4">
-                        <div className="text-sm text-foreground">
-                          {new Date(request.startDate).toLocaleDateString()} - {new Date(request.endDate).toLocaleDateString()}
-                        </div>
-                      </td>
-                      <td className="px-6 py-4">
-                        <span className="text-sm text-foreground">{request.days} days</span>
-                      </td>
+                      <td className="px-6 py-4">{request.days} days</td>
                       <td className="px-6 py-4">
                         <span className={`inline-flex items-center space-x-1 px-2 py-1 rounded-full text-xs font-medium border ${getStatusColor(request.status)}`}>
                           {getStatusIcon(request.status)}
@@ -215,12 +201,8 @@ const LeaveManagement = () => {
                         <td className="px-6 py-4">
                           {request.status === 'pending' && (
                             <div className="flex space-x-2">
-                              <button className="bg-green-500/20 text-green-500 hover:bg-green-500/30 px-3 py-1 rounded text-xs font-medium transition-colors">
-                                Approve
-                              </button>
-                              <button className="bg-red-500/20 text-red-500 hover:bg-red-500/30 px-3 py-1 rounded text-xs font-medium transition-colors">
-                                Reject
-                              </button>
+                              <button className="bg-green-500/20 text-green-500 px-3 py-1 rounded text-xs font-medium">Approve</button>
+                              <button className="bg-red-500/20 text-red-500 px-3 py-1 rounded text-xs font-medium">Reject</button>
                             </div>
                           )}
                         </td>
@@ -234,8 +216,8 @@ const LeaveManagement = () => {
         </div>
       )}
 
-      {/* Leave Balance Tab */}
-      {activeTab === 'balance' && (
+      {/* Balance Tab */}
+      {activeTab === 'balance' && user?.role === 'employee' && (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
           {[
             { type: 'Annual Leave', used: 12, total: 25, color: 'text-blue-500' },
@@ -254,29 +236,93 @@ const LeaveManagement = () => {
                   <span className="text-foreground">Remaining: {leave.total - leave.used} days</span>
                 </div>
                 <div className="w-full bg-muted rounded-full h-2">
-                  <div
-                    className={`h-2 rounded-full ${leave.color.replace('text-', 'bg-').replace('-500', '-500')}`}
-                    style={{ width: `${(leave.used / leave.total) * 100}%` }}
-                  ></div>
+                  <div className={`h-2 rounded-full ${leave.color.replace('text-', 'bg-')}`} style={{ width: `${(leave.used / leave.total) * 100}%` }} />
                 </div>
-                <p className="text-xs text-muted-foreground">
-                  Total: {leave.total} days
-                </p>
+                <p className="text-xs text-muted-foreground">Total: {leave.total} days</p>
               </div>
             </div>
           ))}
         </div>
       )}
 
-      {/* Leave Calendar Tab */}
+      {/* Calendar Tab */}
       {activeTab === 'calendar' && (
         <div className="bg-card p-6 rounded-xl border border-border">
           <div className="text-center py-12">
             <Calendar className="w-16 h-16 text-muted-foreground mx-auto mb-4" />
             <h3 className="text-lg font-medium text-foreground mb-2">Leave Calendar</h3>
-            <p className="text-muted-foreground">
-              Calendar view will be implemented with a proper date picker component
-            </p>
+            <p className="text-muted-foreground">Calendar view will be implemented with a proper date picker component</p>
+          </div>
+        </div>
+      )}
+
+      {/* Apply for Leave Modal */}
+      {showNewLeaveForm && user?.role === 'employee' && (
+        <div className="fixed inset-0 bg-black/40 backdrop-blur-sm flex items-center justify-center z-50">
+          <div className="bg-black/5 dark:bg-card p-6 rounded-xl w-full max-w-lg border border-border shadow-lg">
+            <h2 className="text-xl font-semibold mb-4 text-foreground">Apply for Leave</h2>
+            <div className="space-y-4">
+              <div>
+                <label className="text-sm font-medium block mb-1">Leave Type</label>
+                <select
+                  value={newLeave.leaveType}
+                  onChange={(e) => setNewLeave({ ...newLeave, leaveType: e.target.value })}
+                  className="w-full border border-border rounded-lg px-3 py-2 bg-black/5 text-foreground"
+                >
+                  
+                  <option value="Annual Leave">Annual Leave</option>
+                  <option value="Sick Leave">Sick Leave</option>
+                  <option value="Personal Leave">Personal Leave</option>
+                  <option value="Maternity/Paternity">Maternity/Paternity</option>
+                </select>
+              </div>
+              <div className="flex space-x-4">
+                <div className="flex-1">
+                  <label className="text-sm font-medium block mb-1">Start Date</label>
+                  <input
+                    type="date"
+                    value={newLeave.startDate}
+                    onChange={(e) => setNewLeave({ ...newLeave, startDate: e.target.value })}
+                    className="w-full border border-border rounded-lg px-3 py-2 bg-black/5 text-foreground"
+                  />
+                </div>
+                <div className="flex-1">
+                  <label className="text-sm font-medium block mb-1">End Date</label>
+                  <input
+                    type="date"
+                    value={newLeave.endDate}
+                    onChange={(e) => setNewLeave({ ...newLeave, endDate: e.target.value })}
+                    className="w-full border border-border rounded-lg px-3 py-2 bg-black/5 text-foreground"
+                  />
+                </div>
+              </div>
+              <div>
+                <label className="text-sm font-medium block mb-1">Reason</label>
+                <textarea
+                  value={newLeave.reason}
+                  onChange={(e) => setNewLeave({ ...newLeave, reason: e.target.value })}
+                  rows={4}
+                  className="w-full border border-border rounded-lg px-3 py-2 bg-input text-foreground"
+                />
+              </div>
+            </div>
+            <div className="flex justify-end mt-6 space-x-3">
+              <button onClick={() => setShowNewLeaveForm(false)} className="px-4 py-2 bg-muted text-muted-foreground rounded-lg">Cancel</button>
+              <button
+                onClick={() => {
+                  if (!newLeave.leaveType || !newLeave.startDate || !newLeave.endDate || !newLeave.reason) {
+                    alert('Please fill in all fields');
+                    return;
+                  }
+                  alert('Leave request submitted!');
+                  setNewLeave({ leaveType: '', startDate: '', endDate: '', reason: '' });
+                  setShowNewLeaveForm(false);
+                }}
+                className="px-4 py-2 bg-primary text-white rounded-lg hover:bg-primary/90"
+              >
+                Submit
+              </button>
+            </div>
           </div>
         </div>
       )}
