@@ -9,7 +9,7 @@ import Dashboard from "./pages/Dashboard";
 import LeaveManagement from "./pages/LeaveManagement";
 import Employees from "./pages/Employees";
 import NotFound from "./pages/NotFound";
-import Payroll from "./pages/Payroll";
+//import Payroll from "./pages/Payroll";
 import AttendanceDashboard from "./pages/Attendance";
 import PerformanceDashboard from "./pages/performance";
 import TrainingDashboard from "./pages/Training";
@@ -49,15 +49,15 @@ const App = () => (
                 </ProtectedRoute>
               }
             />
-            <Route
+            {/* <Route
               path="/payroll"
               element={
                 <ProtectedRoute>
                   <Payroll />
-                </ProtectedRoute>
-              }
-            />``
-            
+                </ProtectedRoute> */}
+              
+      
+
             <Route
               path="/attendance"
               element={
