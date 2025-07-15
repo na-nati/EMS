@@ -41,7 +41,7 @@ const mockLeaveRequests = [
 const LeaveManagement = () => {
   const { user } = useAuth();
   const [activeTab, setActiveTab] = useState('requests');
-  const [showNewLeaveForm, setShowNewLeaveForm] = useState<boolean>(() => false);
+  const [_showNewLeaveForm, setShowNewLeaveForm] = useState<boolean>(() => false);
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState('all');
   const [newLeave, setNewLeave] = useState({
@@ -257,7 +257,7 @@ const LeaveManagement = () => {
       )}
 
       {/* Apply for Leave Modal */}
-      {showNewLeaveForm && user?.role === 'employee' && (
+      {_showNewLeaveForm && user?.role === 'employee' && (
         <div className="fixed inset-0 bg-black/40 backdrop-blur-sm flex items-center justify-center z-50">
           <div className="bg-black/5 dark:bg-card p-6 rounded-xl w-full max-w-lg border border-border shadow-lg">
             <h2 className="text-xl font-semibold mb-4 text-foreground">Apply for Leave</h2>
