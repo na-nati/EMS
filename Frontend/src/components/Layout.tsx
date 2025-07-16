@@ -18,7 +18,7 @@ const Layout = ({ children }: LayoutProps) => {
       <Sidebar />
       <div className="flex-1 flex flex-col overflow-hidden">
         <TopNav />
-        <main className="flex-1 overflow-auto p-6">
+        <main className="flex-1 overflow-auto pt-16 px-4 md:px-6">
           {children}
         </main>
       </div>

@@ -7,8 +7,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from ".
 import { Input } from "../components/ui/input" // Assuming you have an Input component
 
 const performanceStats = [
-  { name: "Avg Performance", value: "4.2/5", icon: Star, color: "text-yellow-500" },
-  { name: "Reviews Complete", value: "89%", icon: BarChart3, color: "text-blue-500" },
+  { name: "Avg Performance", value: "89.2/100", icon: Star, color: "text-yellow-500" },
   { name: "Top Performers", value: "156", icon: Award, color: "text-green-500" },
   { name: "Needs Improvement", value: "23", icon: TrendingUp, color: "text-orange-500" },
 ]
@@ -423,13 +422,7 @@ return tempReviews.sort((a, b) => {
       </div>
 
       {/* Performance Trend Chart (Placeholder) */}
-      <div className="bg-card p-6 rounded-xl border border-border">
-        <h3 className="text-lg font-semibold text-foreground mb-4">Overall Performance Score Trend</h3>
-        <div className="h-64 flex items-center justify-center bg-muted/30 rounded-lg text-muted-foreground">
-          <p>This area would display a chart (e.g., line graph) showing average performance scores over time.</p>
-          <BarChart3 className="h-12 w-12 text-muted-foreground ml-4" />
-        </div>
-      </div>
+      
     </div>
   )
 }

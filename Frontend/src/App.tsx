@@ -89,14 +89,11 @@ const InnerApp = () => {
               </ProtectedRoute>
             }
           />
-          <Route
-            path="/payroll"
-            element={
-              <ProtectedRoute>
-                <Payroll />
-              </ProtectedRoute>
-            }
-          />
+          <Route path="/payroll" 
+          element={
+          <ProtectedRoute allowedRoles={['super_admin', 'hr', 'employee','manager']}>
+            <Payroll />
+            </ProtectedRoute>} />
           <Route
             path="/attendance"
             element={
