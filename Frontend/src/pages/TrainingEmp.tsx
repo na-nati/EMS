@@ -3,8 +3,6 @@ import { GraduationCap, Users, CheckCircle, Clock, BookOpen, Award, Plus, Eye, D
 import { Button } from "../components/ui/button";
 import { Badge } from "../components/ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "../components/ui/select";
-import { Input } from "../components/ui/input"; // Assuming you have an Input component
-import { Textarea } from "../components/ui/textarea"; // Assuming you have a Textarea component
 
 // --- Data Definitions ---
 const trainingStats = [
@@ -170,31 +168,21 @@ export default function TrainingEmp({ userRole, currentUser = "Robert Wilson" }:
   const [programs, setPrograms] = useState(initialTrainingPrograms);
   const [requests, setRequests] = useState(initialTrainingRequests);
   const [newRequestModalOpen, setNewRequestModalOpen] = useState(false);
-  const [addProgramModalOpen, setAddProgramModalOpen] = useState(false); // State for Add Program modal
-
   const [newRequestData, setNewRequestData] = useState({
     course: "",
     reason: "",
     cost: ""
   });
 
-  const [newProgramData, setNewProgramData] = useState({ // State for new program form
-    name: "",
-    category: "",
-    duration: "",
-    instructor: "",
-    startDate: "",
-    status: "Active" // Default status for new programs
-  });
-
   // Filtered training programs based on selected filters and role
   const filteredPrograms = useMemo(() => {
     let result = [...programs];
-
+    
     if (userRole === 'employee') {
       // Employees see only active programs
       result = result.filter(program => program.status === "Active");
-    } else if (userRole === 'hr' || userRole === 'admin') { // HR and Admin can filter and see all statuses
+    } else {
+      // HR/Admin see programs based on filters
       result = result.filter(program => {
         const matchesCategory = selectedCategory === "All Categories" || program.category === selectedCategory;
         const matchesStatus = selectedStatus === "All Status" || program.status === selectedStatus;
@@ -210,13 +198,12 @@ export default function TrainingEmp({ userRole, currentUser = "Robert Wilson" }:
     if (userRole === 'employee') {
       return requests.filter(req => req.employee === currentUser); // Filter by current user's name
     }
-    // HR and Admin roles see all requests
     return requests;
   }, [requests, userRole, currentUser]);
 
   // Handler for approving a training request (HR/Admin only)
   const handleApproveRequest = (id: string) => {
-    if (userRole === 'hr' || userRole === 'admin') {
+    if (userRole !== 'employee') {
       setRequests(prevRequests =>
         prevRequests.map(req => req.id === id ? { ...req, status: "Approved" } : req)
       );
@@ -226,7 +213,7 @@ export default function TrainingEmp({ userRole, currentUser = "Robert Wilson" }:
 
   // Handler for rejecting a training request (HR/Admin only)
   const handleRejectRequest = (id: string) => {
-    if (userRole === 'hr' || userRole === 'admin') {
+    if (userRole !== 'employee') {
       setRequests(prevRequests =>
         prevRequests.map(req => req.id === id ? { ...req, status: "Rejected" } : req)
       );
@@ -246,13 +233,10 @@ export default function TrainingEmp({ userRole, currentUser = "Robert Wilson" }:
 
   // Handler for requesting a new training (Employee only)
   const handleNewRequestSubmit = () => {
-    if (!newRequestData.course.trim()) {
-      alert("Course name is required for a new request.");
-      return;
-    }
+    if (!newRequestData.course) return;
     
     const newRequest = {
-      id: `treq${Date.now()}-${Math.floor(Math.random() * 1000)}`, // More unique ID
+      id: `treq${Math.floor(Math.random() * 10000)}`,
       employee: currentUser,
       department: "Unknown", // Placeholder, ideally derived from user profile
       course: newRequestData.course,
@@ -260,7 +244,7 @@ export default function TrainingEmp({ userRole, currentUser = "Robert Wilson" }:
       requestDate: new Date().toISOString().split('T')[0],
       cost: newRequestData.cost || "$0",
       status: "Pending",
-      currentUser: true 
+      currentUser: true // Mark as current user's request
     };
     
     setRequests(prev => [...prev, newRequest]);
@@ -271,54 +255,17 @@ export default function TrainingEmp({ userRole, currentUser = "Robert Wilson" }:
 
   // Handler for enrolling in a program (Employee only)
   const handleEnrollInProgram = (programId: string) => {
-    if (userRole === 'employee') {
-      setPrograms(prev => 
-        prev.map(prog => 
-          prog.id === programId 
-            ? { ...prog, enrolled: prog.enrolled + 1, currentUserEnrolled: true } 
-            : prog
-        )
-      );
-      alert("Enrollment successful!");
-    }
+    setPrograms(prev => 
+      prev.map(prog => 
+        prog.id === programId 
+          ? { ...prog, enrolled: prog.enrolled + 1, currentUserEnrolled: true } 
+          : prog
+      )
+    );
+    alert("Enrollment successful!");
   };
 
-  // Handler for adding a new program (HR/Admin only)
-  const handleAddProgramSubmit = () => {
-    if (userRole === 'hr' || userRole === 'admin') {
-      if (!newProgramData.name.trim() || !newProgramData.category.trim() || !newProgramData.duration.trim() || !newProgramData.instructor.trim() || !newProgramData.startDate.trim()) {
-        alert("Please fill in all required fields for the new program.");
-        return;
-      }
-
-      const newProgram = {
-        id: `prog${Date.now()}-${Math.floor(Math.random() * 1000)}`, // More unique ID
-        name: newProgramData.name,
-        category: newProgramData.category,
-        duration: newProgramData.duration,
-        enrolled: 0,
-        completed: 0,
-        instructor: newProgramData.instructor,
-        status: newProgramData.status,
-        startDate: newProgramData.startDate,
-        currentUserEnrolled: false,
-      };
-      
-      setPrograms(prev => [...prev, newProgram]);
-      setAddProgramModalOpen(false);
-      setNewProgramData({ // Reset form
-        name: "",
-        category: "",
-        duration: "",
-        instructor: "",
-        startDate: "",
-        status: "Active"
-      });
-      alert("New training program added!");
-    }
-  };
-
-  // New Request Modal Component
+  // New Request Modal
   const renderNewRequestModal = () => (
     <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
       <div className="bg-card p-6 rounded-xl border border-border w-full max-w-md">
@@ -336,36 +283,35 @@ export default function TrainingEmp({ userRole, currentUser = "Robert Wilson" }:
         
         <div className="space-y-4">
           <div>
-            <label className="block text-sm font-medium mb-1 text-foreground">Course Name <span className="text-red-500">*</span></label>
-            <Input
+            <label className="block text-sm font-medium mb-1 text-foreground">Course Name</label>
+            <input
               type="text"
-              className="w-full bg-background border-border text-foreground"
+              className="w-full bg-background border border-border rounded-md p-2 text-foreground"
               value={newRequestData.course}
               onChange={(e) => setNewRequestData({...newRequestData, course: e.target.value})}
-              placeholder="e.g., Advanced Python Programming"
-              required
+              placeholder="Enter course name"
             />
           </div>
           
           <div>
             <label className="block text-sm font-medium mb-1 text-foreground">Reason</label>
-            <Textarea
-              className="w-full bg-background border-border text-foreground"
+            <textarea
+              className="w-full bg-background border border-border rounded-md p-2 text-foreground"
               value={newRequestData.reason}
               onChange={(e) => setNewRequestData({...newRequestData, reason: e.target.value})}
-              placeholder="Why do you need this training? (Optional)"
+              placeholder="Why do you need this training?"
               rows={3}
             />
           </div>
           
           <div>
             <label className="block text-sm font-medium mb-1 text-foreground">Estimated Cost</label>
-            <Input
+            <input
               type="text"
-              className="w-full bg-background border-border text-foreground"
+              className="w-full bg-background border border-border rounded-md p-2 text-foreground"
               value={newRequestData.cost}
               onChange={(e) => setNewRequestData({...newRequestData, cost: e.target.value})}
-              placeholder="$0 (Optional)"
+              placeholder="$0"
             />
           </div>
           
@@ -375,99 +321,6 @@ export default function TrainingEmp({ userRole, currentUser = "Robert Wilson" }:
             disabled={!newRequestData.course.trim()}
           >
             Submit Request
-          </Button>
-        </div>
-      </div>
-    </div>
-  );
-
-  // Add Program Modal Component (for HR/Admin)
-  const renderAddProgramModal = () => (
-    <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
-      <div className="bg-card p-6 rounded-xl border border-border w-full max-w-md">
-        <div className="flex justify-between items-center mb-4">
-          <h3 className="text-lg font-semibold">Add New Training Program</h3>
-          <Button 
-            variant="ghost" 
-            size="icon" 
-            onClick={() => setAddProgramModalOpen(false)}
-            className="text-muted-foreground hover:bg-muted/50"
-          >
-            <X className="h-4 w-4" />
-          </Button>
-        </div>
-        
-        <div className="space-y-4">
-          <div>
-            <label className="block text-sm font-medium mb-1 text-foreground">Program Name <span className="text-red-500">*</span></label>
-            <Input
-              type="text"
-              className="w-full bg-background border-border text-foreground"
-              value={newProgramData.name}
-              onChange={(e) => setNewProgramData({...newProgramData, name: e.target.value})}
-              placeholder="e.g., Data Science Fundamentals"
-              required
-            />
-          </div>
-          
-          <div>
-            <label className="block text-sm font-medium mb-1 text-foreground">Category <span className="text-red-500">*</span></label>
-            <Select value={newProgramData.category} onValueChange={(value) => setNewProgramData({...newProgramData, category: value})}>
-              <SelectTrigger className="w-full bg-background border-border text-foreground">
-                <SelectValue placeholder="Select category" />
-              </SelectTrigger>
-              <SelectContent className="bg-card border-border">
-                {/* The problematic SelectItem with value="" has been removed */}
-                <SelectItem value="Technical" className="text-foreground hover:bg-muted/50">Technical</SelectItem>
-                <SelectItem value="Management" className="text-foreground hover:bg-muted/50">Management</SelectItem>
-                <SelectItem value="Marketing" className="text-foreground hover:bg-muted/50">Marketing</SelectItem>
-                <SelectItem value="Design" className="text-foreground hover:bg-muted/50">Design</SelectItem>
-                <SelectItem value="Soft Skills" className="text-foreground hover:bg-muted/50">Soft Skills</SelectItem>
-              </SelectContent>
-            </Select>
-          </div>
-
-          <div>
-            <label className="block text-sm font-medium mb-1 text-foreground">Duration <span className="text-red-500">*</span></label>
-            <Input
-              type="text"
-              className="w-full bg-background border-border text-foreground"
-              value={newProgramData.duration}
-              onChange={(e) => setNewProgramData({...newProgramData, duration: e.target.value})}
-              placeholder="e.g., 40 hours or 2 weeks"
-              required
-            />
-          </div>
-
-          <div>
-            <label className="block text-sm font-medium mb-1 text-foreground">Instructor <span className="text-red-500">*</span></label>
-            <Input
-              type="text"
-              className="w-full bg-background border-border text-foreground"
-              value={newProgramData.instructor}
-              onChange={(e) => setNewProgramData({...newProgramData, instructor: e.target.value})}
-              placeholder="e.g., Jane Smith"
-              required
-            />
-          </div>
-
-          <div>
-            <label className="block text-sm font-medium mb-1 text-foreground">Start Date <span className="text-red-500">*</span></label>
-            <Input
-              type="date"
-              className="w-full bg-background border-border text-foreground"
-              value={newProgramData.startDate}
-              onChange={(e) => setNewProgramData({...newProgramData, startDate: e.target.value})}
-              required
-            />
-          </div>
-          
-          <Button 
-            className="w-full mt-4 bg-primary hover:bg-primary/80 text-primary-foreground"
-            onClick={handleAddProgramSubmit}
-            disabled={!newProgramData.name.trim() || !newProgramData.category.trim() || !newProgramData.duration.trim() || !newProgramData.instructor.trim() || !newProgramData.startDate.trim()}
-          >
-            Add Program
           </Button>
         </div>
       </div>
@@ -526,9 +379,8 @@ export default function TrainingEmp({ userRole, currentUser = "Robert Wilson" }:
     <div className="space-y-8 p-6 bg-background min-h-screen text-foreground font-inter">
       <style>{styleContent}</style>
       
-      {/* Modals */}
+      {/* New Request Modal */}
       {newRequestModalOpen && renderNewRequestModal()}
-      {addProgramModalOpen && renderAddProgramModal()}
 
       {/* --- Header Section --- */}
       <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
@@ -559,7 +411,7 @@ export default function TrainingEmp({ userRole, currentUser = "Robert Wilson" }:
                 Request Training
               </Button>
             </>
-          ) : ( // Applies to HR and Admin roles
+          ) : (
             <>
               <Button variant="outline" className="border-border hover:bg-muted/50 bg-transparent">
                 <Download className="h-4 w-4 mr-2" />
@@ -569,10 +421,7 @@ export default function TrainingEmp({ userRole, currentUser = "Robert Wilson" }:
                 <Award className="h-4 w-4 mr-2" />
                 Certifications
               </Button>
-              <Button 
-                className="bg-primary hover:bg-primary/80 text-primary-foreground"
-                onClick={() => setAddProgramModalOpen(true)} // Open Add Program modal
-              >
+              <Button className="bg-primary hover:bg-primary/80 text-primary-foreground">
                 <Plus className="h-4 w-4 mr-2" />
                 Add Program
               </Button>
@@ -582,7 +431,7 @@ export default function TrainingEmp({ userRole, currentUser = "Robert Wilson" }:
       </div>
 
       {/* --- Training Stats (HR/Admin only) --- */}
-      {(userRole === 'hr' || userRole === 'admin') && (
+      {userRole !== 'employee' && (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
           {trainingStats.map((stat) => {
             const Icon = stat.icon;
@@ -610,7 +459,7 @@ export default function TrainingEmp({ userRole, currentUser = "Robert Wilson" }:
             {userRole === 'employee' ? "Available Training Programs" : "Training Programs"}
           </h3>
           
-          {(userRole === 'hr' || userRole === 'admin') && (
+          {userRole !== 'employee' && (
             <div className="flex flex-wrap gap-3">
               <Select value={selectedCategory} onValueChange={setSelectedCategory}>
                 <SelectTrigger className="w-full sm:w-48 bg-background border-border">
@@ -703,7 +552,7 @@ export default function TrainingEmp({ userRole, currentUser = "Robert Wilson" }:
                           Enroll Now
                         </Button>
                       )
-                    ) : ( // HR and Admin roles see view details button
+                    ) : (
                       <Button size="sm" variant="outline" className="border-border hover:bg-muted/50 bg-transparent">
                         <Eye className="h-4 w-4" />
                       </Button>
@@ -789,7 +638,7 @@ export default function TrainingEmp({ userRole, currentUser = "Robert Wilson" }:
                       {request.status}
                     </Badge>
                     <div className="flex space-x-2">
-                      {(userRole === 'hr' || userRole === 'admin') && request.status === "Pending" && (
+                      {request.status === "Pending" && userRole !== 'employee' && (
                         <>
                           <Button
                             size="sm"
