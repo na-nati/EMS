@@ -157,7 +157,7 @@ const upcomingCertifications = [
 ];
 
 // --- Main Component ---
-type UserRole = 'employee' | 'hr' | 'admin';
+import type { UserRole } from '../contexts/AuthContext'
 
 interface TrainingDashboardProps {
   userRole: UserRole;
@@ -194,7 +194,7 @@ export default function TrainingEmp({ userRole, currentUser = "Robert Wilson" }:
     if (userRole === 'employee') {
       // Employees see only active programs
       result = result.filter(program => program.status === "Active");
-    } else if (userRole === 'hr' || userRole === 'admin') { // HR and Admin can filter and see all statuses
+    } else if (userRole === 'hr' || userRole === 'super_admin') { // HR and Admin can filter and see all statuses
       result = result.filter(program => {
         const matchesCategory = selectedCategory === "All Categories" || program.category === selectedCategory;
         const matchesStatus = selectedStatus === "All Status" || program.status === selectedStatus;
@@ -216,7 +216,7 @@ export default function TrainingEmp({ userRole, currentUser = "Robert Wilson" }:
 
   // Handler for approving a training request (HR/Admin only)
   const handleApproveRequest = (id: string) => {
-    if (userRole === 'hr' || userRole === 'admin') {
+    if (userRole === 'hr' || userRole === 'super_admin') {
       setRequests(prevRequests =>
         prevRequests.map(req => req.id === id ? { ...req, status: "Approved" } : req)
       );
@@ -226,7 +226,7 @@ export default function TrainingEmp({ userRole, currentUser = "Robert Wilson" }:
 
   // Handler for rejecting a training request (HR/Admin only)
   const handleRejectRequest = (id: string) => {
-    if (userRole === 'hr' || userRole === 'admin') {
+    if (userRole === 'hr' || userRole === 'super_admin') {
       setRequests(prevRequests =>
         prevRequests.map(req => req.id === id ? { ...req, status: "Rejected" } : req)
       );
@@ -285,7 +285,7 @@ export default function TrainingEmp({ userRole, currentUser = "Robert Wilson" }:
 
   // Handler for adding a new program (HR/Admin only)
   const handleAddProgramSubmit = () => {
-    if (userRole === 'hr' || userRole === 'admin') {
+    if (userRole === 'hr' || userRole === 'super_admin') {
       if (!newProgramData.name.trim() || !newProgramData.category.trim() || !newProgramData.duration.trim() || !newProgramData.instructor.trim() || !newProgramData.startDate.trim()) {
         alert("Please fill in all required fields for the new program.");
         return;
@@ -582,7 +582,7 @@ export default function TrainingEmp({ userRole, currentUser = "Robert Wilson" }:
       </div>
 
       {/* --- Training Stats (HR/Admin only) --- */}
-      {(userRole === 'hr' || userRole === 'admin') && (
+      {(userRole === 'hr' || userRole === 'super_admin') && (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
           {trainingStats.map((stat) => {
             const Icon = stat.icon;
@@ -610,7 +610,7 @@ export default function TrainingEmp({ userRole, currentUser = "Robert Wilson" }:
             {userRole === 'employee' ? "Available Training Programs" : "Training Programs"}
           </h3>
           
-          {(userRole === 'hr' || userRole === 'admin') && (
+          {(userRole === 'hr' || userRole === 'super_admin') && (
             <div className="flex flex-wrap gap-3">
               <Select value={selectedCategory} onValueChange={setSelectedCategory}>
                 <SelectTrigger className="w-full sm:w-48 bg-background border-border">
@@ -789,7 +789,7 @@ export default function TrainingEmp({ userRole, currentUser = "Robert Wilson" }:
                       {request.status}
                     </Badge>
                     <div className="flex space-x-2">
-                      {(userRole === 'hr' || userRole === 'admin') && request.status === "Pending" && (
+                      {(userRole === 'hr' || userRole === 'super_admin') && request.status === "Pending" && (
                         <>
                           <Button
                             size="sm"

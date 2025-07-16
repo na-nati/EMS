@@ -155,7 +155,7 @@ const upcomingCertifications = [
 ];
 
 // --- Main Component ---
-type UserRole = 'employee' | 'hr' | 'admin';
+import type { UserRole } from '../contexts/AuthContext'
 
 interface TrainingDashboardProps {
   userRole: UserRole;

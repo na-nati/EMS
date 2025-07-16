@@ -22,7 +22,8 @@ import { Input } from "../components/ui/input"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "../components/ui/select"
 
 // Types
-type UserRole = 'hr' | 'admin' | 'employee';
+// Types
+import type { UserRole } from '../contexts/AuthContext'
 
 interface AssetAssignment {
   employee: string;
@@ -251,7 +252,7 @@ export default function AssetsDashboard({ userRole, currentUser }: AssetsDashboa
 
   // Helper functions for role-based UI
   const isHR = userRole === 'hr';
-  const isAdmin = userRole === 'admin';
+  const isAdmin = userRole === 'super_admin';
   const isEmployee = userRole === 'employee';
 
   return (
