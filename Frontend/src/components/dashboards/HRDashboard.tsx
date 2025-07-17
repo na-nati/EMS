@@ -6,7 +6,6 @@ import {
   TrendingUp, 
   UserPlus,
   Edit,
-  Trash2,
   Upload,
   Download,
   Eye,
@@ -14,8 +13,6 @@ import {
   HardHat,
   CheckCircle,
   XCircle,
-  Search,
-  Filter,
   FileSpreadsheet,
   Building,
   ClipboardList
@@ -562,65 +559,7 @@ export function HRDashboard() { // Named export
         </div>
 
         {/* Employee List (HR Employee Management: View all employees, Edit, Delete) */}
-        <div className="bg-card p-6 rounded-xl border border-border lg:col-span-2">
-          <div className="flex justify-between items-center mb-4">
-            <h3 className="text-lg font-semibold text-foreground">Employee Directory</h3>
-            <div className="flex space-x-2">
-              <div className="relative">
-                <input 
-                  type="text" 
-                  placeholder="Search employees..." 
-                  className="bg-background border border-border rounded-md pl-8 pr-3 py-1.5 text-sm w-36 sm:w-48 text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-1 focus:ring-primary"
-                />
-                <Search className="h-4 w-4 text-muted-foreground absolute left-2.5 top-2.5" />
-              </div>
-              <button className="flex items-center text-sm border border-border rounded-md px-3 py-1.5 hover:bg-muted text-foreground transition-colors">
-                <Filter className="h-4 w-4 mr-1" /> Filter
-              </button>
-            </div>
-          </div>
-          <div className="overflow-x-auto">
-            <table className="w-full">
-              <thead>
-                <tr className="border-b border-border text-left text-sm text-muted-foreground">
-                  <th className="pb-3 px-4 font-medium">Name</th>
-                  <th className="pb-3 px-4 font-medium">Email</th>
-                  <th className="pb-3 px-4 font-medium">Department</th>
-                  <th className="pb-3 px-4 font-medium">Status</th>
-                  <th className="pb-3 px-4 font-medium">Actions</th>
-                </tr>
-              </thead>
-              <tbody>
-                {employees.map(emp => {
-                  return (
-                    <tr key={emp.id} className="border-b border-border/50 hover:bg-muted/30 transition-colors">
-                      <td className="py-3 px-4 text-sm text-foreground">{emp.name}</td>
-                      <td className="py-3 px-4 text-sm text-foreground">{emp.email}</td>
-                      <td className="py-3 px-4 text-sm text-foreground">{emp.department}</td>
-                      <td className="py-3 px-4 text-sm">
-                        <span className={`px-2 py-1 rounded-full text-xs font-medium ${
-                          emp.status === 'Active' ? 'bg-green-600/20 text-green-400' :
-                          emp.status === 'On Leave' ? 'bg-yellow-600/20 text-yellow-400' :
-                          'bg-red-600/20 text-red-400'
-                        }`}>
-                          {emp.status}
-                        </span>
-                      </td>
-                      <td className="py-3 px-4 flex space-x-2">
-                        <button className="text-primary hover:text-primary/80 text-sm flex items-center transition-colors">
-                          <Edit className="h-4 w-4 mr-1" /> Edit
-                        </button>
-                        <button className="text-red-500 hover:text-red-400 text-sm flex items-center transition-colors">
-                          <Trash2 className="h-4 w-4 mr-1" /> Delete
-                        </button>
-                      </td>
-                    </tr>
-                  );
-                })}
-              </tbody>
-            </table>
-          </div>
-        </div>
+        
 
         {/* Payroll Summary (Payroll Management: View salary slips) */}
         <div className="bg-card p-6 rounded-xl border border-border">

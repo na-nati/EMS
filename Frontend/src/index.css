@@ -87,9 +87,9 @@
 
 /* Custom scrollbar - excellent addition for consistent UI */
 ::-webkit-scrollbar {
-  width: 6px;
+  width: 3px;
   /* Adjust as needed */
-  height: 6px;
+  height: 3px;
   /* For horizontal scrollbars */
 }
 

@@ -19,9 +19,9 @@ import {
 
 const navigation = [
   { name: 'Dashboard', href: '/dashboard', icon: LayoutDashboard, roles: ['super_admin', 'hr', 'manager', 'employee'] },
-  { name: 'Employees', href: '/employees', icon: Users, roles: ['hr', 'manager'] },
+  { name: 'Employees', href: '/employees', icon: Users, roles: ['hr', 'manager','super_admin'] },
   { name: 'Payroll', href: '/payroll', icon: DollarSign, roles: ['super_admin', 'hr', 'employee', 'manager'] },
-  { name: 'Attendance', href: '/attendance', icon: Calendar, roles: ['hr', 'manager', 'employee'] },
+  { name: 'Attendance', href: '/attendance', icon: Calendar, roles: ['hr', 'manager', 'employee', 'super_admin'] },
   { name: 'Leave Management', href: '/leave', icon: FileText, roles: ['hr', 'manager', 'employee'] },
   { name: 'Performance', href: '/performance', icon: ClipboardCheck, roles: ['super_admin', 'hr', 'manager', 'employee'] },
   { name: 'Training', href: '/training', icon: GraduationCap, roles: ['hr', 'super_admin'] },

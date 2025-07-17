@@ -1,9 +1,17 @@
-import { useState, type SetStateAction } from "react"
-// Mock implementations for v0 preview. In your actual application,
-// replace these with your real AuthContext and useToast hook.
-// import { useAuth } from '../contexts/AuthContext';
-// import { useToast } from '../hooks/use-toast';
+"use client"
 
+import type React from "react"
+
+import { useState, type SetStateAction } from "react"
+import { useAuth } from "../contexts/AuthContext"
+import { Button } from "../components/ui/button"
+import { Badge } from "../components/ui/badge"
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "../components/ui/tabs"
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "../components/ui/dialog"
+import { Input } from "../components/ui/input"
+import { Label } from "../components/ui/lable"
+import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "../components/ui/sheet"
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "../components/ui/select"
 import {
   DollarSign,
   Download,
@@ -20,15 +28,6 @@ import {
   Clock,
   Menu,
 } from "lucide-react"
-import { Button } from "../components/ui/button"
-import { Badge } from "../components/ui/badge"
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "../components/ui/tabs"
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "../components/ui/dialog"
-import { Input } from "../components/ui/input"
-import { Label } from "../components/ui/lable"
-import { useAuth } from "../contexts/AuthContext"
-import { Card, CardContent,  } from "../components/ui/card"
-import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "../components/ui/sheet"
 
 interface PayrollRecord {
   id: string
@@ -155,24 +154,10 @@ const mockPayrollAuditLogs: PayrollAuditLog[] = [
   },
 ]
 
+const departments = ["Engineering", "Design", "Marketing", "HR", "Human Resources"]
+
 const Payroll = () => {
-  const { user, isLoading } = useAuth();
-
-  if (isLoading) {
-    return <div>Loading...</div>;
-  }
-
-  if (!user) {
-    return <div>Please log in to view payroll details.</div>;
-  }
-
-
-  const toast = ({ title, description }: { title: string; description: string }) => {
-    console.log(`Toast: ${title} - ${description}`)
-    // In a real application, this would trigger a shadcn/ui toast notification.
-  }
-
-  const [selectedTab, setSelectedTab] = useState("overview")
+  const [selectedTab, setSelectedTab] = useState("records")
   const [showAddSalary, setShowAddSalary] = useState(false)
   const [showEditSalary, setShowEditSalary] = useState(false)
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false)
@@ -192,18 +177,19 @@ const Payroll = () => {
     year: 2024,
   })
 
- // Role-based data filtering
-  const getFilteredData = () => {
-    let data = payrollData;
-    
-    if (user?.role === 'employee') {
-      // Employee can only see their own payroll
-      data = data.filter(record => record.employeeName === `${user.firstName} ${user.lastName}`);
-    } else if (user?.role === 'manager') {
-      // Manager can see team salary summaries (limited view)
-      data = data.filter(record => record.department === user.department);
-    }
+  const { user, isLoading } = useAuth()
 
+  const toast = ({ title, description }: { title: string; description: string }) => {
+    console.log(`Toast: ${title} - ${description}`)
+  }
+
+  const getFilteredData = () => {
+    let data = payrollData
+    if (user?.role === "employee") {
+      data = data.filter((record) => record.employeeName === `${user.firstName} ${user.lastName}`)
+    } else if (user?.role === "manager") {
+      data = data.filter((record) => record.department === user.department)
+    }
     if (searchTerm) {
       data = data.filter(
         (record) =>
@@ -212,18 +198,16 @@ const Payroll = () => {
           record.department.toLowerCase().includes(searchTerm.toLowerCase()),
       )
     }
-
     return data
   }
+
   const filteredData = getFilteredData()
 
-  // CRUD Operations
   const handleAddSalary = () => {
     const basicSalary = Number.parseFloat(formData.basicSalary)
     const bonus = Number.parseFloat(formData.bonus) || 0
     const deductions = Number.parseFloat(formData.deductions) || 0
     const netSalary = basicSalary + bonus - deductions
-
     const newRecord: PayrollRecord = {
       id: (payrollData.length + 1).toString(),
       employeeName: formData.employeeName,
@@ -237,7 +221,6 @@ const Payroll = () => {
       status: "pending",
       department: formData.department,
     }
-
     setPayrollData([...payrollData, newRecord])
     setShowAddSalary(false)
     resetForm()
@@ -249,12 +232,10 @@ const Payroll = () => {
 
   const handleEditSalary = () => {
     if (!editingRecord) return
-
     const basicSalary = Number.parseFloat(formData.basicSalary)
     const bonus = Number.parseFloat(formData.bonus) || 0
     const deductions = Number.parseFloat(formData.deductions) || 0
     const netSalary = basicSalary + bonus - deductions
-
     const updatedRecord = {
       ...editingRecord,
       employeeName: formData.employeeName,
@@ -267,7 +248,6 @@ const Payroll = () => {
       month: formData.month,
       year: formData.year,
     }
-
     setPayrollData(payrollData.map((record) => (record.id === editingRecord.id ? updatedRecord : record)))
     setShowEditSalary(false)
     setEditingRecord(null)
@@ -280,7 +260,6 @@ const Payroll = () => {
 
   const handleDeleteSalary = () => {
     if (!deletingRecord) return
-
     setPayrollData(payrollData.filter((record) => record.id !== deletingRecord.id))
     setShowDeleteConfirm(false)
     setDeletingRecord(null)
@@ -327,6 +306,7 @@ const Payroll = () => {
     const data = filteredData
     const totalPayroll = data.reduce((sum, record) => sum + record.netSalary, 0)
     const averageSalary = data.length > 0 ? totalPayroll / data.length : 0
+
     const pendingPayroll = data.filter((r) => r.status === "pending" || r.status === "processing").length
 
     if (user?.role === "employee") {
@@ -384,7 +364,6 @@ const Payroll = () => {
   const canManagePayroll = user?.role === "hr"
   const canViewReports = user?.role === "hr" || user?.role === "super_admin"
 
-  // Mobile Action Button Component
   const MobileActionButton = ({ children, onClick }: { children: React.ReactNode; onClick: () => void }) => (
     <Button
       onClick={onClick}
@@ -393,20 +372,18 @@ const Payroll = () => {
     >
       {children}
     </Button>
-  );
+  )
 
   const renderRoleSpecificActions = () => {
     if (user?.role === "employee") {
       return (
         <>
-          {/* Desktop Actions */}
           <div className="hidden sm:flex space-x-2">
             <Button variant="outline" size="sm">
               <Download className="w-4 h-4 mr-2" />
               Download Payslip
             </Button>
           </div>
-          {/* Mobile Actions */}
           <div className="sm:hidden">
             <Sheet open={showMobileMenu} onOpenChange={setShowMobileMenu}>
               <SheetTrigger asChild>
@@ -428,20 +405,17 @@ const Payroll = () => {
             </Sheet>
           </div>
         </>
-      );
+      )
     }
-
     if (user?.role === "manager") {
       return (
         <>
-          {/* Desktop Actions */}
           <div className="hidden sm:flex space-x-2">
             <Button variant="outline" size="sm">
               <Eye className="w-4 h-4 mr-2" />
               Team Summary
             </Button>
           </div>
-          {/* Mobile Actions */}
           <div className="sm:hidden">
             <Sheet open={showMobileMenu} onOpenChange={setShowMobileMenu}>
               <SheetTrigger asChild>
@@ -463,22 +437,20 @@ const Payroll = () => {
             </Sheet>
           </div>
         </>
-      );
+      )
     }
-
     if (user?.role === "hr") {
       return (
         <>
-          {/* Desktop Actions */}
           <div className="hidden sm:flex flex-col sm:flex-row gap-2">
             <Dialog open={showAddSalary} onOpenChange={setShowAddSalary}>
               <DialogTrigger asChild>
-                <Button size="sm" className="bg-green-500"  >
+                <Button size="sm" className="bg-green-500">
                   <Plus className="w-4 h-4 mr-2" />
                   Add Salary
                 </Button>
               </DialogTrigger>
-              <DialogContent className="max-w-[95vw] sm:max-w-md mx-4">
+              <DialogContent className="max-w-[95vw] sm:max-w-md mx-4 bg-card border-border text-foreground">
                 <DialogHeader>
                   <DialogTitle>Add Employee Salary</DialogTitle>
                 </DialogHeader>
@@ -486,20 +458,20 @@ const Payroll = () => {
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                     <div>
                       <Label htmlFor="employeeName">Employee Name</Label>
-                      <Input 
-                        id="employeeName" 
+                      <Input
+                        id="employeeName"
                         value={formData.employeeName}
-                        onChange={(e) => setFormData({...formData, employeeName: e.target.value})}
+                        onChange={(e) => setFormData({ ...formData, employeeName: e.target.value })}
                         placeholder="John Doe"
                         className="mt-1"
                       />
                     </div>
                     <div>
                       <Label htmlFor="employeeId">Employee ID</Label>
-                      <Input 
-                        id="employeeId" 
+                      <Input
+                        id="employeeId"
                         value={formData.employeeId}
-                        onChange={(e) => setFormData({...formData, employeeId: e.target.value})}
+                        onChange={(e) => setFormData({ ...formData, employeeId: e.target.value })}
                         placeholder="EMP001"
                         className="mt-1"
                       />
@@ -507,33 +479,41 @@ const Payroll = () => {
                   </div>
                   <div>
                     <Label htmlFor="department">Department</Label>
-                    <Input 
-                      id="department" 
+                    <Select
                       value={formData.department}
-                      onChange={(e) => setFormData({...formData, department: e.target.value})}
-                      placeholder="Engineering"
-                      className="mt-1"
-                    />
+                      onValueChange={(value) => setFormData({ ...formData, department: value })}
+                    >
+                      <SelectTrigger className="mt-1 bg-background border-border text-foreground placeholder:text-muted-foreground">
+                        <SelectValue placeholder="Select Department" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {departments.map((dept) => (
+                          <SelectItem key={dept} value={dept}>
+                            {dept}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
                   </div>
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                     <div>
                       <Label htmlFor="basicSalary">Basic Salary</Label>
-                      <Input 
-                        id="basicSalary" 
-                        type="number" 
+                      <Input
+                        id="basicSalary"
+                        type="number"
                         value={formData.basicSalary}
-                        onChange={(e) => setFormData({...formData, basicSalary: e.target.value})}
+                        onChange={(e) => setFormData({ ...formData, basicSalary: e.target.value })}
                         placeholder="50000"
                         className="mt-1"
                       />
                     </div>
                     <div>
                       <Label htmlFor="bonus">Bonus</Label>
-                      <Input 
-                        id="bonus" 
-                        type="number" 
+                      <Input
+                        id="bonus"
+                        type="number"
                         value={formData.bonus}
-                        onChange={(e) => setFormData({...formData, bonus: e.target.value})}
+                        onChange={(e) => setFormData({ ...formData, bonus: e.target.value })}
                         placeholder="5000"
                         className="mt-1"
                       />
@@ -541,27 +521,27 @@ const Payroll = () => {
                   </div>
                   <div>
                     <Label htmlFor="deductions">Deductions</Label>
-                    <Input 
-                      id="deductions" 
-                      type="number" 
+                    <Input
+                      id="deductions"
+                      type="number"
                       value={formData.deductions}
-                      onChange={(e) => setFormData({...formData, deductions: e.target.value})}
+                      onChange={(e) => setFormData({ ...formData, deductions: e.target.value })}
                       placeholder="2000"
                       className="mt-1"
                     />
                   </div>
                   <div className="flex flex-col sm:flex-row gap-2 pt-4">
-                    <Button 
-                      onClick={() => {setShowAddSalary(false); resetForm();}} 
-                      variant="outline" 
+                    <Button
+                      onClick={() => {
+                        setShowAddSalary(false)
+                        resetForm()
+                      }}
+                      variant="outline"
                       className="flex-1 h-11"
                     >
                       Cancel
                     </Button>
-                    <Button 
-                      onClick={handleAddSalary} 
-                      className="flex-1 h-11"
-                    >
+                    <Button onClick={handleAddSalary} className="flex-1 h-11">
                       Add Salary
                     </Button>
                   </div>
@@ -573,7 +553,6 @@ const Payroll = () => {
               Generate Report
             </Button>
           </div>
-          {/* Mobile Actions */}
           <div className="sm:hidden">
             <Sheet open={showMobileMenu} onOpenChange={setShowMobileMenu}>
               <SheetTrigger asChild>
@@ -586,7 +565,12 @@ const Payroll = () => {
                   <SheetTitle>Actions</SheetTitle>
                 </SheetHeader>
                 <div className="mt-6 space-y-2">
-                  <MobileActionButton onClick={() => {setShowAddSalary(true); setShowMobileMenu(false);}} >
+                  <MobileActionButton
+                    onClick={() => {
+                      setShowAddSalary(true)
+                      setShowMobileMenu(false)
+                    }}
+                  >
                     <Plus className="w-4 h-4" />
                     Add Salary
                   </MobileActionButton>
@@ -599,20 +583,17 @@ const Payroll = () => {
             </Sheet>
           </div>
         </>
-      );
+      )
     }
-
     if (user?.role === "super_admin") {
       return (
         <>
-          {/* Desktop Actions */}
           <div className="hidden sm:flex space-x-2">
             <Button variant="outline" size="sm">
               <FileText className="w-4 h-4 mr-2" />
               System Statistics
             </Button>
           </div>
-          {/* Mobile Actions */}
           <div className="sm:hidden">
             <Sheet open={showMobileMenu} onOpenChange={setShowMobileMenu}>
               <SheetTrigger asChild>
@@ -634,90 +615,84 @@ const Payroll = () => {
             </Sheet>
           </div>
         </>
-      );
+      )
     }
-
-    return null;
-  };
+    return null
+  }
 
   const getTabsList = () => {
-    const tabs = [
-      { value: "overview", label: user?.role === "employee" ? "My Payslip" : "Payroll Overview" },
-    ];
-
+    const tabs = []
     if (user?.role !== "employee") {
-      tabs.push({ value: "records", label: "Payroll Records" });
+      tabs.push({ value: "records", label: "Payroll Records" })
+    } else {
+      tabs.push({ value: "records", label: "My Payslip" })
     }
-
     if (canViewReports) {
-      tabs.push({ value: "reports", label: "Reports" });
+      tabs.push({ value: "reports", label: "Reports" })
     }
-
     if (user?.role === "super_admin") {
-      tabs.push({ value: "audit", label: "Audit Log" });
+      tabs.push({ value: "audit", label: "Audit Log" })
     }
+    return tabs
+  }
 
-    return tabs;
-  };
-
-  // Mobile Card Component for Records
   const MobileRecordCard = ({ record }: { record: PayrollRecord }) => (
-    <Card className="shadow-sm">
-      <CardContent className="p-4">
-        <div className="space-y-3">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="font-medium text-foreground text-sm">{record.employeeName}</p>
-              <p className="text-xs text-muted-foreground">{record.employeeId}</p>
-            </div>
-            <Badge className={getStatusBadge(record.status)}>
-              {record.status}
-            </Badge>
+    <div className="bg-card p-4 rounded-xl border border-border shadow-sm">
+      <div className="space-y-3">
+        <div className="flex items-center justify-between">
+          <div>
+            <p className="font-medium text-foreground text-sm">{record.employeeName}</p>
+            <p className="text-xs text-muted-foreground">{record.employeeId}</p>
           </div>
-          
-          <div className="grid grid-cols-2 gap-3 text-sm">
-            <div>
-              <p className="text-muted-foreground">Department</p>
-              <p className="font-medium">{record.department}</p>
-            </div>
-            <div>
-              <p className="text-muted-foreground">Basic Salary</p>
-              <p className="font-medium">${record.basicSalary.toLocaleString()}</p>
-            </div>
-            <div>
-              <p className="text-muted-foreground">Bonus</p>
-              <p className="font-medium text-green-600">${record.bonus.toLocaleString()}</p>
-            </div>
-            <div>
-              <p className="text-muted-foreground">Deductions</p>
-              <p className="font-medium text-red-600">${record.deductions.toLocaleString()}</p>
-            </div>
+          <Badge className={getStatusBadge(record.status)}>{record.status}</Badge>
+        </div>
+        <div className="grid grid-cols-2 gap-3 text-sm">
+          <div>
+            <p className="text-muted-foreground">Department</p>
+            <p className="font-medium">{record.department}</p>
           </div>
-
-          <div className="flex items-center justify-between pt-2 border-t">
-            <div>
-              <p className="text-muted-foreground text-sm">Net Salary</p>
-              <p className="font-bold text-lg">${record.netSalary.toLocaleString()}</p>
-            </div>
-            {canManagePayroll && (
-              <div className="flex gap-2">
-                <Button size="sm" variant="ghost" onClick={() => openEditDialog(record)}>
-                  <Edit className="w-4 h-4" />
-                </Button>
-                <Button size="sm" variant="ghost" onClick={() => openDeleteDialog(record)}>
-                  <Trash2 className="w-4 h-4" />
-                </Button>
-              </div>
-            )}
+          <div>
+            <p className="text-muted-foreground">Basic Salary</p>
+            <p className="font-medium">${record.basicSalary.toLocaleString()}</p>
+          </div>
+          <div>
+            <p className="text-muted-foreground">Bonus</p>
+            <p className="font-medium text-green-600">${record.bonus.toLocaleString()}</p>
+          </div>
+          <div>
+            <p className="text-muted-foreground">Deductions</p>
+            <p className="font-medium text-red-600">${record.deductions.toLocaleString()}</p>
           </div>
         </div>
-      </CardContent>
-    </Card>
-  );
+        <div className="flex items-center justify-between pt-2 border-t">
+          <div>
+            <p className="text-muted-foreground text-sm">Net Salary</p>
+            <p className="font-bold text-lg">${record.netSalary.toLocaleString()}</p>
+          </div>
+          {canManagePayroll && (
+            <div className="flex gap-2">
+              <Button size="sm" variant="ghost" onClick={() => openEditDialog(record)}>
+                <Edit className="w-4 h-4" />
+              </Button>
+              <Button size="sm" variant="ghost" onClick={() => openDeleteDialog(record)}>
+                <Trash2 className="w-4 h-4" />
+              </Button>
+            </div>
+          )}
+        </div>
+      </div>
+    </div>
+  )
+
+  if (isLoading) {
+    return <div>Loading...</div>
+  }
+  if (!user) {
+    return <div>Please log in to view payroll details.</div>
+  }
 
   return (
     <div className="space-y-4 sm:space-y-6 p-3 sm:p-4 lg:p-6 bg-background min-h-screen text-foreground font-inter">
-      {/* Tailwind CSS configuration for custom colors and font */}
       <style>
         {`
           @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
@@ -752,27 +727,25 @@ const Payroll = () => {
           .bg-muted { background-color: hsl(var(--muted)); }
           .text-muted-foreground { color: hsl(var(--muted-foreground)); }
           .border-border { border-color: hsl(var(--border)); }
+          .input { background-color: hsl(var(--input)); }
+          .ring { border-color: hsl(var(--ring)); }
           .hover\\:bg-primary\\/80:hover { background-color: hsl(142 76% 36% / 0.8); }
           .hover\\:bg-muted\\/50:hover { background-color: hsl(0 0% 14.9% / 0.5); }
           .font-inter { font-family: 'Inter', sans-serif; }
         `}
       </style>
-
-      {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 sm:gap-4">
         <div className="space-y-1">
           <h1 className="text-xl sm:text-2xl lg:text-3xl font-bold text-foreground">Payroll Management</h1>
           <p className="text-muted-foreground text-xs sm:text-sm">
             {user?.role === "employee" && "View your salary breakdown and payslips"}
-            {user?.role === "manager" && "View team salary summaries (optional)"}
+            {user?.role === "manager" && "Monitor your team's attendance"}
             {user?.role === "hr" && "Manage employee salaries and payroll processing"}
             {user?.role === "super_admin" && "System-wide payroll statistics and monitoring"}
           </p>
         </div>
         {renderRoleSpecificActions()}
       </div>
-
-      {/* Search Bar */}
       {user?.role !== "employee" && (
         <div className="relative max-w-full sm:max-w-md">
           <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground w-4 h-4" />
@@ -784,11 +757,12 @@ const Payroll = () => {
           />
         </div>
       )}
-
-      {/* Payroll Stats */}
       <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-3 sm:gap-4">
         {getPayrollStats().map((stat) => (
-          <div key={stat.title} className="bg-card p-4 sm:p-6 rounded-xl border border-border shadow-sm hover:shadow-md transition-shadow">
+          <div
+            key={stat.title}
+            className="bg-card p-3 sm:p-4 lg:p-6 rounded-xl border border-border shadow-sm hover:shadow-md transition-shadow"
+          >
             <div className="flex items-center justify-between">
               <div className="min-w-0 flex-1">
                 <p className="text-xs sm:text-sm font-medium text-muted-foreground truncate">{stat.title}</p>
@@ -799,30 +773,118 @@ const Payroll = () => {
           </div>
         ))}
       </div>
-
-      {/* Main Content Tabs */}
       <Tabs value={selectedTab} onValueChange={setSelectedTab}>
         <TabsList
-          className={`grid w-full ${getTabsList().length === 1 ? "grid-cols-1" : getTabsList().length === 2 ? "grid-cols-2" : getTabsList().length === 3 ? "grid-cols-3" : "grid-cols-4"} h-10 sm:h-auto bg-muted/30`}
+          className={`grid w-full ${
+            getTabsList().length === 1
+              ? "grid-cols-1"
+              : getTabsList().length === 2
+                ? "grid-cols-2"
+                : getTabsList().length === 3
+                  ? "grid-cols-3"
+                  : "grid-cols-4"
+          } h-10 sm:h-auto bg-muted/30`}
         >
           {getTabsList().map((tab) => (
             <TabsTrigger
               key={tab.value}
               value={tab.value}
-              className="text-xs sm:text-sm py-2 data-[state=active]:bg-hsl[(0 0% 6%)] data-[state=active]:text-hsl[(142 76% 36%)] data-[state=active]:shadow-sm"
+              className="text-xs hover:underline sm:text-sm py-2 data-[state=active]:bg-card data-[state=active]:text-foreground data-[state=active]:shadow-sm"
             >
               {tab.label}
             </TabsTrigger>
           ))}
         </TabsList>
-
-        {/* Overview Tab */}
-        <TabsContent value="overview" className="space-y-4 sm:space-y-6">
-          {user?.role === "employee" ? (
-            // Employee view - their own payslip breakdown
+        {user?.role !== "employee" ? (
+          <TabsContent value="records" className="space-y-4 sm:space-y-6">
+            <div className="block sm:hidden space-y-3">
+              {filteredData.map((record) => (
+                <MobileRecordCard key={record.id} record={record} />
+              ))}
+            </div>
+            <div className="hidden sm:block">
+              <div className="bg-card p-4 sm:p-6 rounded-xl border border-border shadow-sm">
+                <h3 className="text-base sm:text-lg font-semibold text-foreground mb-3 sm:mb-4">
+                  Detailed Payroll Records
+                </h3>
+                <div className="space-y-4">
+                  {filteredData.map((record) => (
+                    <div
+                      key={record.id}
+                      className="flex flex-col sm:flex-row items-start sm:items-center justify-between p-4 bg-muted/30 rounded-lg border border-border"
+                    >
+                      <div className="flex items-center space-x-4 mb-3 sm:mb-0">
+                        <div className="w-12 h-12 bg-primary/10 rounded-full flex items-center justify-center flex-shrink-0">
+                          <span className="text-sm font-medium text-primary">
+                            {record.employeeName
+                              .split(" ")
+                              .map((n) => n[0])
+                              .join("")}
+                          </span>
+                        </div>
+                        <div>
+                          <p className="text-sm font-medium text-foreground">{record.employeeName}</p>
+                          <p className="text-xs text-muted-foreground">
+                            {record.employeeId} • {record.department}
+                          </p>
+                        </div>
+                      </div>
+                      <div className="flex flex-wrap items-center sm:justify-end gap-3 sm:gap-6 w-full sm:w-auto">
+                        <div className="text-center min-w-[70px]">
+                          <p className="text-xs text-muted-foreground">Basic</p>
+                          <p className="text-sm font-medium text-foreground mt-1">
+                            ${record.basicSalary.toLocaleString()}
+                          </p>
+                        </div>
+                        <div className="text-center min-w-[70px]">
+                          <p className="text-xs text-muted-foreground">Bonus</p>
+                          <p className="text-sm font-medium text-green-500 mt-1">${record.bonus.toLocaleString()}</p>
+                        </div>
+                        <div className="text-center min-w-[70px]">
+                          <p className="text-xs text-muted-foreground">Deductions</p>
+                          <p className="text-sm font-medium text-red-500 mt-1">${record.deductions.toLocaleString()}</p>
+                        </div>
+                        <div className="text-center min-w-[70px]">
+                          <p className="text-xs text-muted-foreground">Net</p>
+                          <p className="text-sm font-bold text-primary mt-1">${record.netSalary.toLocaleString()}</p>
+                        </div>
+                        <Badge className={`${getStatusBadge(record.status)} w-20 justify-center`}>
+                          {record.status}
+                        </Badge>
+                        {canManagePayroll && (
+                          <div className="flex gap-1 sm:gap-2 flex-shrink-0">
+                            <Button
+                              size="sm"
+                              variant="ghost"
+                              onClick={() => openEditDialog(record)}
+                              className="h-8 w-8 p-0 text-muted-foreground hover:bg-muted/50 hover:text-foreground"
+                            >
+                              <Edit className="w-4 h-4" />
+                            </Button>
+                            <Button
+                              size="sm"
+                              variant="ghost"
+                              onClick={() => openDeleteDialog(record)}
+                              className="h-8 w-8 p-0 text-muted-foreground hover:bg-muted/50 hover:text-foreground"
+                            >
+                              <Trash2 className="w-4 h-4" />
+                            </Button>
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </div>
+          </TabsContent>
+        ) : (
+          <TabsContent value="records" className="space-y-4 sm:space-y-6">
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6">
               <div className="bg-card p-4 sm:p-6 rounded-xl border border-border shadow-sm">
-                <h3 className="text-base sm:text-lg font-semibold text-foreground mb-3 sm:mb-4">Current Month Payslip</h3>
+                <h3 className="text-base sm:text-lg font-semibold text-foreground mb-3 sm:mb-4">
+                  Current Month Payslip
+                </h3>
                 <div className="space-y-3 sm:space-y-4">
                   {filteredData.length > 0 && (
                     <>
@@ -834,7 +896,9 @@ const Payroll = () => {
                       </div>
                       <div className="flex justify-between items-center">
                         <span className="text-sm text-muted-foreground">Bonus</span>
-                        <span className="font-medium text-green-500 text-sm sm:text-base">+${filteredData[0].bonus.toLocaleString()}</span>
+                        <span className="font-medium text-green-500 text-sm sm:text-base">
+                          +${filteredData[0].bonus.toLocaleString()}
+                        </span>
                       </div>
                       <div className="flex justify-between items-center">
                         <span className="text-sm text-muted-foreground">Deductions</span>
@@ -860,7 +924,11 @@ const Payroll = () => {
                   {["December 2023", "November 2023", "October 2023"].map((month) => (
                     <div key={month} className="flex items-center justify-between p-3 bg-muted/30 rounded-lg">
                       <span className="text-sm font-medium text-foreground">{month}</span>
-                      <Button size="sm" variant="outline" className="h-8 w-8 p-0 border-border hover:bg-muted/50 bg-transparent">
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        className="h-8 w-8 p-0 border-border hover:bg-muted/50 bg-transparent"
+                      >
                         <Download className="w-4 h-4" />
                       </Button>
                     </div>
@@ -868,180 +936,8 @@ const Payroll = () => {
                 </div>
               </div>
             </div>
-          ) : (
-            // Other roles - department/system overview
-            <div className="bg-card p-4 sm:p-6 rounded-xl border border-border shadow-sm">
-              <h3 className="text-base sm:text-lg font-semibold text-foreground mb-3 sm:mb-4">
-                {user?.role === "manager" ? "Team Payroll Summary" : "Payroll Overview"}
-              </h3>
-              <div className="space-y-3 sm:space-y-4">
-                {filteredData.map((record) => (
-                  <div
-                    key={record.id}
-                    className="flex flex-col sm:flex-row sm:items-center justify-between p-3 sm:p-4 bg-muted/20 rounded-lg shadow-sm gap-3 sm:gap-4"
-                  >
-                    <div className="flex items-center space-x-3 sm:space-x-4 min-w-0 flex-1">
-                      <div className="min-w-0 flex-1">
-                        <p className="font-medium text-foreground text-sm sm:text-base truncate">{record.employeeName}</p>
-                        <p className="text-xs sm:text-sm text-muted-foreground">
-                          {record.employeeId} • {record.department}
-                        </p>
-                      </div>
-                    </div>
-                    <div className="flex flex-col sm:flex-row items-start sm:items-center gap-2 sm:gap-3">
-                      {user?.role === "hr" && (
-                        <>
-                          <div className="text-left sm:text-right">
-                            <p className="text-sm font-medium text-foreground">${record.netSalary.toLocaleString()}</p>
-                            <p className="text-xs text-muted-foreground">Net Salary</p>
-                          </div>
-                          <Badge className={getStatusBadge(record.status)}>{record.status}</Badge>
-                          <div className="flex gap-1 sm:gap-2">
-                            <Button
-                              size="sm"
-                              variant="ghost"
-                              onClick={() => openEditDialog(record)}
-                              className="h-8 w-8 p-0 text-muted-foreground hover:bg-muted/50 hover:text-foreground"
-                            >
-                              <Edit className="w-4 h-4" />
-                            </Button>
-                            <Button
-                              size="sm"
-                              variant="ghost"
-                              onClick={() => openDeleteDialog(record)}
-                              className="h-8 w-8 p-0 text-muted-foreground hover:bg-muted/50 hover:text-foreground"
-                            >
-                              <Trash2 className="w-4 h-4" />
-                            </Button>
-                          </div>
-                        </>
-                      )}
-                      {user?.role === "manager" && (
-                        <div className="text-left sm:text-right">
-                          <p className="text-sm font-medium text-foreground">Summary View</p>
-                          <p className="text-xs text-muted-foreground">Contact HR for details</p>
-                        </div>
-                      )}
-                      {user?.role === "super_admin" && (
-                        <div className="flex items-center gap-2 sm:gap-3">
-                          <div className="text-left sm:text-right">
-                            <p className="text-sm font-medium text-foreground">${record.netSalary.toLocaleString()}</p>
-                          </div>
-                          <Badge className={getStatusBadge(record.status)}>{record.status}</Badge>
-                        </div>
-                      )}
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </div>
-          )}
-        </TabsContent>
-
-        {/* Records Tab */}
-        {user?.role !== "employee" && (
-          <TabsContent value="records" className="space-y-4 sm:space-y-6">
-            {/* Mobile View - Cards */}
-            <div className="block sm:hidden space-y-3">
-              {filteredData.map((record) => (
-                <MobileRecordCard key={record.id} record={record} />
-              ))}
-            </div>
-
-            {/* Desktop View - Table */}
-            <div className="hidden sm:block">
-              <div className="bg-card p-4 sm:p-6 rounded-xl border border-border shadow-sm">
-                <h3 className="text-base sm:text-lg font-semibold text-foreground mb-3 sm:mb-4">Detailed Payroll Records</h3>
-                <div className="overflow-x-auto">
-                  <table className="w-full">
-                    <thead className="bg-muted/30">
-                      <tr>
-                        <th className="px-4 sm:px-6 py-3 sm:py-4 text-left text-xs font-medium text-muted-foreground uppercase">
-                          Employee
-                        </th>
-                        <th className="hidden sm:table-cell px-6 py-3 sm:py-4 text-left text-xs font-medium text-muted-foreground uppercase">
-                          Department
-                        </th>
-                        <th className="px-4 sm:px-6 py-3 sm:py-4 text-left text-xs font-medium text-muted-foreground uppercase">
-                          Basic
-                        </th>
-                        <th className="hidden md:table-cell px-6 py-3 sm:py-4 text-left text-xs font-medium text-muted-foreground uppercase">
-                          Bonus
-                        </th>
-                        <th className="hidden md:table-cell px-6 py-3 sm:py-4 text-left text-xs font-medium text-muted-foreground uppercase">
-                          Deductions
-                        </th>
-                        <th className="px-4 sm:px-6 py-3 sm:py-4 text-left text-xs font-medium text-muted-foreground uppercase">
-                          Net
-                        </th>
-                        <th className="px-4 sm:px-6 py-3 sm:py-4 text-left text-xs font-medium text-muted-foreground uppercase">
-                          Status
-                        </th>
-                        {canManagePayroll && (
-                          <th className="px-4 sm:px-6 py-3 sm:py-4 text-left text-xs font-medium text-muted-foreground uppercase">
-                            Actions
-                          </th>
-                        )}
-                      </tr>
-                    </thead>
-                    <tbody className="divide-y divide-border">
-                      {filteredData.map((record) => (
-                        <tr key={record.id} className="hover:bg-muted/20">
-                          <td className="px-4 sm:px-6 py-3 sm:py-4">
-                            <div>
-                              <div className="text-sm font-medium text-foreground">{record.employeeName}</div>
-                              <div className="text-xs text-muted-foreground">{record.employeeId}</div>
-                            </div>
-                          </td>
-                          <td className="hidden sm:table-cell px-6 py-3 sm:py-4 text-sm text-foreground">{record.department}</td>
-                          <td className="px-4 sm:px-6 py-3 sm:py-4 text-sm text-foreground">
-                            ${record.basicSalary.toLocaleString()}
-                          </td>
-                          <td className="hidden md:table-cell px-6 py-3 sm:py-4 text-sm text-green-500">
-                            ${record.bonus.toLocaleString()}
-                          </td>
-                          <td className="hidden md:table-cell px-6 py-3 sm:py-4 text-sm text-red-500">
-                            ${record.deductions.toLocaleString()}
-                          </td>
-                          <td className="px-4 sm:px-6 py-3 sm:py-4 text-sm font-medium text-foreground">
-                            ${record.netSalary.toLocaleString()}
-                          </td>
-                          <td className="px-4 sm:px-6 py-3 sm:py-4">
-                            <Badge className={getStatusBadge(record.status)}>{record.status}</Badge>
-                          </td>
-                          {canManagePayroll && (
-                            <td className="px-4 sm:px-6 py-3 sm:py-4">
-                              <div className="flex gap-1 sm:gap-2">
-                                <Button
-                                  size="sm"
-                                  variant="ghost"
-                                  onClick={() => openEditDialog(record)}
-                                  className="h-8 w-8 p-0 text-muted-foreground hover:bg-muted/50 hover:text-foreground"
-                                >
-                                  <Edit className="w-4 h-4" />
-                                </Button>
-                                <Button
-                                  size="sm"
-                                  variant="ghost"
-                                  onClick={() => openDeleteDialog(record)}
-                                  className="h-8 w-8 p-0 text-muted-foreground hover:bg-muted/50 hover:text-foreground"
-                                >
-                                  <Trash2 className="w-4 h-4" />
-                                </Button>
-                              </div>
-                            </td>
-                          )}
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                </div>
-              </div>
-            </div>
           </TabsContent>
         )}
-
-        {/* Reports Tab */}
         {canViewReports && (
           <TabsContent value="reports" className="space-y-4 sm:space-y-6">
             <div className="bg-card p-4 sm:p-6 rounded-xl border border-border shadow-sm">
@@ -1051,7 +947,9 @@ const Payroll = () => {
                   <div className="text-center">
                     <Calculator className="w-10 h-10 sm:w-12 sm:h-12 mx-auto text-blue-500 mb-3 sm:mb-4" />
                     <h3 className="font-semibold text-foreground mb-2 text-sm sm:text-base">Monthly Report</h3>
-                    <p className="text-xs sm:text-sm text-muted-foreground mb-3 sm:mb-4">Generate monthly payroll summary</p>
+                    <p className="text-xs sm:text-sm text-muted-foreground mb-3 sm:mb-4">
+                      Generate monthly payroll summary
+                    </p>
                     <Button size="sm" className="w-full h-9 bg-primary hover:bg-primary/80">
                       <Download className="w-4 h-4 mr-2" />
                       Download
@@ -1084,12 +982,13 @@ const Payroll = () => {
             </div>
           </TabsContent>
         )}
-
-        {/* Audit Log Tab (for Super Admin) */}
         {user?.role === "super_admin" && (
           <TabsContent value="audit" className="space-y-4 sm:space-y-6">
             <div className="bg-card p-4 sm:p-6 rounded-xl border border-border shadow-sm">
               <h3 className="text-base sm:text-lg font-semibold text-foreground mb-3 sm:mb-4">Payroll Audit Log</h3>
+              <p className="text-sm text-muted-foreground mb-6">
+                Monitor all attendance-related activities across the system
+              </p>
               <div className="space-y-3 sm:space-y-4">
                 {mockPayrollAuditLogs.map((log, index) => (
                   <div key={index} className="flex items-center justify-between p-3 sm:p-4 bg-muted/30 rounded-lg">
@@ -1118,8 +1017,6 @@ const Payroll = () => {
           </TabsContent>
         )}
       </Tabs>
-
-      {/* Edit Dialog */}
       <Dialog open={showEditSalary} onOpenChange={setShowEditSalary}>
         <DialogContent className="max-w-[95vw] sm:max-w-md mx-4 bg-card border-border text-foreground">
           <DialogHeader>
@@ -1132,7 +1029,9 @@ const Payroll = () => {
                 <Input
                   id="editEmployeeName"
                   value={formData.employeeName}
-                  onChange={(e: { target: { value: any } }) => setFormData({ ...formData, employeeName: e.target.value })}
+                  onChange={(e: { target: { value: any } }) =>
+                    setFormData({ ...formData, employeeName: e.target.value })
+                  }
                   className="mt-1 bg-background border-border text-foreground placeholder:text-muted-foreground"
                 />
               </div>
@@ -1146,15 +1045,24 @@ const Payroll = () => {
                 />
               </div>
             </div>
-            <div>
-              <Label htmlFor="editDepartment">Department</Label>
-              <Input
-                id="editDepartment"
-                value={formData.department}
-                onChange={(e: { target: { value: any } }) => setFormData({ ...formData, department: e.target.value })}
-                className="mt-1 bg-background border-border text-foreground placeholder:text-muted-foreground"
-              />
-            </div>
+             <div>
+                    <Label htmlFor="department">Department</Label>
+                    <Select
+                      value={formData.department}
+                      onValueChange={(value) => setFormData({ ...formData, department: value })}
+                    >
+                      <SelectTrigger className="mt-1 bg-background border-border text-foreground placeholder:text-muted-foreground">
+                        <SelectValue placeholder="Select Department" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {departments.map((dept) => (
+                          <SelectItem key={dept} value={dept}>
+                            {dept}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div>
                 <Label htmlFor="editBasicSalary">Basic Salary</Label>
@@ -1162,7 +1070,9 @@ const Payroll = () => {
                   id="editBasicSalary"
                   type="number"
                   value={formData.basicSalary}
-                  onChange={(e: { target: { value: any } }) => setFormData({ ...formData, basicSalary: e.target.value })}
+                  onChange={(e: { target: { value: any } }) =>
+                    setFormData({ ...formData, basicSalary: e.target.value })
+                  }
                   className="mt-1 bg-background border-border text-foreground placeholder:text-muted-foreground"
                 />
               </div>
@@ -1206,8 +1116,6 @@ const Payroll = () => {
           </div>
         </DialogContent>
       </Dialog>
-
-      {/* Delete Confirmation Dialog */}
       <Dialog open={showDeleteConfirm} onOpenChange={setShowDeleteConfirm}>
         <DialogContent className="max-w-[95vw] sm:max-w-md mx-4 bg-card border-border text-foreground">
           <DialogHeader>
