@@ -1,13 +1,32 @@
-import { useState, type SetStateAction } from "react"
-import { Users, Plus, Search, Upload, Download, Edit, Trash2, Eye, Filter, Building } from "lucide-react"
+"use client"
+import { useState } from "react"
+import { Users, Plus, Search, Upload, Download, Edit, Trash2, Eye, Filter, Building, DollarSign } from "lucide-react"
 import { Button } from "../components/ui/button"
 import { Input } from "../components/ui/input"
 import { Badge } from "../components/ui/badge"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "../components/ui/select"
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogFooter } from "../components/ui/dialog"
+import { Label } from "../components/ui/lable" // Corrected import path for Label
+import { useAuth, type UserRole } from "../contexts/AuthContext" // Import useAuth and UserRole
 
-const employees = [
+interface Employee {
+  id: number
+  employeeId: string
+  name: string
+  email: string
+  department: string
+  position: string
+  status: "Active" | "Inactive" | "On Leave"
+  joinDate: string
+  phone: string
+  salary: number
+  experience: number
+}
+
+const initialEmployees: Employee[] = [
   {
     id: 1,
+    employeeId: "EMP001",
     name: "John Smith",
     email: "john.smith@company.com",
     department: "Engineering",
@@ -15,9 +34,12 @@ const employees = [
     status: "Active",
     joinDate: "2022-01-15",
     phone: "+1-555-0123",
+    salary: 75000,
+    experience: 5,
   },
   {
     id: 2,
+    employeeId: "EMP002",
     name: "Sarah Connor",
     email: "sarah.connor@company.com",
     department: "Marketing",
@@ -25,9 +47,12 @@ const employees = [
     status: "Active",
     joinDate: "2021-03-22",
     phone: "+1-555-0124",
+    salary: 65000,
+    experience: 7,
   },
   {
     id: 3,
+    employeeId: "EMP003",
     name: "Mike Johnson",
     email: "mike.johnson@company.com",
     department: "Sales",
@@ -35,9 +60,12 @@ const employees = [
     status: "Active",
     joinDate: "2023-05-10",
     phone: "+1-555-0125",
+    salary: 45000,
+    experience: 3,
   },
   {
     id: 4,
+    employeeId: "EMP004",
     name: "Emily Davis",
     email: "emily.davis@company.com",
     department: "HR",
@@ -45,169 +73,589 @@ const employees = [
     status: "Inactive",
     joinDate: "2020-08-05",
     phone: "+1-555-0126",
+    salary: 55000,
+    experience: 4,
   },
 ]
 
 const departments = ["All Departments", "Engineering", "Marketing", "Sales", "HR", "Finance"]
+const employeeStatuses = ["All Statuses", "Active", "Inactive", "On Leave"]
 
 const Employees = () => {
+  const { user, isLoading } = useAuth()
+  const userRole: UserRole = user?.role || "employee"
+  const [employees, setEmployees] = useState<Employee[]>(initialEmployees)
   const [searchTerm, setSearchTerm] = useState("")
   const [selectedDepartment, setSelectedDepartment] = useState("All Departments")
+  const [selectedStatus, setSelectedStatus] = useState("All Statuses")
+  const [minSalary, setMinSalary] = useState("")
+  const [maxSalary, setMaxSalary] = useState("")
+  const [showAddModal, setShowAddModal] = useState(false)
+  const [showEditModal, setShowEditModal] = useState(false)
+  const [showDeleteModal, setShowDeleteModal] = useState(false)
+  const [showViewModal, setShowViewModal] = useState(false)
+  const [showMoreFiltersModal, setShowMoreFiltersModal] = useState(false)
+  const [selectedEmployee, setSelectedEmployee] = useState<Employee | null>(null)
+  const [formData, setFormData] = useState({
+    employeeId: "",
+    name: "",
+    email: "",
+    department: "",
+    position: "",
+    phone: "",
+    salary: "",
+    experience: "",
+    joinDate: "",
+  })
+
+  // Permissions based on user role
+  const isAdmin = userRole === "super_admin"
+  const isHR = userRole === "hr"
+  const isManager = userRole === "manager"
+  const canAdd = isHR
+  const canEdit = isHR
+  const canDelete = isHR
+  const canViewDetails = isAdmin || isHR || isManager || userRole === "employee" // All roles can view details
+  const canImportExport = isAdmin || isHR
+  const canViewSalary = isAdmin || isHR
 
   const filteredEmployees = employees.filter((employee) => {
     const matchesSearch =
       employee.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      employee.email.toLowerCase().includes(searchTerm.toLowerCase())
+      employee.email.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      employee.employeeId.toLowerCase().includes(searchTerm.toLowerCase())
     const matchesDepartment = selectedDepartment === "All Departments" || employee.department === selectedDepartment
-    return matchesSearch && matchesDepartment
+    const matchesStatus = selectedStatus === "All Statuses" || employee.status === selectedStatus
+    const matchesMinSalary = minSalary === "" || employee.salary >= Number(minSalary)
+    const matchesMaxSalary = maxSalary === "" || employee.salary <= Number(maxSalary)
+    return matchesSearch && matchesDepartment && matchesStatus && matchesMinSalary && matchesMaxSalary
   })
 
+  const resetForm = () => {
+    setFormData({
+      employeeId: "",
+      name: "",
+      email: "",
+      department: "",
+      position: "",
+      phone: "",
+      salary: "",
+      experience: "",
+      joinDate: "",
+    })
+  }
+
+  const handleAddEmployee = () => {
+    const newEmployee: Employee = {
+      id: employees.length + 1,
+      employeeId: formData.employeeId,
+      name: formData.name,
+      email: formData.email,
+      department: formData.department,
+      position: formData.position,
+      status: "Active", // Default status for new employees
+      joinDate: formData.joinDate,
+      phone: formData.phone,
+      salary: Number(formData.salary),
+      experience: Number(formData.experience),
+    }
+    setEmployees([...employees, newEmployee])
+    setShowAddModal(false)
+    resetForm()
+  }
+
+  const handleEditEmployee = () => {
+    if (!selectedEmployee) return
+    const updatedEmployee = {
+      ...selectedEmployee,
+      employeeId: formData.employeeId,
+      name: formData.name,
+      email: formData.email,
+      department: formData.department,
+      position: formData.position,
+      phone: formData.phone,
+      salary: Number(formData.salary),
+      experience: Number(formData.experience),
+      joinDate: formData.joinDate,
+    }
+    setEmployees(employees.map((emp) => (emp.id === selectedEmployee.id ? updatedEmployee : emp)))
+    setShowEditModal(false)
+    setSelectedEmployee(null)
+    resetForm()
+  }
+
+  const handleDeleteEmployee = () => {
+    if (!selectedEmployee) return
+    setEmployees(employees.filter((emp) => emp.id !== selectedEmployee.id))
+    setShowDeleteModal(false)
+    setSelectedEmployee(null)
+  }
+
+  const openEditModal = (employee: Employee) => {
+    setSelectedEmployee(employee)
+    setFormData({
+      employeeId: employee.employeeId,
+      name: employee.name,
+      email: employee.email,
+      department: employee.department,
+      position: employee.position,
+      phone: employee.phone,
+      salary: employee.salary.toString(),
+      experience: employee.experience.toString(),
+      joinDate: employee.joinDate,
+    })
+    setShowEditModal(true)
+  }
+
+  const openViewModal = (employee: Employee) => {
+    setSelectedEmployee(employee)
+    setShowViewModal(true)
+  }
+
+  const openDeleteModal = (employee: Employee) => {
+    setSelectedEmployee(employee)
+    setShowDeleteModal(true)
+  }
+
+  const handleApplyMoreFilters = () => {
+    // Filters are already applied via state changes in the input fields
+    setShowMoreFiltersModal(false)
+  }
+
+  const handleClearMoreFilters = () => {
+    setSelectedStatus("All Statuses")
+    setMinSalary("")
+    setMaxSalary("")
+    setShowMoreFiltersModal(false)
+  }
+
+  if (isLoading) {
+    return <div className="text-center mt-10 text-muted-foreground">Loading...</div>
+  }
+  if (!user) {
+    return <div className="text-center mt-10 text-destructive">Unauthorized access. Please log in.</div>
+  }
+
   return (
-    <div className="space-y-6 p-6 bg-background min-h-screen text-foreground font-inter">
+    <div className="space-y-4 sm:space-y-6 p-4 sm:p-6 bg-background min-h-screen text-foreground">
+      {/* Tailwind CSS configuration for custom colors */}
       <style>
         {`
-          @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
           :root {
             --background: 0 0% 3.9%;
             --foreground: 0 0% 98%;
             --card: 0 0% 6%;
             --card-foreground: 0 0% 98%;
-            --popover: 0 0% 6%;
-            --popover-foreground: 0 0% 98%;
             --primary: 142 76% 36%;
             --primary-foreground: 0 0% 98%;
-            --secondary: 0 0% 14.9%;
-            --secondary-foreground: 0 0% 98%;
             --muted: 0 0% 14.9%;
             --muted-foreground: 0 0% 65%;
-            --accent: 0 0% 14.9%;
-            --accent-foreground: 0 0% 98%;
-            --destructive: 0 62.8% 30.6%;
-            --destructive-foreground: 0 0% 98%;
             --border: 0 0% 15%;
-            --input: 0 0% 15%;
-            --ring: 142 76% 36%;
           }
           .bg-background { background-color: hsl(var(--background)); }
           .text-foreground { color: hsl(var(--foreground)); }
           .bg-card { background-color: hsl(var(--card)); }
-          .text-card-foreground { color: hsl(var(--card-foreground)); }
           .bg-primary { background-color: hsl(var(--primary)); }
           .text-primary { color: hsl(var(--primary)); }
           .text-primary-foreground { color: hsl(var(--primary-foreground)); }
           .bg-muted { background-color: hsl(var(--muted)); }
           .text-muted-foreground { color: hsl(var(--muted-foreground)); }
           .border-border { border-color: hsl(var(--border)); }
-          .hover\\:bg-primary\\/80:hover { background-color: hsl(142 76% 36% / 0.8); }
-          .hover\\:bg-muted\\/50:hover { background-color: hsl(0 0% 14.9% / 0.5); }
-          .font-inter { font-family: 'Inter', sans-serif; }
         `}
       </style>
-      {/* Header Section */}
-      <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
-          <h1 className="text-3xl font-bold text-foreground">Employee Management</h1>
+          <h1 className="text-2xl sm:text-3xl font-bold text-foreground">Employee Management</h1>
           <p className="text-muted-foreground mt-2">Manage employee records and departments</p>
         </div>
-        <div className="flex flex-wrap gap-3">
-          <Button variant="outline" className="border-border hover:bg-muted/50 bg-transparent">
-            <Upload className="h-4 w-4 mr-2" />
-            Import CSV
-          </Button>
-          <Button className="bg-primary hover:bg-primary/80">
-            <Plus className="h-4 w-4 mr-2" />
-            Add Employee
-          </Button>
+        <div className="flex flex-col sm:flex-row space-y-2 sm:space-y-0 sm:space-x-3">
+          {canImportExport && (
+            <Button variant="outline" className="hover:bg-muted/50 bg-transparent shadow-sm">
+              <Upload className="h-4 w-4 mr-2" />
+              Import CSV
+            </Button>
+          )}
+          {canAdd && (
+            <Dialog open={showAddModal} onOpenChange={setShowAddModal}>
+              <DialogTrigger asChild>
+                <Button className="bg-primary hover:bg-primary/80 shadow-sm">
+                  <Plus className="h-4 w-4 mr-2" />
+                  Add Employee
+                </Button>
+              </DialogTrigger>
+              <DialogContent className="max-w-2xl bg-card text-foreground shadow-lg">
+                <DialogHeader>
+                  <DialogTitle>Add New Employee</DialogTitle>
+                </DialogHeader>
+                <div className="space-y-4 max-h-[70vh] overflow-y-auto">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <div>
+                      <Label htmlFor="employeeId">Employee ID</Label>
+                      <Input
+                        id="employeeId"
+                        value={formData.employeeId}
+                        onChange={(e) => setFormData({ ...formData, employeeId: e.target.value })}
+                        placeholder="EMP001"
+                        className="bg-background"
+                      />
+                    </div>
+                    <div>
+                      <Label htmlFor="name">Full Name</Label>
+                      <Input
+                        id="name"
+                        value={formData.name}
+                        onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+                        placeholder="John Doe"
+                        className="bg-background"
+                      />
+                    </div>
+                  </div>
+                  <div>
+                    <Label htmlFor="email">Email</Label>
+                    <Input
+                      id="email"
+                      type="email"
+                      value={formData.email}
+                      onChange={(e) => setFormData({ ...formData, email: e.target.value })}
+                      placeholder="john@company.com"
+                      className="bg-background"
+                    />
+                  </div>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <div>
+                      <Label htmlFor="department">Department</Label>
+                      <Select
+                        value={formData.department}
+                        onValueChange={(value) => setFormData({ ...formData, department: value })}
+                      >
+                        <SelectTrigger className="bg-background">
+                          <SelectValue placeholder="Select department" />
+                        </SelectTrigger>
+                        <SelectContent className="bg-card">
+                          {departments.slice(1).map((dept) => (
+                            <SelectItem key={dept} value={dept}>
+                              {dept}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
+                    <div>
+                      <Label htmlFor="position">Position</Label>
+                      <Input
+                        id="position"
+                        value={formData.position}
+                        onChange={(e) => setFormData({ ...formData, position: e.target.value })}
+                        placeholder="Software Engineer"
+                        className="bg-background"
+                      />
+                    </div>
+                  </div>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <div>
+                      <Label htmlFor="salary">Salary</Label>
+                      <Input
+                        id="salary"
+                        type="number"
+                        value={formData.salary}
+                        onChange={(e) => setFormData({ ...formData, salary: e.target.value })}
+                        placeholder="75000"
+                        className="bg-background"
+                      />
+                    </div>
+                    <div>
+                      <Label htmlFor="experience">Experience (Years)</Label>
+                      <Input
+                        id="experience"
+                        type="number"
+                        value={formData.experience}
+                        onChange={(e) => setFormData({ ...formData, experience: e.target.value })}
+                        placeholder="5"
+                        className="bg-background"
+                      />
+                    </div>
+                  </div>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <div>
+                      <Label htmlFor="phone">Phone</Label>
+                      <Input
+                        id="phone"
+                        value={formData.phone}
+                        onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
+                        placeholder="+1-555-0123"
+                        className="bg-background"
+                      />
+                    </div>
+                    <div>
+                      <Label htmlFor="joinDate">Join Date</Label>
+                      <Input
+                        id="joinDate"
+                        type="date"
+                        value={formData.joinDate}
+                        onChange={(e) => setFormData({ ...formData, joinDate: e.target.value })}
+                        className="bg-background"
+                      />
+                    </div>
+                  </div>
+                </div>
+                <DialogFooter className="flex flex-col sm:flex-row gap-2">
+                  <Button
+                    variant="outline"
+                    onClick={() => {
+                      setShowAddModal(false)
+                      resetForm()
+                    }}
+                    className="hover:bg-muted/50 shadow-sm"
+                  >
+                    Cancel
+                  </Button>
+                  <Button onClick={handleAddEmployee} className="bg-primary hover:bg-primary/80 shadow-sm">
+                    Add Employee
+                  </Button>
+                </DialogFooter>
+              </DialogContent>
+            </Dialog>
+          )}
         </div>
       </div>
-
-      {/* Stats Section */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-        <div className="bg-card p-6 rounded-xl border border-border shadow-sm">
+      {/* Stats Cards */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6">
+        <div className="bg-card p-4 sm:p-6 rounded-xl shadow-sm">
           <div className="flex items-center justify-between">
             <div>
               <p className="text-sm font-medium text-muted-foreground">Total Employees</p>
-              <p className="text-2xl font-bold text-foreground">1,234</p>
+              <p className="text-xl sm:text-2xl font-bold text-foreground">{employees.length}</p>
             </div>
-            <Users className="h-8 w-8 text-blue-500" />
+            <Users className="h-6 w-6 sm:h-8 sm:w-8 text-blue-500" />
           </div>
         </div>
-        <div className="bg-card p-6 rounded-xl border border-border shadow-sm">
+        <div className="bg-card p-4 sm:p-6 rounded-xl shadow-sm">
           <div className="flex items-center justify-between">
             <div>
               <p className="text-sm font-medium text-muted-foreground">Active</p>
-              <p className="text-2xl font-bold text-foreground">1,198</p>
+              <p className="text-xl sm:text-2xl font-bold text-foreground">
+                {employees.filter((e) => e.status === "Active").length}
+              </p>
             </div>
-            <div className="h-8 w-8 bg-green-500/10 rounded-lg flex items-center justify-center">
-              <div className="w-4 h-4 bg-green-500 rounded-full" />
+            <div className="h-6 w-6 sm:h-8 sm:w-8 bg-green-500/10 rounded-lg flex items-center justify-center">
+              <div className="w-3 h-3 sm:w-4 sm:h-4 bg-green-500 rounded-full" />
             </div>
           </div>
         </div>
-        <div className="bg-card p-6 rounded-xl border border-border shadow-sm">
+        <div className="bg-card p-4 sm:p-6 rounded-xl shadow-sm">
           <div className="flex items-center justify-between">
             <div>
               <p className="text-sm font-medium text-muted-foreground">Departments</p>
-              <p className="text-2xl font-bold text-foreground">12</p>
+              <p className="text-xl sm:text-2xl font-bold text-foreground">
+                {new Set(employees.map((e) => e.department)).size}
+              </p>
             </div>
-            <Building className="h-8 w-8 text-purple-500" />
+            <Building className="h-6 w-6 sm:h-8 sm:w-8 text-purple-500" />
           </div>
         </div>
-        <div className="bg-card p-6 rounded-xl border border-border shadow-sm">
+        <div className="bg-card p-4 sm:p-6 rounded-xl shadow-sm">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-sm font-medium text-muted-foreground">New This Month</p>
-              <p className="text-2xl font-bold text-foreground">15</p>
+              <p className="text-sm font-medium text-muted-foreground">Avg Salary</p>
+              <p className="text-xl sm:text-2xl font-bold text-foreground">
+                ${Math.round(employees.reduce((sum, e) => sum + e.salary, 0) / employees.length).toLocaleString()}
+              </p>
             </div>
-            <Plus className="h-8 w-8 text-green-500" />
+            <DollarSign className="h-6 w-6 sm:h-8 sm:w-8 text-green-500" />
           </div>
         </div>
       </div>
-
-      {/* Filters and Search */}
-      <div className="bg-card p-6 rounded-xl border border-border shadow-sm">
-        <h3 className="text-lg font-semibold text-foreground mb-4">Employee Directory</h3>
-        <div className="flex flex-col md:flex-row gap-4 mb-6">
+      {/* Employee Directory */}
+      <div className="bg-card p-4 sm:p-6 rounded-xl shadow-lg">
+        <h3 className="text-base sm:text-lg font-semibold text-foreground mb-3 sm:mb-4">Employee Directory</h3>
+        <div className="flex flex-col lg:flex-row gap-4 mb-6">
           <div className="flex-1">
             <div className="relative">
               <Search className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
               <Input
                 placeholder="Search employees..."
                 value={searchTerm}
-                onChange={(e: { target: { value: SetStateAction<string> } }) => setSearchTerm(e.target.value)}
-                className="pl-9 bg-background border-border text-foreground placeholder:text-muted-foreground focus:ring-1 focus:ring-primary"
+                onChange={(e) => setSearchTerm(e.target.value)}
+                className="pl-9 bg-background"
               />
             </div>
           </div>
-          <Select value={selectedDepartment} onValueChange={setSelectedDepartment}>
-            <SelectTrigger className="w-full md:w-48 bg-background border-border text-foreground">
-              <SelectValue placeholder="Select department" />
-            </SelectTrigger>
-            <SelectContent className="bg-card border-border">
-              {departments.map((dept) => (
-                <SelectItem key={dept} value={dept} className="text-foreground hover:bg-muted/50">
-                  {dept}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-          <Button variant="outline" className="border-border hover:bg-muted/50 bg-transparent">
-            <Filter className="h-4 w-4 mr-2" />
-            More Filters
-          </Button>
-          <Button variant="outline" className="border-border hover:bg-muted/50 bg-transparent">
-            <Download className="h-4 w-4 mr-2" />
-            Export
-          </Button>
+          <div className="flex flex-col sm:flex-row gap-2">
+            <Select value={selectedDepartment} onValueChange={setSelectedDepartment}>
+              <SelectTrigger className="w-full sm:w-48 bg-background">
+                <SelectValue placeholder="Select department" />
+              </SelectTrigger>
+              <SelectContent className="bg-card">
+                {departments.map((dept) => (
+                  <SelectItem key={dept} value={dept}>
+                    {dept}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+            <Dialog open={showMoreFiltersModal} onOpenChange={setShowMoreFiltersModal}>
+              <DialogTrigger asChild>
+                <Button variant="outline" className="hover:bg-muted/50 bg-transparent shadow-sm">
+                  <Filter className="h-4 w-4 mr-2" />
+                  More Filters
+                </Button>
+              </DialogTrigger>
+              <DialogContent className="max-w-md bg-card text-foreground shadow-lg">
+                <DialogHeader>
+                  <DialogTitle>More Filters</DialogTitle>
+                </DialogHeader>
+                <div className="space-y-4">
+                  <div>
+                    <Label htmlFor="filterStatus">Status</Label>
+                    <Select value={selectedStatus} onValueChange={setSelectedStatus}>
+                      <SelectTrigger className="bg-background">
+                        <SelectValue placeholder="Select status" />
+                      </SelectTrigger>
+                      <SelectContent className="bg-card">
+                        {employeeStatuses.map((status) => (
+                          <SelectItem key={status} value={status}>
+                            {status}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <div>
+                    <Label htmlFor="minSalary">Min Salary</Label>
+                    <Input
+                      id="minSalary"
+                      type="number"
+                      value={minSalary}
+                      onChange={(e) => setMinSalary(e.target.value)}
+                      placeholder="e.g., 30000"
+                      className="bg-background"
+                    />
+                  </div>
+                  <div>
+                    <Label htmlFor="maxSalary">Max Salary</Label>
+                    <Input
+                      id="maxSalary"
+                      type="number"
+                      value={maxSalary}
+                      onChange={(e) => setMaxSalary(e.target.value)}
+                      placeholder="e.g., 100000"
+                      className="bg-background"
+                    />
+                  </div>
+                </div>
+                <DialogFooter className="flex flex-col sm:flex-row gap-2">
+                  <Button
+                    variant="outline"
+                    onClick={handleClearMoreFilters}
+                    className="hover:bg-muted/50 bg-transparent shadow-sm"
+                  >
+                    Clear Filters
+                  </Button>
+                  <Button onClick={handleApplyMoreFilters} className="bg-primary hover:bg-primary/80 shadow-sm">
+                    Apply Filters
+                  </Button>
+                </DialogFooter>
+              </DialogContent>
+            </Dialog>
+            {canImportExport && (
+              <Button variant="outline" className="hover:bg-muted/50 bg-transparent shadow-sm">
+                <Download className="h-4 w-4 mr-2" />
+                Export
+              </Button>
+            )}
+          </div>
         </div>
-
-        {/* Employee List */}
-        <div className="space-y-4">
+        {/* Mobile View */}
+        <div className="block lg:hidden space-y-4">
+          {filteredEmployees.map((employee) => (
+            <div key={employee.id} className="p-4 rounded-lg bg-muted/30 shadow-sm">
+              <div className="flex items-center justify-between mb-2">
+                <div className="flex items-center space-x-3">
+                  <div className="w-10 h-10 bg-primary/10 rounded-full flex items-center justify-center">
+                    <span className="text-sm font-medium text-primary">
+                      {employee.name
+                        .split(" ")
+                        .map((n) => n[0])
+                        .join("")}
+                    </span>
+                  </div>
+                  <div>
+                    <p className="font-medium text-foreground">{employee.name}</p>
+                    <p className="text-sm text-muted-foreground">{employee.employeeId}</p>
+                  </div>
+                </div>
+                <Badge
+                  variant={employee.status === "Active" ? "default" : "secondary"}
+                  className={
+                    employee.status === "Active" ? "bg-green-500/20 text-green-400" : "bg-gray-500/20 text-gray-400"
+                  }
+                >
+                  {employee.status}
+                </Badge>
+              </div>
+              <div className="grid grid-cols-2 gap-2 text-sm mb-3">
+                <div>
+                  <span className="text-muted-foreground">Position:</span>
+                  <p className="text-foreground">{employee.position}</p>
+                </div>
+                <div>
+                  <span className="text-muted-foreground">Department:</span>
+                  <p className="text-foreground">{employee.department}</p>
+                </div>
+                {canViewSalary && (
+                  <div>
+                    <span className="text-muted-foreground">Salary:</span>
+                    <p className="text-foreground">${employee.salary.toLocaleString()}</p>
+                  </div>
+                )}
+                <div>
+                  <span className="text-muted-foreground">Experience:</span>
+                  <p className="text-foreground">{employee.experience} years</p>
+                </div>
+              </div>
+              <div className="flex justify-end space-x-2">
+                {canViewDetails && (
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    onClick={() => openViewModal(employee)}
+                    className="hover:bg-muted/50 shadow-sm"
+                  >
+                    <Eye className="h-4 w-4" />
+                  </Button>
+                )}
+                {canEdit && (
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    onClick={() => openEditModal(employee)}
+                    className="hover:bg-muted/50 shadow-sm"
+                  >
+                    <Edit className="h-4 w-4" />
+                  </Button>
+                )}
+                {canDelete && (
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    onClick={() => openDeleteModal(employee)}
+                    className="hover:bg-muted/50 shadow-sm"
+                  >
+                    <Trash2 className="h-4 w-4" />
+                  </Button>
+                )}
+              </div>
+            </div>
+          ))}
+        </div>
+        {/* Desktop Table View */}
+        <div className="hidden lg:block space-y-4">
           {filteredEmployees.map((employee) => (
             <div
               key={employee.id}
-              className="flex flex-col sm:flex-row items-start sm:items-center justify-between p-4 border border-border rounded-xl hover:bg-muted/50"
+              className="flex flex-col sm:flex-row items-start sm:items-center justify-between p-4 bg-muted/30 rounded-lg shadow-sm"
             >
-              <div className="flex flex-col sm:flex-row items-start sm:items-center space-y-2 sm:space-y-0 sm:space-x-4 w-full sm:w-auto">
+              <div className="flex items-center space-x-4 mb-3 sm:mb-0">
                 <div className="w-12 h-12 bg-primary/10 rounded-full flex items-center justify-center flex-shrink-0">
                   <span className="text-sm font-medium text-primary">
                     {employee.name
@@ -216,40 +664,326 @@ const Employees = () => {
                       .join("")}
                   </span>
                 </div>
-                <div className="flex-1">
+                <div>
                   <p className="text-sm font-medium text-foreground">{employee.name}</p>
-                  <p className="text-xs text-muted-foreground">{employee.email}</p>
-                  <p className="text-xs text-muted-foreground">{employee.phone}</p>
+                  <p className="text-xs text-muted-foreground">
+                    {employee.employeeId} • {employee.department}
+                  </p>
                 </div>
-                <div className="flex-shrink-0">
-                  <p className="text-sm font-medium text-foreground">{employee.position}</p>
-                  <p className="text-xs text-muted-foreground">{employee.department}</p>
+              </div>
+              <div className="flex flex-wrap items-center sm:justify-end gap-3 sm:gap-6 w-full sm:w-auto">
+                <div className="text-center min-w-[70px]">
+                  <p className="text-xs text-muted-foreground">Position</p>
+                  <p className="text-sm font-medium text-foreground mt-1">{employee.position}</p>
+                </div>
+                {canViewSalary && (
+                  <div className="text-center min-w-[70px]">
+                    <p className="text-xs text-muted-foreground">Salary</p>
+                    <p className="text-sm font-medium text-foreground mt-1">${employee.salary.toLocaleString()}</p>
+                  </div>
+                )}
+                <div className="text-center min-w-[70px]">
+                  <p className="text-xs text-muted-foreground">Experience</p>
+                  <p className="text-sm font-medium text-foreground mt-1">{employee.experience} years</p>
                 </div>
                 <Badge
-                  variant={employee.status === "Active" ? "default" : "secondary"}
-                  className={
-                    employee.status === "Active" ? "bg-green-500/20 text-green-400" : "bg-orange-500/20 text-orange-400"
-                  }
+                  className={`${
+                    employee.status === "Active" ? "bg-green-500/20 text-green-400" : "bg-gray-500/20 text-gray-400"
+                  } w-20 justify-center`}
                 >
                   {employee.status}
                 </Badge>
-              </div>
-              <div className="flex items-center space-x-2 mt-2 sm:mt-0 flex-wrap justify-end sm:justify-start">
-                <span className="text-xs text-muted-foreground flex-shrink-0">Joined: {employee.joinDate}</span>
-                <Button size="sm" variant="outline" className="border-border hover:bg-muted/50 bg-transparent">
-                  <Eye className="h-4 w-4" />
-                </Button>
-                <Button size="sm" variant="outline" className="border-border hover:bg-muted/50 bg-transparent">
-                  <Edit className="h-4 w-4" />
-                </Button>
-                <Button size="sm" variant="outline" className="border-border hover:bg-muted/50 bg-transparent">
-                  <Trash2 className="h-4 w-4" />
-                </Button>
+                <div className="flex gap-1 sm:gap-2 flex-shrink-0">
+                  {canViewDetails && (
+                    <Button
+                      size="sm"
+                      variant="ghost"
+                      onClick={() => openViewModal(employee)}
+                      className="h-8 w-8 p-0 text-muted-foreground hover:bg-muted/50 hover:text-foreground"
+                    >
+                      <Eye className="h-4 w-4" />
+                    </Button>
+                  )}
+                  {canEdit && (
+                    <Button
+                      size="sm"
+                      variant="ghost"
+                      onClick={() => openEditModal(employee)}
+                      className="h-8 w-8 p-0 text-muted-foreground hover:bg-muted/50 hover:text-foreground"
+                    >
+                      <Edit className="h-4 w-4" />
+                    </Button>
+                  )}
+                  {canDelete && (
+                    <Button
+                      size="sm"
+                      variant="ghost"
+                      onClick={() => openDeleteModal(employee)}
+                      className="h-8 w-8 p-0 text-muted-foreground hover:bg-muted/50 hover:text-foreground"
+                    >
+                      <Trash2 className="h-4 w-4" />
+                    </Button>
+                  )}
+                </div>
               </div>
             </div>
           ))}
         </div>
       </div>
+      {/* Edit Employee Modal */}
+      <Dialog open={showEditModal} onOpenChange={setShowEditModal}>
+        <DialogContent className="max-w-2xl bg-card text-foreground shadow-lg">
+          <DialogHeader>
+            <DialogTitle>Edit Employee</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4 max-h-[70vh] overflow-y-auto">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div>
+                <Label htmlFor="editEmployeeId">Employee ID</Label>
+                <Input
+                  id="editEmployeeId"
+                  value={formData.employeeId}
+                  onChange={(e) => setFormData({ ...formData, employeeId: e.target.value })}
+                  className="bg-background"
+                />
+              </div>
+              <div>
+                <Label htmlFor="editName">Full Name</Label>
+                <Input
+                  id="editName"
+                  value={formData.name}
+                  onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+                  className="bg-background"
+                />
+              </div>
+            </div>
+            <div>
+              <Label htmlFor="editEmail">Email</Label>
+              <Input
+                id="editEmail"
+                type="email"
+                value={formData.email}
+                onChange={(e) => setFormData({ ...formData, email: e.target.value })}
+                className="bg-background"
+              />
+            </div>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div>
+                <Label htmlFor="editDepartment">Department</Label>
+                <Select
+                  value={formData.department}
+                  onValueChange={(value) => setFormData({ ...formData, department: value })}
+                >
+                  <SelectTrigger className="bg-background">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent className="bg-card">
+                    {departments.slice(1).map((dept) => (
+                      <SelectItem key={dept} value={dept}>
+                        {dept}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+              <div>
+                <Label htmlFor="editPosition">Position</Label>
+                <Input
+                  id="editPosition"
+                  value={formData.position}
+                  onChange={(e) => setFormData({ ...formData, position: e.target.value })}
+                  className="bg-background"
+                />
+              </div>
+            </div>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div>
+                <Label htmlFor="editSalary">Salary</Label>
+                <Input
+                  id="editSalary"
+                  type="number"
+                  value={formData.salary}
+                  onChange={(e) => setFormData({ ...formData, salary: e.target.value })}
+                  className="bg-background"
+                />
+              </div>
+              <div>
+                <Label htmlFor="editExperience">Experience (Years)</Label>
+                <Input
+                  id="editExperience"
+                  type="number"
+                  value={formData.experience}
+                  onChange={(e) => setFormData({ ...formData, experience: e.target.value })}
+                  className="bg-background"
+                />
+              </div>
+            </div>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div>
+                <Label htmlFor="editPhone">Phone</Label>
+                <Input
+                  id="editPhone"
+                  value={formData.phone}
+                  onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
+                  className="bg-background"
+                />
+              </div>
+              <div>
+                <Label htmlFor="editJoinDate">Join Date</Label>
+                <Input
+                  id="editJoinDate"
+                  type="date"
+                  value={formData.joinDate}
+                  onChange={(e) => setFormData({ ...formData, joinDate: e.target.value })}
+                  className="bg-background"
+                />
+              </div>
+            </div>
+          </div>
+          <DialogFooter className="flex flex-col sm:flex-row gap-2">
+            <Button
+              variant="outline"
+              onClick={() => {
+                setShowEditModal(false)
+                resetForm()
+                setSelectedEmployee(null)
+              }}
+              className="hover:bg-muted/50 shadow-sm"
+            >
+              Cancel
+            </Button>
+            <Button onClick={handleEditEmployee} className="bg-primary hover:bg-primary/80 shadow-sm">
+              Save Changes
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+      {/* View Employee Modal */}
+      <Dialog open={showViewModal} onOpenChange={setShowViewModal}>
+        <DialogContent className="max-w-2xl bg-card text-foreground shadow-lg">
+          <DialogHeader>
+            <DialogTitle>Employee Details</DialogTitle>
+          </DialogHeader>
+          {selectedEmployee && (
+            <div className="space-y-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div>
+                  <label className="text-sm font-medium text-muted-foreground">Employee ID</label>
+                  <p className="text-foreground">{selectedEmployee.employeeId}</p>
+                </div>
+                <div>
+                  <label className="text-sm font-medium text-muted-foreground">Full Name</label>
+                  <p className="text-foreground">{selectedEmployee.name}</p>
+                </div>
+              </div>
+              <div>
+                <label className="text-sm font-medium text-muted-foreground">Email</label>
+                <p className="text-foreground">{selectedEmployee.email}</p>
+              </div>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div>
+                  <label className="text-sm font-medium text-muted-foreground">Department</label>
+                  <p className="text-foreground">{selectedEmployee.department}</p>
+                </div>
+                <div>
+                  <label className="text-sm font-medium text-muted-foreground">Position</label>
+                  <p className="text-foreground">{selectedEmployee.position}</p>
+                </div>
+              </div>
+              {canViewSalary && (
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  <div>
+                    <label className="text-sm font-medium text-muted-foreground">Salary</label>
+                    <p className="text-foreground">${selectedEmployee.salary.toLocaleString()}</p>
+                  </div>
+                  <div>
+                    <label className="text-sm font-medium text-muted-foreground">Experience</label>
+                    <p className="text-foreground">{selectedEmployee.experience} years</p>
+                  </div>
+                </div>
+              )}
+              {!canViewSalary && ( // Display experience if salary is hidden
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  <div>
+                    <label className="text-sm font-medium text-muted-foreground">Experience</label>
+                    <p className="text-foreground">{selectedEmployee.experience} years</p>
+                  </div>
+                </div>
+              )}
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div>
+                  <label className="text-sm font-medium text-muted-foreground">Phone</label>
+                  <p className="text-foreground">{selectedEmployee.phone}</p>
+                </div>
+                <div>
+                  <label className="text-sm font-medium text-muted-foreground">Join Date</label>
+                  <p className="text-foreground">{new Date(selectedEmployee.joinDate).toLocaleDateString()}</p>
+                </div>
+              </div>
+              <div>
+                <label className="text-sm font-medium text-muted-foreground">Status</label>
+                <div className="mt-1">
+                  <Badge
+                    variant={selectedEmployee.status === "Active" ? "default" : "secondary"}
+                    className={
+                      selectedEmployee.status === "Active"
+                        ? "bg-green-500/20 text-green-400"
+                        : "bg-gray-500/20 text-gray-400"
+                    }
+                  >
+                    {selectedEmployee.status}
+                  </Badge>
+                </div>
+              </div>
+            </div>
+          )}
+          <DialogFooter>
+            <Button
+              variant="outline"
+              onClick={() => {
+                setShowViewModal(false)
+                setSelectedEmployee(null)
+              }}
+              className="hover:bg-muted/50 shadow-sm"
+            >
+              Close
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+      {/* Delete Confirmation Modal */}
+      <Dialog open={showDeleteModal} onOpenChange={setShowDeleteModal}>
+        <DialogContent className="max-w-md bg-card text-foreground shadow-lg">
+          <DialogHeader>
+            <DialogTitle>Confirm Delete</DialogTitle>
+          </DialogHeader>
+          <div className="py-4">
+            <p className="text-muted-foreground">
+              Are you sure you want to delete <strong className="text-foreground">{selectedEmployee?.name}</strong>?
+              This action cannot be undone.
+            </p>
+          </div>
+          <DialogFooter className="flex flex-col sm:flex-row gap-2">
+            <Button
+              variant="outline"
+              onClick={() => {
+                setShowDeleteModal(false)
+                setSelectedEmployee(null)
+              }}
+              className="hover:bg-muted/50 shadow-sm"
+            >
+              Cancel
+            </Button>
+            <Button
+              variant="destructive"
+              onClick={handleDeleteEmployee}
+              className="bg-destructive hover:bg-destructive/80 shadow-sm"
+            >
+              Delete Employee
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   )
 }
