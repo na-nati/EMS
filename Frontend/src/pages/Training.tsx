@@ -720,18 +720,7 @@ export default function TrainingEmp({ userRole, currentUser = "Robert Wilson" }:
                     <p className="text-xs text-muted-foreground">Enrolled</p>
                     <p className="text-sm font-medium text-foreground">{program.enrolled} employees</p>
                   </div>
-                  <div>
-                    <p className="text-xs text-muted-foreground">Progress</p>
-                    <div className="h-2 w-full bg-muted rounded-full overflow-hidden">
-                      <div
-                        className="h-full bg-primary rounded-full"
-                        style={{ width: `${(program.completed / program.enrolled) * 100}%` }}
-                      ></div>
-                    </div>
-                    <span className="text-xs text-foreground mt-1">
-                      {program.completed}/{program.enrolled}
-                    </span>
-                  </div>
+                 
                 </div>
               </div>
             ))

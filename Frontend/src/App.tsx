@@ -115,7 +115,7 @@ const InnerApp = () => {
             path="/training"
             element={
               <ProtectedRoute allowedRoles={["super_admin", "hr"]}>
-                {/* Pass userRole to TrainingDashboard */}
+                
                 <TrainingDashboard userRole={effectiveUserRole} />
               </ProtectedRoute>
             }
