@@ -52,6 +52,23 @@ interface AssetRequest {
   status: string
 }
 
+// Asset type and initial assets
+interface Asset {
+  assetId: string
+  name: string
+  category: string
+  status: string
+  location: string
+}
+
+const initialAssets: Asset[] = [
+  { assetId: "LP-2024-0156", name: 'MacBook Pro 16"', category: "Laptops", status: "Assigned", location: "Office Floor 3" },
+  { assetId: "MN-2024-0892", name: 'Dell Monitor 24"', category: "Monitors", status: "Available", location: "Office Floor 2" },
+  { assetId: "PH-2024-0234", name: "iPhone 15 Pro", category: "Smartphones", status: "Assigned", location: "Remote" },
+  { assetId: "LP-2024-0089", name: "Surface Laptop", category: "Laptops", status: "Returned", location: "Storage Room A" },
+  { assetId: "PR-2024-0045", name: "HP Printer", category: "Printers", status: "Maintenance", location: "IT Support" },
+]
+
 // Props
 interface AssetsDashboardProps {
   userRole: UserRole
@@ -182,57 +199,34 @@ export default function AssetsDashboard({ userRole, currentUser }: AssetsDashboa
   const [showAssignAssetForm, setShowAssignAssetForm] = useState(false)
   const [showRequestForm, setShowRequestForm] = useState(false)
 
-  // Filter assignments based on role
-  let filteredAssignments = initialRecentAssignments
-  if (userRole === "employee" && currentUser) {
-    filteredAssignments = initialRecentAssignments.filter((assignment) => assignment.employee === currentUser)
-  } else {
-    filteredAssignments = initialRecentAssignments.filter((assignment) => {
-      const matchesSearchTerm =
-        assignment.employee.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        assignment.asset.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        assignment.assetId.toLowerCase().includes(searchTerm.toLowerCase())
-      const matchesCategory =
-        selectedCategory === "All Categories" ||
-        (selectedCategory === "Laptops" &&
-          (assignment.asset.toLowerCase().includes("book") ||
-            assignment.asset.toLowerCase().includes("laptop") ||
-            assignment.assetId.toLowerCase().startsWith("lp"))) ||
-        (selectedCategory === "Monitors" &&
-          (assignment.asset.toLowerCase().includes("monitor") || assignment.assetId.toLowerCase().startsWith("mn"))) ||
-        (selectedCategory === "Smartphones" &&
-          (assignment.asset.toLowerCase().includes("phone") || assignment.assetId.toLowerCase().startsWith("ph"))) ||
-        (selectedCategory === "Printers" &&
-          (assignment.asset.toLowerCase().includes("printer") || assignment.assetId.toLowerCase().startsWith("pr")))
-      const matchesStatus = selectedStatus === "All Status" || assignment.status === selectedStatus
-      return matchesSearchTerm && matchesCategory && matchesStatus
-    })
-  }
+  // Asset list state and search
+  const [assets, setAssets] = useState<Asset[]>(initialAssets)
+  const [assetSearch, setAssetSearch] = useState("")
+  const [viewAsset, setViewAsset] = useState<Asset | null>(null)
+  const [editAsset, setEditAsset] = useState<Asset | null>(null)
+  const [deleteAsset, setDeleteAsset] = useState<Asset | null>(null)
 
-  const handleViewAsset = (assetId: string) => {
-    console.log(`Viewing asset: ${assetId}`)
-    alert(`Viewing details for Asset ID: ${assetId}`)
-  }
+  // Add state for assignment modals
+  const [viewAssignment, setViewAssignment] = useState<AssetAssignment | null>(null)
+  const [editAssignment, setEditAssignment] = useState<AssetAssignment | null>(null)
+  const [assignments, setAssignments] = useState<AssetAssignment[]>(
+    userRole === 'employee' && currentUser
+      ? initialRecentAssignments.filter(a => a.employee === currentUser)
+      : initialRecentAssignments
+  )
 
-  const handleEditAsset = (assetId: string) => {
-    console.log(`Editing asset: ${assetId}`)
-    alert(`Editing Asset ID: ${assetId}`)
-  }
+  // Add state for loading status of approve/reject actions in asset requests
+  const [requestActionLoading, setRequestActionLoading] = useState<{ [key: number]: 'approve' | 'reject' | null }>({})
 
-  const handleScheduleMaintenance = (assetId: string) => {
-    console.log(`Scheduling maintenance for: ${assetId}`)
-    alert(`Scheduling maintenance for Asset ID: ${assetId}`)
-  }
+  // Add state for maintenance schedule modal
+  const [scheduleMaintenance, setScheduleMaintenance] = useState<MaintenanceAlert | null>(null)
 
-  const handleApproveRequest = (requestId: string) => {
-    console.log(`Approving request: ${requestId}`)
-    alert(`Request approved for: ${requestId}`)
-  }
-
-  const handleRejectRequest = (requestId: string) => {
-    console.log(`Rejecting request: ${requestId}`)
-    alert(`Request rejected for: ${requestId}`)
-  }
+  const filteredAssets = assets.filter(
+    asset =>
+      asset.name.toLowerCase().includes(assetSearch.toLowerCase()) ||
+      asset.assetId.toLowerCase().includes(assetSearch.toLowerCase()) ||
+      asset.category.toLowerCase().includes(assetSearch.toLowerCase())
+  )
 
   const handleAddAsset = (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault()
@@ -720,8 +714,8 @@ export default function AssetsDashboard({ userRole, currentUser }: AssetsDashboa
         )}
         {/* Assignments List */}
         <div className="space-y-3 sm:space-y-4">
-          {filteredAssignments.length > 0 ? (
-            filteredAssignments.map((assignment, index) => (
+          {assignments.length > 0 ? (
+            assignments.map((assignment, index) => (
               <div
                 key={index}
                 className="flex flex-col sm:flex-row items-start sm:items-center justify-between p-3 sm:p-4 bg-muted/30 rounded-lg shadow-item"
@@ -772,7 +766,7 @@ export default function AssetsDashboard({ userRole, currentUser }: AssetsDashboa
                         size="sm"
                         variant="outline"
                         className="border-border hover:bg-muted/50 bg-transparent p-1.5 sm:p-2"
-                        onClick={() => handleViewAsset(assignment.assetId)}
+                        onClick={() => setViewAssignment(assignment)}
                       >
                         <Eye className="h-3 w-3 sm:h-4 sm:w-4" />
                       </Button>
@@ -780,7 +774,7 @@ export default function AssetsDashboard({ userRole, currentUser }: AssetsDashboa
                         size="sm"
                         variant="outline"
                         className="border-border hover:bg-muted/50 bg-transparent p-1.5 sm:p-2"
-                        onClick={() => handleEditAsset(assignment.assetId)}
+                        onClick={() => setEditAssignment(assignment)}
                       >
                         <Edit className="h-3 w-3 sm:h-4 sm:w-4" />
                       </Button>
@@ -838,7 +832,7 @@ export default function AssetsDashboard({ userRole, currentUser }: AssetsDashboa
                         size="sm"
                         variant="outline"
                         className="border-border hover:bg-muted/50 bg-transparent text-xs sm:text-sm"
-                        onClick={() => handleScheduleMaintenance(alert.assetId)}
+                        onClick={() => setScheduleMaintenance(alert)}
                       >
                         <Edit className="h-3 w-3 mr-1" />
                         Schedule
@@ -893,16 +887,32 @@ export default function AssetsDashboard({ userRole, currentUser }: AssetsDashboa
                         <Button
                           size="sm"
                           className="bg-green-600 hover:bg-green-700 text-white text-xs sm:text-sm"
-                          onClick={() => handleApproveRequest(request.requestedAsset)}
+                          disabled={requestActionLoading[index] === 'approve'}
+                          onClick={async () => {
+                            setRequestActionLoading(prev => ({ ...prev, [index]: 'approve' }))
+                            setTimeout(() => {
+                              assetRequests[index].status = 'Approved'
+                              setRequestActionLoading(prev => ({ ...prev, [index]: null }))
+                            }, 1000)
+                          }}
                         >
+                          {requestActionLoading[index] === 'approve' ? <span className="animate-spin mr-2">⏳</span> : null}
                           Approve
                         </Button>
                         <Button
                           size="sm"
                           variant="outline"
                           className="border-red-500 text-red-400 hover:bg-red-500/10 bg-transparent text-xs sm:text-sm"
-                          onClick={() => handleRejectRequest(request.requestedAsset)}
+                          disabled={requestActionLoading[index] === 'reject'}
+                          onClick={async () => {
+                            setRequestActionLoading(prev => ({ ...prev, [index]: 'reject' }))
+                            setTimeout(() => {
+                              assetRequests[index].status = 'Rejected'
+                              setRequestActionLoading(prev => ({ ...prev, [index]: null }))
+                            }, 1000)
+                          }}
                         >
+                          {requestActionLoading[index] === 'reject' ? <span className="animate-spin mr-2">⏳</span> : null}
                           Reject
                         </Button>
                       </div>
@@ -917,6 +927,290 @@ export default function AssetsDashboard({ userRole, currentUser }: AssetsDashboa
                 View All Requests
               </Button>
             )}
+          </div>
+        </div>
+      )}
+
+      {/* Assets List Section (HR/Admin only) */}
+      {(isHR || isAdmin) && (
+        <div className="bg-card p-4 sm:p-6 rounded-xl shadow-card">
+          <h3 className="text-lg font-semibold text-foreground mb-3 sm:mb-4">Assets List</h3>
+          <div className="mb-4 flex flex-col sm:flex-row gap-2">
+            <Input
+              placeholder="Search assets by name, ID, or category..."
+              value={assetSearch}
+              onChange={e => setAssetSearch(e.target.value)}
+              className="bg-background border-border text-foreground placeholder:text-muted-foreground focus:ring-1 focus:ring-primary text-xs sm:text-sm py-2"
+            />
+          </div>
+          <div className="overflow-x-auto">
+            <table className="min-w-full text-xs sm:text-sm">
+              <thead>
+                <tr className="bg-muted/30">
+                  <th className="px-3 py-2 text-left font-medium">Asset ID</th>
+                  <th className="px-3 py-2 text-left font-medium">Name</th>
+                  <th className="px-3 py-2 text-left font-medium">Category</th>
+                  <th className="px-3 py-2 text-left font-medium">Status</th>
+                  <th className="px-3 py-2 text-left font-medium">Location</th>
+                  <th className="px-3 py-2 text-left font-medium">Actions</th>
+                </tr>
+              </thead>
+              <tbody>
+                {filteredAssets.length > 0 ? (
+                  filteredAssets.map((asset) => (
+                    <tr key={asset.assetId} className="border-b border-border last:border-0">
+                      <td className="px-3 py-2">{asset.assetId}</td>
+                      <td className="px-3 py-2">{asset.name}</td>
+                      <td className="px-3 py-2">{asset.category}</td>
+                      <td className="px-3 py-2">{asset.status}</td>
+                      <td className="px-3 py-2">{asset.location}</td>
+                      <td className="px-3 py-2 space-x-2">
+                        <Button size="sm" variant="outline" className="p-1.5" onClick={() => setViewAsset(asset)}>
+                          <Eye className="h-4 w-4" />
+                        </Button>
+                        <Button size="sm" variant="outline" className="p-1.5" onClick={() => setEditAsset(asset)}>
+                          <Edit className="h-4 w-4" />
+                        </Button>
+                        <Button size="sm" variant="outline" className="p-1.5 text-red-500 border-red-500" onClick={() => setDeleteAsset(asset)}>
+                          <X className="h-4 w-4" />
+                        </Button>
+                      </td>
+                    </tr>
+                  ))
+                ) : (
+                  <tr>
+                    <td colSpan={6} className="text-center py-6 text-muted-foreground">No assets found.</td>
+                  </tr>
+                )}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      )}
+      {/* View Asset Modal */}
+      {viewAsset && (
+        <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50">
+          <div className="bg-card p-6 rounded-xl shadow-card w-full max-w-md relative">
+            <button className="absolute top-3 right-3 text-muted-foreground hover:text-foreground" onClick={() => setViewAsset(null)}>
+              <X className="h-5 w-5" />
+            </button>
+            <h3 className="text-lg font-semibold mb-4 text-foreground">Asset Details</h3>
+            <div className="space-y-2">
+              <div><span className="font-medium">Name:</span> {viewAsset.name}</div>
+              <div><span className="font-medium">Asset ID:</span> {viewAsset.assetId}</div>
+              <div><span className="font-medium">Category:</span> {viewAsset.category}</div>
+              <div><span className="font-medium">Status:</span> {viewAsset.status}</div>
+              <div><span className="font-medium">Location:</span> {viewAsset.location}</div>
+            </div>
+            <div className="flex justify-end space-x-2 mt-4">
+              <Button type="button" variant="outline" onClick={() => setViewAsset(null)} className="border-border hover:bg-muted/50 text-xs sm:text-sm">Close</Button>
+            </div>
+          </div>
+        </div>
+      )}
+      {/* Edit Asset Modal */}
+      {editAsset && (
+        <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50">
+          <div className="bg-card p-6 rounded-xl shadow-card w-full max-w-md relative">
+            <button className="absolute top-3 right-3 text-muted-foreground hover:text-foreground" onClick={() => setEditAsset(null)}>
+              <X className="h-5 w-5" />
+            </button>
+            <h3 className="text-lg font-semibold mb-4 text-foreground">Edit Asset</h3>
+            <form
+              onSubmit={e => {
+                e.preventDefault();
+                setAssets(prev => prev.map(a => a.assetId === editAsset.assetId ? { ...a, ...editAsset } : a));
+                setEditAsset(null);
+              }}
+              className="space-y-3"
+            >
+              <Input
+                value={editAsset.name}
+                onChange={e => setEditAsset(d => d ? { ...d, name: e.target.value } : d)}
+                placeholder="Asset Name"
+                className="bg-background border-border text-foreground"
+                required
+              />
+              <Input
+                value={editAsset.category}
+                onChange={e => setEditAsset(d => d ? { ...d, category: e.target.value } : d)}
+                placeholder="Category"
+                className="bg-background border-border text-foreground"
+                required
+              />
+              <Input
+                value={editAsset.status}
+                onChange={e => setEditAsset(d => d ? { ...d, status: e.target.value } : d)}
+                placeholder="Status"
+                className="bg-background border-border text-foreground"
+                required
+              />
+              <Input
+                value={editAsset.location}
+                onChange={e => setEditAsset(d => d ? { ...d, location: e.target.value } : d)}
+                placeholder="Location"
+                className="bg-background border-border text-foreground"
+                required
+              />
+              <div className="flex justify-end space-x-2 mt-4">
+                <Button type="button" variant="outline" onClick={() => setEditAsset(null)} className="border-border hover:bg-muted/50 text-xs sm:text-sm">Cancel</Button>
+                <Button type="submit" className="bg-primary hover:bg-primary/80 text-xs sm:text-sm">Save</Button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+      {/* Delete Asset Confirmation Modal */}
+      {deleteAsset && (
+        <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50">
+          <div className="bg-card p-6 rounded-xl shadow-card w-full max-w-sm relative">
+            <button className="absolute top-3 right-3 text-muted-foreground hover:text-foreground" onClick={() => setDeleteAsset(null)}>
+              <X className="h-5 w-5" />
+            </button>
+            <h3 className="text-lg font-semibold mb-4 text-foreground">Delete Asset</h3>
+            <p className="mb-4 text-muted-foreground">Are you sure you want to delete this asset?</p>
+            <div className="flex justify-end space-x-2">
+              <Button type="button" variant="outline" onClick={() => setDeleteAsset(null)} className="border-border hover:bg-muted/50 text-xs sm:text-sm">Cancel</Button>
+              <Button type="button" className="bg-red-600 hover:bg-red-700 text-white text-xs sm:text-sm" onClick={() => { setAssets(prev => prev.filter(a => a.assetId !== deleteAsset.assetId)); setDeleteAsset(null); }}>Delete</Button>
+            </div>
+          </div>
+        </div>
+      )}
+      {/* View Assignment Modal */}
+      {viewAssignment && (
+        <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50">
+          <div className="bg-card p-6 rounded-xl shadow-card w-full max-w-md relative">
+            <button className="absolute top-3 right-3 text-muted-foreground hover:text-foreground" onClick={() => setViewAssignment(null)}>
+              <X className="h-5 w-5" />
+            </button>
+            <h3 className="text-lg font-semibold mb-4 text-foreground">Asset Assignment Details</h3>
+            <div className="space-y-2">
+              <div><span className="font-medium">Employee:</span> {viewAssignment.employee}</div>
+              <div><span className="font-medium">Department:</span> {viewAssignment.department}</div>
+              <div><span className="font-medium">Asset:</span> {viewAssignment.asset}</div>
+              <div><span className="font-medium">Asset ID:</span> {viewAssignment.assetId}</div>
+              <div><span className="font-medium">Location:</span> {viewAssignment.location}</div>
+              <div><span className="font-medium">Assigned Date:</span> {viewAssignment.assignDate}</div>
+              <div><span className="font-medium">Status:</span> {viewAssignment.status}</div>
+            </div>
+            <div className="flex justify-end space-x-2 mt-4">
+              <Button type="button" variant="outline" onClick={() => setViewAssignment(null)} className="border-border hover:bg-muted/50 text-xs sm:text-sm">Close</Button>
+            </div>
+          </div>
+        </div>
+      )}
+      {/* Edit Assignment Modal */}
+      {editAssignment && (
+        <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50">
+          <div className="bg-card p-6 rounded-xl shadow-card w-full max-w-md relative">
+            <button className="absolute top-3 right-3 text-muted-foreground hover:text-foreground" onClick={() => setEditAssignment(null)}>
+              <X className="h-5 w-5" />
+            </button>
+            <h3 className="text-lg font-semibold mb-4 text-foreground">Edit Asset Assignment</h3>
+            <form
+              onSubmit={e => {
+                e.preventDefault();
+                setAssignments(prev => prev.map(a => a.assetId === editAssignment.assetId ? { ...a, ...editAssignment } : a));
+                setEditAssignment(null);
+              }}
+              className="space-y-3"
+            >
+              <Input
+                value={editAssignment.employee}
+                onChange={e => setEditAssignment(d => d ? { ...d, employee: e.target.value } : d)}
+                placeholder="Employee Name"
+                className="bg-background border-border text-foreground"
+                required
+              />
+              <Input
+                value={editAssignment.department}
+                onChange={e => setEditAssignment(d => d ? { ...d, department: e.target.value } : d)}
+                placeholder="Department"
+                className="bg-background border-border text-foreground"
+                required
+              />
+              <Input
+                value={editAssignment.asset}
+                onChange={e => setEditAssignment(d => d ? { ...d, asset: e.target.value } : d)}
+                placeholder="Asset Name"
+                className="bg-background border-border text-foreground"
+                required
+              />
+              <Input
+                value={editAssignment.assetId}
+                onChange={e => setEditAssignment(d => d ? { ...d, assetId: e.target.value } : d)}
+                placeholder="Asset ID"
+                className="bg-background border-border text-foreground"
+                required
+              />
+              <Input
+                value={editAssignment.location}
+                onChange={e => setEditAssignment(d => d ? { ...d, location: e.target.value } : d)}
+                placeholder="Location"
+                className="bg-background border-border text-foreground"
+                required
+              />
+              <Input
+                value={editAssignment.assignDate}
+                onChange={e => setEditAssignment(d => d ? { ...d, assignDate: e.target.value } : d)}
+                placeholder="Assigned Date"
+                className="bg-background border-border text-foreground"
+                required
+              />
+              <Select value={editAssignment.status} onValueChange={val => setEditAssignment(d => d ? { ...d, status: val } : d)}>
+                <SelectTrigger className="w-full bg-background border-border text-foreground focus:ring-1 focus:ring-primary text-xs sm:text-sm py-2">
+                  <SelectValue placeholder="Select status" />
+                </SelectTrigger>
+                <SelectContent className="bg-card">
+                  <SelectItem value="Active" className="text-foreground hover:bg-muted/50 text-xs sm:text-sm">Active</SelectItem>
+                  <SelectItem value="Available" className="text-foreground hover:bg-muted/50 text-xs sm:text-sm">Available</SelectItem>
+                  <SelectItem value="Returned" className="text-foreground hover:bg-muted/50 text-xs sm:text-sm">Returned</SelectItem>
+                  <SelectItem value="Maintenance" className="text-foreground hover:bg-muted/50 text-xs sm:text-sm">Maintenance</SelectItem>
+                  <SelectItem value="Approved" className="text-foreground hover:bg-muted/50 text-xs sm:text-sm">Approved</SelectItem>
+                  <SelectItem value="Rejected" className="text-foreground hover:bg-muted/50 text-xs sm:text-sm">Rejected</SelectItem>
+                </SelectContent>
+              </Select>
+              <div className="flex justify-end space-x-2 mt-4">
+                <Button type="button" variant="outline" onClick={() => setEditAssignment(null)} className="border-border hover:bg-muted/50 text-xs sm:text-sm">Cancel</Button>
+                <Button type="submit" className="bg-primary hover:bg-primary/80 text-xs sm:text-sm">Save</Button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+      {/* Maintenance Schedule Modal */}
+      {scheduleMaintenance && (
+        <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50">
+          <div className="bg-card p-6 rounded-xl shadow-card w-full max-w-md relative">
+            <button className="absolute top-3 right-3 text-muted-foreground hover:text-foreground" onClick={() => setScheduleMaintenance(null)}>
+              <X className="h-5 w-5" />
+            </button>
+            <h3 className="text-lg font-semibold mb-4 text-foreground">Schedule Maintenance</h3>
+            <form
+              onSubmit={e => {
+                e.preventDefault();
+                alert('Maintenance scheduled!');
+                setScheduleMaintenance(null);
+              }}
+              className="space-y-3"
+            >
+              <div><span className="font-medium">Asset:</span> {scheduleMaintenance.asset}</div>
+              <div><span className="font-medium">Asset ID:</span> {scheduleMaintenance.assetId}</div>
+              <Input
+                type="date"
+                placeholder="Maintenance Date"
+                className="bg-background border-border text-foreground"
+                required
+              />
+              <Input
+                placeholder="Notes (optional)"
+                className="bg-background border-border text-foreground"
+              />
+              <div className="flex justify-end space-x-2 mt-4">
+                <Button type="button" variant="outline" onClick={() => setScheduleMaintenance(null)} className="border-border hover:bg-muted/50 text-xs sm:text-sm">Cancel</Button>
+                <Button type="submit" className="bg-primary hover:bg-primary/80 text-xs sm:text-sm">Schedule</Button>
+              </div>
+            </form>
           </div>
         </div>
       )}

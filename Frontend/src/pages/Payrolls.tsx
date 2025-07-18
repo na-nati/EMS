@@ -789,7 +789,7 @@ const Payroll = () => {
             <TabsTrigger
               key={tab.value}
               value={tab.value}
-              className="text-xs hover:underline sm:text-sm py-2 data-[state=active]:bg-card data-[state=active]:text-foreground data-[state=active]:shadow-sm"
+              className="text-xs hover:underline hover:text-green-500 sm:text-sm py-2 data-[state=active]:bg-card data-[state=active]:text-foreground data-[state=active]:shadow-sm"
             >
               {tab.label}
             </TabsTrigger>
