@@ -17,28 +17,30 @@ import AssetsDashboard from "./pages/Assets";
 import Report from "./pages/Report";
 import Employee from "./pages/Employee";
 import TrainingEmp from "./pages/TrainingEmp";
+import Recruitment from "./pages/Recruitment";
+
 
 // Import UserRole type
 import type { UserRole } from "./contexts/AuthContext";
 
 // ✅ Placeholder page component
-interface PlaceholderPageProps {
-  title: string;
-}
+// interface PlaceholderPageProps {
+//   title: string;
+// }
 
-const PlaceholderPage = ({ title }: PlaceholderPageProps) => (
-  <div className="flex items-center justify-center min-h-[calc(100vh-4rem)] bg-gray-50">
-    <div className="text-center p-8 bg-white rounded-lg shadow-lg">
-      <h1 className="text-3xl font-extrabold text-gray-800 mb-4">{title}</h1>
-      <p className="text-lg text-gray-600">
-        This page is under development. Please check back later!
-      </p>
-      <div className="mt-6">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-gray-900 mx-auto"></div>
-      </div>
-    </div>
-  </div>
-);
+// const PlaceholderPage = ({ title }: PlaceholderPageProps) => (
+//   <div className="flex items-center justify-center min-h-[calc(100vh-4rem)] bg-gray-50">
+//     <div className="text-center p-8 bg-white rounded-lg shadow-lg">
+//       <h1 className="text-3xl font-extrabold text-gray-800 mb-4">{title}</h1>
+//       <p className="text-lg text-gray-600">
+//         This page is under development. Please check back later!
+//       </p>
+//       <div className="mt-6">
+//         <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-gray-900 mx-auto"></div>
+//       </div>
+//     </div>
+//   </div>
+// );
 
 // ✅ Inner app that uses useAuth safely
 const InnerApp = () => {
@@ -142,7 +144,7 @@ const InnerApp = () => {
             path="/recruitment"
             element={
               <ProtectedRoute allowedRoles={["super_admin", "hr", "manager"]}>
-                <PlaceholderPage title="Recruitment" />
+                <Recruitment />
               </ProtectedRoute>
             }
           />
