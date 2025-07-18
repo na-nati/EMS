@@ -101,7 +101,7 @@ const jobPostings = [
   },
 ]
 
-const hiringRequests = [
+const initialHiringRequests = [
   {
     position: "DevOps Engineer",
     requestedBy: "John Smith",
@@ -260,7 +260,8 @@ export default function RecruitmentDashboard() {
     views: 0,
   })
 
-  // Add state for hiring request modal (manager)
+  // Add state for hiring requests and hiring request modal (manager)
+  const [hiringRequests, setHiringRequests] = useState<typeof initialHiringRequests>(initialHiringRequests);
   const [hiringRequestOpen, setHiringRequestOpen] = useState(false)
   const [hiringRequestForm, setHiringRequestForm] = useState({
     position: '',
@@ -307,6 +308,11 @@ export default function RecruitmentDashboard() {
     status: 'Active',
     internal: true,
   });
+
+  // Add state for approve/reject modals
+  const [approveModal, setApproveModal] = useState<{ open: boolean, request: any | null }>({ open: false, request: null });
+  const [rejectModal, setRejectModal] = useState<{ open: boolean, request: any | null }>({ open: false, request: null });
+  const [rejectComment, setRejectComment] = useState("");
 
   // Filter job vacancies and hiring requests based on role
   const filteredJobs = jobVacancies.filter(job => {
@@ -570,25 +576,12 @@ export default function RecruitmentDashboard() {
                   className="space-y-3"
                 >
                   <Input value={jobForm.title} onChange={e => setJobForm(f => ({ ...f, title: e.target.value }))} placeholder="Title" required className="bg-background border-border text-foreground" />
-                  <Input value={jobForm.department} onChange={e => userRole === 'manager' ? undefined : setJobForm(f => ({ ...f, department: e.target.value }))} placeholder="Department" required className="bg-background border-border text-foreground" readOnly={userRole === 'manager'} />
-                  <Input value={jobForm.location} onChange={e => setJobForm(f => ({ ...f, location: e.target.value }))} placeholder="Location" required className="bg-background border-border text-foreground" />
-                  <Select value={jobForm.type} onValueChange={val => setJobForm(f => ({ ...f, type: val }))}>
-                    <SelectTrigger className="w-full bg-background border-border text-foreground">
-                      <SelectValue placeholder="Select type" />
-                    </SelectTrigger>
-                    <SelectContent className="bg-card border-border">
-                      <SelectItem value="Full-time">Full-time</SelectItem>
-                      <SelectItem value="Part-time">Part-time</SelectItem>
-                      <SelectItem value="Contract">Contract</SelectItem>
-                      <SelectItem value="Internship">Internship</SelectItem>
-                    </SelectContent>
-                  </Select>
                   <Input value={jobForm.experience} onChange={e => setJobForm(f => ({ ...f, experience: e.target.value }))} placeholder="Experience (e.g., 3+ years)" className="bg-background border-border text-foreground" />
                   <Input value={jobForm.requirements} onChange={e => setJobForm(f => ({ ...f, requirements: e.target.value }))} placeholder="Requirements" className="bg-background border-border text-foreground" />
                   <Input type="date" value={jobForm.startDate} onChange={e => setJobForm(f => ({ ...f, startDate: e.target.value }))} placeholder="Application Start Date" className="bg-background border-border text-foreground" required />
                   <Input type="date" value={jobForm.endDate} onChange={e => setJobForm(f => ({ ...f, endDate: e.target.value }))} placeholder="Application End Date" className="bg-background border-border text-foreground" required />
-                  <Input value={jobForm.specification} onChange={e => setJobForm(f => ({ ...f, specification: e.target.value }))} placeholder="Job Specification" className="bg-background border-border text-foreground" />
-                  <Input value={jobForm.salary} onChange={e => setJobForm(f => ({ ...f, salary: e.target.value }))} placeholder="Salary" className="bg-background border-border text-foreground" />
+                  {/* Rich text editor placeholder for job specification */}
+                  <textarea value={jobForm.specification} onChange={e => setJobForm(f => ({ ...f, specification: e.target.value }))} placeholder="Job Specification (Rich Text Supported)" className="bg-background border-border text-foreground h-24" />
                   <div className="flex justify-end space-x-2 mt-4">
                     <Button type="button" variant="outline" onClick={() => { setEditJob(null); setCreateJobOpen(false) }} className="border-border hover:bg-muted/50 text-xs sm:text-sm">Cancel</Button>
                     <Button type="submit" className="bg-primary hover:bg-primary/80 text-xs sm:text-sm">{editJob ? "Save" : "Create"}</Button>
@@ -674,16 +667,16 @@ export default function RecruitmentDashboard() {
                       <div className="flex space-x-2">
                         {/* Only Super Admin and HR can approve/reject requests */}
                         {(isSuperAdmin || isHR) && request.status === 'Pending' && (
-                          <>
-                            <Button size="sm" className="bg-green-600 hover:bg-green-700 text-white">
+                          <div className="flex flex-col sm:flex-row gap-2 w-full">
+                            <Button size="sm" className="bg-green-600 hover:bg-green-700 text-white w-full sm:w-auto" onClick={() => setApproveModal({ open: true, request })}>
                               <CheckCircle className="h-3 w-3 mr-1" />
                               Approve
                             </Button>
-                            <Button size="sm" variant="outline" className="border-red-500 text-red-400 hover:bg-red-500/10 bg-transparent">
+                            <Button size="sm" variant="outline" className="border-red-500 text-red-400 hover:bg-red-500/10 bg-transparent w-full sm:w-auto" onClick={() => setRejectModal({ open: true, request })}>
                               <X className="h-3 w-3 mr-1" />
                               Reject
                             </Button>
-                          </>
+                          </div>
                         )}
                         <Button size="sm" variant="outline" className="border-border hover:bg-muted/50 bg-transparent">
                           <Eye className="h-4 w-4" />
@@ -997,7 +990,7 @@ export default function RecruitmentDashboard() {
       {/* HR Job Posting Modal */}
       {showHRJobModal && (
         <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50">
-          <div className="bg-card p-6 rounded-xl shadow-card w-full max-w-md relative">
+          <div className="bg-card p-6 rounded-xl shadow-card w-full max-w-md relative max-h-[80vh] overflow-y-auto">
             <button className="absolute top-3 right-3 text-muted-foreground hover:text-foreground" onClick={() => setShowHRJobModal(false)}>
               <X className="h-5 w-5" />
             </button>
@@ -1050,6 +1043,52 @@ export default function RecruitmentDashboard() {
                 <Button type="submit" className="bg-primary hover:bg-primary/80 text-xs sm:text-sm">Create</Button>
               </div>
             </form>
+          </div>
+        </div>
+      )}
+
+      {/* Approve Modal */}
+      {approveModal.open && (
+        <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50">
+          <div className="bg-card p-6 rounded-xl shadow-card w-full max-w-md relative">
+            <button className="absolute top-3 right-3 text-muted-foreground hover:text-foreground" onClick={() => setApproveModal({ open: false, request: null })}>
+              <X className="h-5 w-5" />
+            </button>
+            <h3 className="text-lg font-semibold mb-4 text-foreground">Approve Hiring Request</h3>
+            <p className="mb-4 text-foreground">Are you sure you want to approve the request for <span className="font-bold">{approveModal.request?.position}</span>?</p>
+            <div className="flex justify-end space-x-2 mt-4">
+              <Button type="button" variant="outline" onClick={() => setApproveModal({ open: false, request: null })} className="border-border hover:bg-muted/50 text-xs sm:text-sm">Cancel</Button>
+              <Button type="button" className="bg-green-600 hover:bg-green-700 text-white text-xs sm:text-sm" onClick={() => {
+                if (approveModal.request) {
+                  setHiringRequests((prev: typeof initialHiringRequests) => prev.map((req) => req === approveModal.request ? { ...req, status: 'Approved' } : req));
+                }
+                setApproveModal({ open: false, request: null });
+              }}>Approve</Button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Reject Modal */}
+      {rejectModal.open && (
+        <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50">
+          <div className="bg-card p-6 rounded-xl shadow-card w-full max-w-md relative">
+            <button className="absolute top-3 right-3 text-muted-foreground hover:text-foreground" onClick={() => setRejectModal({ open: false, request: null })}>
+              <X className="h-5 w-5" />
+            </button>
+            <h3 className="text-lg font-semibold mb-4 text-foreground">Reject Hiring Request</h3>
+            <p className="mb-4 text-foreground">Are you sure you want to reject the request for <span className="font-bold">{rejectModal.request?.position}</span>?</p>
+            <textarea value={rejectComment} onChange={e => setRejectComment(e.target.value)} placeholder="Optional comment" className="bg-background border-border text-foreground w-full h-20 mb-2" />
+            <div className="flex justify-end space-x-2 mt-4">
+              <Button type="button" variant="outline" onClick={() => setRejectModal({ open: false, request: null })} className="border-border hover:bg-muted/50 text-xs sm:text-sm">Cancel</Button>
+              <Button type="button" className="bg-red-600 hover:bg-red-700 text-white text-xs sm:text-sm" onClick={() => {
+                if (rejectModal.request) {
+                  setHiringRequests((prev: typeof initialHiringRequests) => prev.map((req) => req === rejectModal.request ? { ...req, status: 'Rejected', rejectComment } : req));
+                }
+                setRejectModal({ open: false, request: null });
+                setRejectComment("");
+              }}>Reject</Button>
+            </div>
           </div>
         </div>
       )}
