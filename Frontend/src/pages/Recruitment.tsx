@@ -1168,7 +1168,7 @@ const Recruitment = () => {
             <DialogHeader>
               <DialogTitle>Edit Job</DialogTitle>
             </DialogHeader>
-            <EditJobForm job={editingJob} onCancel={() => setEditingJob(null)} onSave={(updatedJob) => { setEditingJob(null); /* Optionally update mockJobPostings here */ }} />
+            <EditJobForm job={editingJob} onCancel={() => setEditingJob(null)} onSave={() => setEditingJob(null)} />
           </DialogContent>
         </Dialog>
       )}
