@@ -1,6 +1,7 @@
-import { useState } from "react"
+import { useState } from 'react';
 import {
   Building,
+  Users,
   FileText,
   Calendar,
   CheckCircle,
@@ -8,333 +9,526 @@ import {
   Eye,
   Edit,
   Plus,
-  X,
+  Search,
+  Filter,
+  Download,
+  Trash2,
+  MapPin,
+  DollarSign,
+  Briefcase,
+  Send,
   UserCheck,
-  TrendingUp,
-} from "lucide-react"
-import { Button } from "../components/ui/button"
-import { Badge } from "../components/ui/badge"
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "../components/ui/select"
-import { Input } from "../components/ui/input"
-import { useAuth } from "../contexts/AuthContext"
-import { Tabs, TabsList, TabsTrigger, TabsContent } from "../components/ui/tabs"
+  AlertCircle,
+} from 'lucide-react';
+import { Button } from '../components/ui/button';
+import { Card, CardContent, CardHeader, CardTitle } from '../components/ui/card';
+import { Badge } from '../components/ui/badge';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../components/ui/select';
+import { Input } from '../components/ui/input';
+import { Label } from '../components/ui/lable';
+import { Textarea } from '../components/ui/textarea';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogFooter } from '../components/ui/dialog';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '../components/ui/tabs';
+import { useAuth } from '../contexts/AuthContext';
 
+// Mock Data
 const recruitmentStats = [
-  { name: "Open Positions", value: "24", icon: Building, color: "text-blue-500" },
-  { name: "Active Applications", value: "156", icon: FileText, color: "text-green-500" },
-  { name: "Interviews Scheduled", value: "32", icon: Calendar, color: "text-purple-500" },
-  { name: "Pending Approvals", value: "8", icon: Clock, color: "text-orange-500" },
-]
+  { name: 'Open Positions', value: '24', icon: Building, color: 'text-blue-500' },
+  { name: 'Active Applications', value: '156', icon: FileText, color: 'text-green-500' },
+  { name: 'Interviews Scheduled', value: '32', icon: Calendar, color: 'text-purple-500' },
+  { name: 'Pending Approvals', value: '8', icon: Clock, color: 'text-orange-500' },
+];
 
-const jobPostings = [
+const mockJobPostings = [
   {
-    title: "Senior Software Engineer",
-    department: "Engineering",
-    location: "Remote",
-    type: "Full-time",
+    id: 1,
+    title: 'Senior Software Engineer',
+    department: 'Engineering',
+    location: 'Remote',
+    type: 'Full-time',
     applications: 45,
-    posted: "2024-12-01",
-    deadline: "2024-12-30",
-    status: "Active",
-    salary: "$95k - $120k",
-    views: 234,
+    posted: '2024-12-01',
+    deadline: '2024-12-30',
+    applicationStart: '2024-12-01',
+    applicationEnd: '2024-12-30',
+    status: 'Active',
+    salary: '$95k - $120k',
+    experience: '5+ years',
+    requirements: 'React, Node.js, TypeScript, AWS',
+    description: 'We are looking for a senior software engineer to join our growing team...',
+    benefits: 'Health insurance, 401k, Remote work'
   },
   {
-    title: "Marketing Manager",
-    department: "Marketing",
-    location: "New York",
-    type: "Full-time",
+    id: 2,
+    title: 'Marketing Manager',
+    department: 'Marketing',
+    location: 'New York',
+    type: 'Full-time',
     applications: 28,
-    posted: "2024-11-25",
-    deadline: "2024-12-25",
-    status: "Active",
-    salary: "$75k - $90k",
-    views: 189,
-  },
-  {
-    title: "Marketing Manager",
-    department: "Marketing",
-    location: "New York",
-    type: "Full-time",
-    applications: 28,
-    posted: "2024-11-25",
-    deadline: "2024-12-25",
-    status: "Active",
-    salary: "$75k - $90k",
-    views: 189,
-  },
-  {
-    title: "Sales Representative",
-    department: "Sales",
-    location: "Chicago",
-    type: "Full-time",
-    applications: 67,
-    posted: "2024-11-20",
-    deadline: "2024-12-20",
-    status: "Active",
-    salary: "$50k - $65k + Commission",
-    views: 312,
-  },
-  {
-    title: "UX Designer",
-    department: "Design",
-    location: "San Francisco",
-    type: "Contract",
-    applications: 34,
-    posted: "2024-11-15",
-    deadline: "2024-12-15",
-    status: "Closed",
-    salary: "$80k - $95k",
-    views: 156,
-  },
-  {
-    title: "DevOps Engineer",
-    department: "Engineering",
-    location: "Austin",
-    type: "Full-time",
-    applications: 23,
-    posted: "2024-12-05",
-    deadline: "2025-01-05",
-    status: "Active",
-    salary: "$85k - $110k",
-    views: 98,
-  },
-]
+    posted: '2024-11-25',
+    deadline: '2024-12-25',
+    applicationStart: '2024-11-25',
+    applicationEnd: '2024-12-25',
+    status: 'Active',
+    salary: '$75k - $90k',
+    experience: '3+ years',
+    requirements: 'Digital Marketing, SEO, Analytics',
+    description: 'Lead our marketing initiatives and drive brand growth...',
+    benefits: 'Health insurance, Bonus structure, Office perks'
+  }
+];
 
-const initialHiringRequests = [
+const mockHiringRequests = [
   {
-    position: "DevOps Engineer",
-    requestedBy: "John Smith",
-    department: "Engineering",
-    urgency: "High",
-    requestDate: "2024-12-10",
-    justification: "Team expansion for new project",
-    status: "Pending",
-    budget: "$100k",
+    id: 1,
+    position: 'DevOps Engineer',
+    requestedBy: 'John Smith',
+    department: 'Engineering',
+    urgency: 'High',
+    requestDate: '2024-12-10',
+    justification: 'Team expansion for new project',
+    numberOfEmployees: 2,
+    expectedSalary: '$80k - $100k',
+    skills: 'Docker, Kubernetes, AWS',
+    status: 'Pending'
   },
   {
-    position: "Content Writer",
-    requestedBy: "Sarah Wilson",
-    department: "Marketing",
-    urgency: "Medium",
-    requestDate: "2024-12-08",
-    justification: "Content strategy scale-up",
-    status: "Approved",
-    budget: "$60k",
-  },
-  {
-    position: "Data Analyst",
-    requestedBy: "Mike Johnson",
-    department: "Finance",
-    urgency: "Low",
-    requestDate: "2024-12-05",
-    justification: "Analytics team enhancement",
-    status: "Pending",
-    budget: "$75k",
-  },
-  {
-    position: "Product Manager",
-    requestedBy: "Emily Davis",
-    department: "Product",
-    urgency: "High",
-    requestDate: "2024-12-12",
-    justification: "New product line launch",
-    status: "Under Review",
-    budget: "$120k",
-  },
-]
+    id: 2,
+    position: 'Content Writer',
+    requestedBy: 'Sarah Wilson',
+    department: 'Marketing',
+    urgency: 'Medium',
+    requestDate: '2024-12-08',
+    justification: 'Content strategy scale-up',
+    numberOfEmployees: 1,
+    expectedSalary: '$45k - $60k',
+    skills: 'SEO Writing, Content Strategy',
+    status: 'Approved'
+  }
+];
 
-const interviewSchedule = [
+const mockDocuments = [
   {
-    candidate: "Alex Johnson",
-    position: "Senior Software Engineer",
-    interviewer: "John Smith",
-    date: "2024-12-18",
-    time: "10:00 AM",
-    type: "Technical",
-    status: "Scheduled",
+    id: 1,
+    name: 'Resume - Alice Johnson.pdf',
+    type: 'Resume',
+    applicant: 'Alice Johnson',
+    position: 'Senior Software Engineer',
+    uploadDate: '2024-12-15',
+    status: 'Approved',
+    size: '2.4 MB'
   },
   {
-    candidate: "Maria Garcia",
-    position: "Marketing Manager",
-    interviewer: "Sarah Wilson",
-    date: "2024-12-18",
-    time: "2:00 PM",
-    type: "Behavioral",
-    status: "Scheduled",
-  },
-  {
-    candidate: "David Kim",
-    position: "UX Designer",
-    interviewer: "Emily Davis",
-    date: "2024-12-19",
-    time: "11:00 AM",
-    type: "Portfolio Review",
-    status: "Completed",
-  },
-  {
-    candidate: "Lisa Chen",
-    position: "Sales Representative",
-    interviewer: "Mike Johnson",
-    date: "2024-12-19",
-    time: "3:00 PM",
-    type: "Final Round",
-    status: "Scheduled",
-  },
-]
+    id: 2,
+    name: 'Cover Letter - Bob Smith.pdf',
+    type: 'Cover Letter',
+    applicant: 'Bob Smith',
+    position: 'Marketing Manager',
+    uploadDate: '2024-12-14',
+    status: 'Pending',
+    size: '1.1 MB'
+  }
+];
 
-const recruitmentMetrics = [
-  { metric: "Time to Hire", value: "18 days", trend: "down", change: "-2 days" },
-  { metric: "Cost per Hire", value: "$3,200", trend: "up", change: "+$200" },
-  { metric: "Application Rate", value: "12.5%", trend: "up", change: "+1.2%" },
-  { metric: "Offer Acceptance", value: "85%", trend: "up", change: "+5%" },
-]
-
-// Define Job type for job vacancies
-interface Job {
-  title: string;
-  department: string;
-  location: string;
-  type: string;
-  experience: string;
-  requirements: string;
-  startDate: string;
-  endDate: string;
-  specification: string;
-  salary: string;
-  status: string;
-  applications: number;
-  posted: string;
-  deadline: string;
-  views: number;
-}
-
-// Mock data for documents
-type Document = {
-  id: number;
-  name: string;
-  status: string;
-  type: string;
-  requestedBy: string;
-  department: string;
-  date: string;
-};
-const initialDocuments: Document[] = [
-  { id: 1, name: "Offer Letter", status: "Approved", type: "PDF", requestedBy: "John Smith", department: "Engineering", date: "2024-12-10" },
-  { id: 2, name: "Resume", status: "Pending", type: "PDF", requestedBy: "Sarah Wilson", department: "Marketing", date: "2024-12-08" },
-  { id: 3, name: "Contract", status: "Approved", type: "DOCX", requestedBy: "Mike Johnson", department: "Finance", date: "2024-12-05" },
-]
-
-export default function RecruitmentDashboard() {
+const Recruitment = () => {
   const { user } = useAuth();
-  const userRole = user?.role;
-  const userDepartment = user?.department;
-  // Role helpers
-  const isSuperAdmin = userRole === 'super_admin';
-  const isHR = userRole === 'hr';
-  const isManager = userRole === 'manager';
-  const isEmployee = userRole === 'employee';
-  // Add state for job vacancy modals and search
-  const [jobSearch, setJobSearch] = useState("")
-  // Use Job type for jobVacancies, viewJob, editJob, deleteJob, and jobForm
-  const [jobVacancies, setJobVacancies] = useState<Job[]>(jobPostings as Job[])
-  const [viewJob, setViewJob] = useState<Job | null>(null)
-  const [editJob, setEditJob] = useState<Job | null>(null)
-  const [deleteJob, setDeleteJob] = useState<Job | null>(null)
-  const [createJobOpen, setCreateJobOpen] = useState(false)
-  const [jobForm, setJobForm] = useState<Job>({
-    title: "",
-    department: "",
-    location: "",
-    type: "Full-time",
-    experience: "",
-    requirements: "",
-    startDate: "",
-    endDate: "",
-    specification: "",
-    salary: "",
-    status: "Active",
-    applications: 0,
-    posted: "",
-    deadline: "",
-    views: 0,
-  })
-
-  // Add state for hiring requests and hiring request modal (manager)
-  const [hiringRequests, setHiringRequests] = useState<typeof initialHiringRequests>(initialHiringRequests);
-  const [hiringRequestOpen, setHiringRequestOpen] = useState(false)
-  const [hiringRequestForm, setHiringRequestForm] = useState({
-    position: '',
-    justification: '',
-    urgency: 'Medium',
-    budget: '',
-  })
-
-  // Document management state
-  const [documents, setDocuments] = useState<Document[]>(initialDocuments)
-  const [docSearch, setDocSearch] = useState("")
-  const [viewDoc, setViewDoc] = useState<Document | null>(null)
-  const [editDoc, setEditDoc] = useState<Document | null>(null)
-  const [deleteDoc, setDeleteDoc] = useState<Document | null>(null)
-  const [createDocOpen, setCreateDocOpen] = useState(false)
-  const [docForm, setDocForm] = useState<Document>({ name: "", type: "PDF", status: "Pending", requestedBy: user?.email || "", department: userDepartment || "", date: new Date().toISOString().slice(0, 10), id: 0 })
-
-  // Tab state
-  const [tab, setTab] = useState("jobs")
-
-  // Add state for manager hire modal
-  const [showManagerHireModal, setShowManagerHireModal] = useState(false);
-  const [managerHireForm, setManagerHireForm] = useState({
-    title: '',
-    department: userDepartment || '',
-    numEmployees: 1,
-    description: '',
-    justification: '',
-    urgency: 'Medium',
-    budget: '',
-  });
-  // Add state for HR job posting modal
-  const [showHRJobModal, setShowHRJobModal] = useState(false);
-  const [hrJobForm, setHRJobForm] = useState({
+  const [selectedTab, setSelectedTab] = useState('overview');
+  const [searchTerm, setSearchTerm] = useState('');
+  const [selectedDepartment, setSelectedDepartment] = useState('All Departments');
+  const [selectedStatus, setSelectedStatus] = useState('All Status');
+  const [showJobForm, setShowJobForm] = useState(false);
+  const [showRequestForm, setShowRequestForm] = useState(false);
+  // Update state initializations to allow storing the relevant object
+  const [showDocumentModal, setShowDocumentModal] = useState<null | typeof mockDocuments[0]>(null);
+  const [editingJob, setEditingJob] = useState<null | typeof mockJobPostings[0]>(null);
+  const [viewingJob, setViewingJob] = useState<null | typeof mockJobPostings[0]>(null);
+  const [jobFormData, setJobFormData] = useState({
     title: '',
     department: '',
+    location: '',
     type: 'Full-time',
+    salary: '',
     experience: '',
     requirements: '',
-    startDate: '',
-    endDate: '',
-    specification: '',
-    salary: '',
-    status: 'Active',
-    internal: true,
+    description: '',
+    benefits: '',
+    applicationStart: '',
+    applicationEnd: ''
   });
-
-  // Add state for approve/reject modals
-  const [approveModal, setApproveModal] = useState<{ open: boolean, request: any | null }>({ open: false, request: null });
-  const [rejectModal, setRejectModal] = useState<{ open: boolean, request: any | null }>({ open: false, request: null });
-  const [rejectComment, setRejectComment] = useState("");
-
-  // Filter job vacancies and hiring requests based on role
-  const filteredJobs = jobVacancies.filter(job => {
-    if (isManager) return job.department === userDepartment;
-    if (isEmployee) return job.status === "Active";
-    return true; // HR and Super Admin see all
-  })
-
-  const filteredHiringRequests = hiringRequests.filter(request => {
-    if (isManager) return request.department === userDepartment;
-    if (isEmployee) return false;
-    return true;
+  const [requestFormData, setRequestFormData] = useState({
+    position: '',
+    department: user?.department || '',
+    numberOfEmployees: 1,
+    urgency: 'Medium',
+    justification: '',
+    expectedSalary: '',
+    skills: ''
   });
+  const [hiringRequests, setHiringRequests] = useState(mockHiringRequests);
+  const [jobPostings, setJobPostings] = useState(mockJobPostings);
+  // Add state for viewing a hiring request
+  const [viewingRequest, setViewingRequest] = useState<null | typeof mockHiringRequests[0]>(null);
 
-  // Filtered documents (approved only for search)
-  const filteredDocs: Document[] = documents.filter(doc =>
-    doc.status === "Approved" && doc.name.toLowerCase().includes(docSearch.toLowerCase())
-  )
+  // Role-based data filtering
+  const getFilteredData = () => {
+    let jobs = jobPostings;
+    let requests = hiringRequests;
+
+    if (user?.role === 'manager') {
+      // Manager sees only their department
+      jobs = jobs.filter(job => job.department === user.department);
+      requests = requests.filter(req => req.department === user.department);
+    }
+
+    // Apply search and filters
+    if (searchTerm) {
+      jobs = jobs.filter(job =>
+        job.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        job.department.toLowerCase().includes(searchTerm.toLowerCase())
+      );
+    }
+
+    if (selectedDepartment !== 'All Departments') {
+      jobs = jobs.filter(job => job.department === selectedDepartment);
+    }
+
+    if (selectedStatus !== 'All Status') {
+      jobs = jobs.filter(job => job.status === selectedStatus);
+    }
+
+    return { jobs, requests };
+  };
+
+  const { jobs: filteredJobs, requests: filteredRequests } = getFilteredData();
+
+  const handleCreateJob = () => {
+    console.log('Creating job with data:', jobFormData);
+    setShowJobForm(false);
+    setJobFormData({
+      title: '',
+      department: '',
+      location: '',
+      type: 'Full-time',
+      salary: '',
+      experience: '',
+      requirements: '',
+      description: '',
+      benefits: '',
+      applicationStart: '',
+      applicationEnd: ''
+    });
+  };
+
+  const handleCreateRequest = () => {
+    console.log('Creating hiring request:', requestFormData);
+    setShowRequestForm(false);
+    setRequestFormData({
+      position: '',
+      department: user?.department || '',
+      numberOfEmployees: 1,
+      urgency: 'Medium',
+      justification: '',
+      expectedSalary: '',
+      skills: ''
+    });
+  };
+
+  const getPageTitle = () => {
+    if (user?.role === 'manager') return 'Recruitment Requests';
+    if (user?.role === 'hr') return 'Recruitment Management';
+    return 'Recruitment';
+  };
+
+  const getPageDescription = () => {
+    if (user?.role === 'manager') return 'Request new hires for your department';
+    if (user?.role === 'hr') return 'Manage job postings and hiring requests';
+    return 'View job opportunities and recruitment information';
+  };
+
+  const renderManagerActions = () => (
+    <div className="flex flex-col sm:flex-row gap-2">
+      <Dialog open={showRequestForm} onOpenChange={setShowRequestForm}>
+        <DialogTrigger asChild>
+          <Button className="bg-primary hover:bg-primary/80">
+            <Send className="h-4 w-4 mr-2" />
+            Request New Hire
+          </Button>
+        </DialogTrigger>
+        <DialogContent className="max-w-2xl bg-card border-border text-foreground">
+          <DialogHeader>
+            <DialogTitle>Request New Hire</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4">
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <Label htmlFor="position">Position Title</Label>
+                <Input
+                  id="position"
+                  value={requestFormData.position}
+                  onChange={(e) => setRequestFormData({ ...requestFormData, position: e.target.value })}
+                  placeholder="e.g., Senior Developer"
+                  className="bg-background border-border text-foreground"
+                />
+              </div>
+              <div>
+                <Label htmlFor="numberOfEmployees">Number of Employees</Label>
+                <Input
+                  id="numberOfEmployees"
+                  type="number"
+                  min="1"
+                  value={requestFormData.numberOfEmployees}
+                  onChange={(e) => setRequestFormData({ ...requestFormData, numberOfEmployees: parseInt(e.target.value) })}
+                  className="bg-background border-border text-foreground"
+                />
+              </div>
+            </div>
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <Label htmlFor="urgency">Urgency Level</Label>
+                <Select value={requestFormData.urgency} onValueChange={(value) => setRequestFormData({ ...requestFormData, urgency: value })}>
+                  <SelectTrigger className="bg-background border-border text-foreground">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent className="bg-card border-border">
+                    <SelectItem value="High">High</SelectItem>
+                    <SelectItem value="Medium">Medium</SelectItem>
+                    <SelectItem value="Low">Low</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              <div>
+                <Label htmlFor="expectedSalary">Expected Salary Range</Label>
+                <Input
+                  id="expectedSalary"
+                  value={requestFormData.expectedSalary}
+                  onChange={(e) => setRequestFormData({ ...requestFormData, expectedSalary: e.target.value })}
+                  placeholder="e.g., $70k - $90k"
+                  className="bg-background border-border text-foreground"
+                />
+              </div>
+            </div>
+            <div>
+              <Label htmlFor="skills">Required Skills & Qualifications</Label>
+              <Textarea
+                id="skills"
+                value={requestFormData.skills}
+                onChange={(e) => setRequestFormData({ ...requestFormData, skills: e.target.value })}
+                placeholder="List key skills, experience, and qualifications required..."
+                className="bg-background border-border text-foreground"
+                rows={3}
+              />
+            </div>
+            <div>
+              <Label htmlFor="justification">Business Justification</Label>
+              <Textarea
+                id="justification"
+                value={requestFormData.justification}
+                onChange={(e) => setRequestFormData({ ...requestFormData, justification: e.target.value })}
+                placeholder="Explain why this hire is necessary..."
+                className="bg-background border-border text-foreground"
+                rows={4}
+              />
+            </div>
+          </div>
+          <DialogFooter className="flex flex-col sm:flex-row gap-2">
+            <Button variant="outline" onClick={() => setShowRequestForm(false)} className="border-border hover:bg-muted/50">
+              Cancel
+            </Button>
+            <Button onClick={handleCreateRequest} className="bg-primary hover:bg-primary/80">
+              Submit Request
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+      <Button variant="outline" className="border-border hover:bg-muted/50">
+        <Eye className="h-4 w-4 mr-2" />
+        My Requests
+      </Button>
+    </div>
+  );
+
+  const renderHRActions = () => (
+    <div className="flex flex-col sm:flex-row gap-2">
+      <Dialog open={showJobForm} onOpenChange={setShowJobForm}>
+        <DialogTrigger asChild>
+          <Button className="bg-primary hover:bg-primary/80">
+            <Plus className="h-4 w-4 mr-2" />
+            Post New Job
+          </Button>
+        </DialogTrigger>
+        <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto bg-card border-border text-foreground">
+          <DialogHeader>
+            <DialogTitle>Create Job Vacancy</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-6">
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <Label htmlFor="title">Job Title</Label>
+                <Input
+                  id="title"
+                  value={jobFormData.title}
+                  onChange={(e) => setJobFormData({ ...jobFormData, title: e.target.value })}
+                  placeholder="e.g., Senior Software Engineer"
+                  className="bg-background border-border text-foreground"
+                />
+              </div>
+              <div>
+                <Label htmlFor="department">Department</Label>
+                <Select value={jobFormData.department} onValueChange={(value) => setJobFormData({ ...jobFormData, department: value })}>
+                  <SelectTrigger className="bg-background border-border text-foreground">
+                    <SelectValue placeholder="Select department" />
+                  </SelectTrigger>
+                  <SelectContent className="bg-card border-border">
+                    <SelectItem value="Engineering">Engineering</SelectItem>
+                    <SelectItem value="Marketing">Marketing</SelectItem>
+                    <SelectItem value="Sales">Sales</SelectItem>
+                    <SelectItem value="Design">Design</SelectItem>
+                    <SelectItem value="Finance">Finance</SelectItem>
+                    <SelectItem value="HR">Human Resources</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
+            <div className="grid grid-cols-3 gap-4">
+              <div>
+                <Label htmlFor="location">Location</Label>
+                <Input
+                  id="location"
+                  value={jobFormData.location}
+                  onChange={(e) => setJobFormData({ ...jobFormData, location: e.target.value })}
+                  placeholder="e.g., Remote, New York"
+                  className="bg-background border-border text-foreground"
+                />
+              </div>
+              <div>
+                <Label htmlFor="type">Employment Type</Label>
+                <Select value={jobFormData.type} onValueChange={(value) => setJobFormData({ ...jobFormData, type: value })}>
+                  <SelectTrigger className="bg-background border-border text-foreground">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent className="bg-card border-border">
+                    <SelectItem value="Full-time">Full-time</SelectItem>
+                    <SelectItem value="Part-time">Part-time</SelectItem>
+                    <SelectItem value="Contract">Contract</SelectItem>
+                    <SelectItem value="Freelance">Freelance</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              <div>
+                <Label htmlFor="experience">Experience Required</Label>
+                <Input
+                  id="experience"
+                  value={jobFormData.experience}
+                  onChange={(e) => setJobFormData({ ...jobFormData, experience: e.target.value })}
+                  placeholder="e.g., 3-5 years"
+                  className="bg-background border-border text-foreground"
+                />
+              </div>
+            </div>
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <Label htmlFor="salary">Salary Range</Label>
+                <Input
+                  id="salary"
+                  value={jobFormData.salary}
+                  onChange={(e) => setJobFormData({ ...jobFormData, salary: e.target.value })}
+                  placeholder="e.g., $70k - $90k"
+                  className="bg-background border-border text-foreground"
+                />
+              </div>
+              <div>
+                <Label htmlFor="requirements">Key Requirements</Label>
+                <Input
+                  id="requirements"
+                  value={jobFormData.requirements}
+                  onChange={(e) => setJobFormData({ ...jobFormData, requirements: e.target.value })}
+                  placeholder="e.g., React, Node.js, 5+ years"
+                  className="bg-background border-border text-foreground"
+                />
+              </div>
+            </div>
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <Label htmlFor="applicationStart">Application Start Date</Label>
+                <Input
+                  id="applicationStart"
+                  type="date"
+                  value={jobFormData.applicationStart}
+                  onChange={(e) => setJobFormData({ ...jobFormData, applicationStart: e.target.value })}
+                  className="bg-background border-border text-foreground"
+                />
+              </div>
+              <div>
+                <Label htmlFor="applicationEnd">Application End Date</Label>
+                <Input
+                  id="applicationEnd"
+                  type="date"
+                  value={jobFormData.applicationEnd}
+                  onChange={(e) => setJobFormData({ ...jobFormData, applicationEnd: e.target.value })}
+                  className="bg-background border-border text-foreground"
+                />
+              </div>
+            </div>
+            <div>
+              <Label htmlFor="description">Job Description (Rich Text)</Label>
+              <Textarea
+                id="description"
+                value={jobFormData.description}
+                onChange={(e) => setJobFormData({ ...jobFormData, description: e.target.value })}
+                placeholder="Detailed job description, responsibilities, and company information..."
+                className="bg-background border-border text-foreground"
+                rows={6}
+              />
+            </div>
+            <div>
+              <Label htmlFor="benefits">Benefits & Perks</Label>
+              <Textarea
+                id="benefits"
+                value={jobFormData.benefits}
+                onChange={(e) => setJobFormData({ ...jobFormData, benefits: e.target.value })}
+                placeholder="Health insurance, retirement plans, vacation policy, etc..."
+                className="bg-background border-border text-foreground"
+                rows={3}
+              />
+            </div>
+          </div>
+          <DialogFooter className="flex flex-col sm:flex-row gap-2">
+            <Button variant="outline" onClick={() => setShowJobForm(false)} className="border-border hover:bg-muted/50">
+              Cancel
+            </Button>
+            <Button variant="outline" className="border-border hover:bg-muted/50">
+              Save as Draft
+            </Button>
+            <Button onClick={handleCreateJob} className="bg-primary hover:bg-primary/80">
+              Post Job
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+      <Button variant="outline" className="border-border hover:bg-muted/50">
+        <FileText className="h-4 w-4 mr-2" />
+        Applications Report
+      </Button>
+      <Button variant="outline" className="border-border hover:bg-muted/50">
+        <Calendar className="h-4 w-4 mr-2" />
+        Interview Schedule
+      </Button>
+    </div>
+  );
+
+  if (!user) {
+    return (
+      <div className="flex items-center justify-center min-h-screen">
+        <div className="text-center">
+          <h2 className="text-xl font-semibold text-foreground">Please log in to access recruitment</h2>
+          <p className="text-muted-foreground">You need to be authenticated to view this page.</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
-    <div className="space-y-8 p-6 bg-background min-h-screen text-foreground font-inter">
-      {/* Tailwind CSS configuration for custom colors and font */}
+    <div className="space-y-6 p-4 sm:p-6 bg-background min-h-screen text-foreground font-inter">
       <style>
         {`
           @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
@@ -375,723 +569,730 @@ export default function RecruitmentDashboard() {
         `}
       </style>
 
-      <div className="flex items-center justify-between">
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
-          <h1 className="text-3xl font-bold text-foreground">Recruitment Management</h1>
-          <p className="text-muted-foreground mt-2">Manage job postings and hiring requests</p>
+          <h1 className="text-2xl sm:text-3xl font-bold text-foreground">{getPageTitle()}</h1>
+          <p className="text-muted-foreground mt-2 text-sm sm:text-base">{getPageDescription()}</p>
         </div>
-        <div className="flex space-x-3">
-          <Button variant="outline" className="border-border hover:bg-muted/50 bg-transparent">
-            <FileText className="h-4 w-4 mr-2" />
-            Applications Report
-          </Button>
-          <Button variant="outline" className="border-border hover:bg-muted/50 bg-transparent">
-            <Calendar className="h-4 w-4 mr-2" />
-            Interview Schedule
-          </Button>
-          <Button className="bg-primary hover:bg-primary/80">
-            <Plus className="h-4 w-4 mr-2" />
-            Post New Job
-          </Button>
-        </div>
+        {user.role === 'manager' && renderManagerActions()}
+        {user.role === 'hr' && renderHRActions()}
       </div>
 
-
-      {/* Only show stats to Super Admin and HR */}
-      {(isSuperAdmin || isHR) && (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+      {/* Stats (HR and Manager) */}
+      {(user.role === 'hr' || user.role === 'manager') && (
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6">
           {recruitmentStats.map((stat) => {
-            const Icon = stat.icon
+            const Icon = stat.icon;
             return (
-              <div key={stat.name} className="bg-card p-6 rounded-xl border border-border">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <p className="text-sm font-medium text-muted-foreground">{stat.name}</p>
-                    <p className="text-2xl font-bold text-foreground mt-2">{stat.value}</p>
+              <Card key={stat.name} className="bg-card border-border">
+                <CardContent className="p-4 sm:p-6">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <p className="text-sm font-medium text-muted-foreground">{stat.name}</p>
+                      <p className="text-xl sm:text-2xl font-bold text-foreground mt-2">{stat.value}</p>
+                    </div>
+                    <div className="h-10 w-10 sm:h-12 sm:w-12 bg-primary/10 rounded-lg flex items-center justify-center">
+                      <Icon className={`h-5 w-5 sm:h-6 sm:w-6 ${stat.color}`} />
+                    </div>
                   </div>
-                  <div className="h-12 w-12 bg-primary/10 rounded-lg flex items-center justify-center">
-                    <Icon className={`h-6 w-6 ${stat.color}`} />
-                  </div>
-                </div>
-              </div>
-            )
+                </CardContent>
+              </Card>
+            );
           })}
         </div>
       )}
 
-      {/* Only show metrics to Super Admin and HR */}
-      {(isSuperAdmin || isHR) && (
-        <div className="bg-card p-6 rounded-xl border border-border">
-          <h3 className="text-lg font-semibold text-foreground mb-4">Recruitment Metrics</h3>
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-            {recruitmentMetrics.map((metric, index) => (
-              <div key={index} className="p-4 bg-muted/30 rounded-lg">
-                <div className="flex items-center justify-between mb-2">
-                  <p className="text-sm font-medium text-foreground">{metric.metric}</p>
-                  <div className="flex items-center space-x-1">
-                    <TrendingUp
-                      className={`h-4 w-4 ${metric.trend === "up" ? "text-green-500" : "text-red-500 rotate-180"}`}
-                    />
-                    <span className={`text-xs font-medium ${metric.trend === "up" ? "text-green-500" : "text-red-500"}`}>
-                      {metric.change}
-                    </span>
-                  </div>
-                </div>
-                <p className="text-xl font-bold text-foreground">{metric.value}</p>
-              </div>
-            ))}
-          </div>
-        </div>
-      )}
-
-      {/* Tabbed Interface */}
-      <Tabs value={tab} onValueChange={setTab} className="mb-6">
-        <TabsList>
-          {/* Only show tabs relevant to the role */}
-          <TabsTrigger value="jobs">Job Vacancies</TabsTrigger>
-          {(isSuperAdmin || isHR || isManager) && <TabsTrigger value="requests">Recruitment Requests</TabsTrigger>}
-          {(isSuperAdmin || isHR || isManager) && <TabsTrigger value="documents">Document Management</TabsTrigger>}
+      {/* Main Content Tabs */}
+      <Tabs value={selectedTab} onValueChange={setSelectedTab} className="space-y-4">
+        <TabsList className="grid w-full grid-cols-2 lg:grid-cols-4 bg-muted/30">
+          <TabsTrigger
+            value="overview"
+            className="text-sm data-[state=active]:bg-card data-[state=active]:text-foreground"
+          >
+            Overview
+          </TabsTrigger>
+          {user.role === 'hr' && (
+            <TabsTrigger
+              value="jobs"
+              className="text-sm data-[state=active]:bg-card data-[state=active]:text-foreground"
+            >
+              Job Postings
+            </TabsTrigger>
+          )}
+          <TabsTrigger
+            value="requests"
+            className="text-sm data-[state=active]:bg-card data-[state=active]:text-foreground"
+          >
+            {user.role === 'manager' ? 'My Requests' : 'Hiring Requests'}
+          </TabsTrigger>
+          {user.role === 'hr' && (
+            <TabsTrigger
+              value="documents"
+              className="text-sm data-[state=active]:bg-card data-[state=active]:text-foreground"
+            >
+              Documents
+            </TabsTrigger>
+          )}
         </TabsList>
-        <TabsContent value="jobs">
-          <div className="bg-card p-6 rounded-xl border border-border mb-8">
-            <div className="flex items-center justify-between mb-4">
-              <h3 className="text-lg font-semibold text-foreground">Job Vacancies</h3>
-              <div className="flex space-x-2">
-                <Input
-                  placeholder="Search job vacancies..."
-                  value={jobSearch}
-                  onChange={e => setJobSearch(e.target.value)}
-                  className="w-64 bg-background border-border text-foreground placeholder:text-muted-foreground focus:ring-1 focus:ring-primary text-xs sm:text-sm py-2"
-                />
-                {/* HR can create job posting with rich text */}
-                {isHR && (
-                  <Button className="bg-primary hover:bg-primary/80" onClick={() => setShowHRJobModal(true)}>
-                    <Plus className="h-4 w-4 mr-2" />
-                    Create Job Posting
-                  </Button>
-                )}
-                {/* Only Super Admin, HR, and Manager can create jobs (Manager only for their department) */}
-                {(isSuperAdmin || isHR || isManager) && (
-                  <Button className="bg-primary hover:bg-primary/80" onClick={() => { setCreateJobOpen(true); setJobForm({ title: "", department: isManager ? userDepartment || "" : "", location: "", type: "Full-time", experience: "", requirements: "", startDate: "", endDate: "", specification: "", salary: "", status: "Active", applications: 0, posted: "", deadline: "", views: 0 }) }}>
-                    <Plus className="h-4 w-4 mr-2" />
-                    {isManager ? "Create Department Job" : "Create Job Vacancy"}
-                  </Button>
-                )}
-              </div>
+
+        {/* Overview Tab */}
+        <TabsContent value="overview" className="space-y-6">
+          {/* Search and Filters */}
+          <div className="flex flex-col sm:flex-row gap-4">
+            <div className="relative flex-1">
+              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground w-4 h-4" />
+              <Input
+                placeholder="Search jobs, positions..."
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                className="pl-10 bg-background border-border text-foreground"
+              />
             </div>
-            <div className="overflow-x-auto">
-              <table className="min-w-full text-xs sm:text-sm">
-                <thead>
-                  <tr className="bg-muted/30">
-                    <th className="px-3 py-2 text-left font-medium">Title</th>
-                    <th className="px-3 py-2 text-left font-medium">Department</th>
-                    <th className="px-3 py-2 text-left font-medium">Location</th>
-                    <th className="px-3 py-2 text-left font-medium">Type</th>
-                    <th className="px-3 py-2 text-left font-medium">Status</th>
-                    <th className="px-3 py-2 text-left font-medium">Actions</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {filteredJobs.length > 0 ? (
-                    filteredJobs.map((job, idx) => (
-                      <tr key={idx} className="border-b border-border last:border-0">
-                        <td className="px-3 py-2">{job.title}</td>
-                        <td className="px-3 py-2">{job.department}</td>
-                        <td className="px-3 py-2">{job.location}</td>
-                        <td className="px-3 py-2">{job.type}</td>
-                        <td className="px-3 py-2">{job.status}</td>
-                        <td className="px-3 py-2 space-x-2">
-                          <Button size="sm" variant="outline" className="p-1.5" onClick={() => setViewJob(job)}>
-                            <Eye className="h-4 w-4" />
-                          </Button>
-                          {/* Only Super Admin, HR, or Manager (for their department) can edit. Only Super Admin/HR can delete. */}
-                          {(isSuperAdmin || isHR || (isManager && job.department === userDepartment)) && (
-                            <Button size="sm" variant="outline" className="p-1.5" onClick={() => { setEditJob(job); setJobForm({ ...job, experience: job.experience || "", requirements: job.requirements || "", startDate: job.startDate || job.posted || "", endDate: job.endDate || job.deadline || "", specification: job.specification || "" }) }}>
-                              <Edit className="h-4 w-4" />
-                            </Button>
-                          )}
-                          {(isSuperAdmin || isHR) && (
-                            <Button size="sm" variant="outline" className="p-1.5 text-red-500 border-red-500" onClick={() => setDeleteJob(job)}>
-                              <X className="h-4 w-4" />
-                            </Button>
-                          )}
-                        </td>
-                      </tr>
-                    ))
-                  ) : (
-                    <tr>
-                      <td colSpan={6} className="text-center py-6 text-muted-foreground">No job vacancies found.</td>
-                    </tr>
-                  )}
-                </tbody>
-              </table>
+            <div className="flex gap-2">
+              <Select value={selectedDepartment} onValueChange={setSelectedDepartment}>
+                <SelectTrigger className="w-full sm:w-48 bg-background border-border text-foreground">
+                  <SelectValue placeholder="Department" />
+                </SelectTrigger>
+                <SelectContent className="bg-card border-border">
+                  <SelectItem value="All Departments">All Departments</SelectItem>
+                  <SelectItem value="Engineering">Engineering</SelectItem>
+                  <SelectItem value="Marketing">Marketing</SelectItem>
+                  <SelectItem value="Sales">Sales</SelectItem>
+                  <SelectItem value="Design">Design</SelectItem>
+                  <SelectItem value="Finance">Finance</SelectItem>
+                </SelectContent>
+              </Select>
+              <Select value={selectedStatus} onValueChange={setSelectedStatus}>
+                <SelectTrigger className="w-full sm:w-32 bg-background border-border text-foreground">
+                  <SelectValue placeholder="Status" />
+                </SelectTrigger>
+                <SelectContent className="bg-card border-border">
+                  <SelectItem value="All Status">All Status</SelectItem>
+                  <SelectItem value="Active">Active</SelectItem>
+                  <SelectItem value="Closed">Closed</SelectItem>
+                  <SelectItem value="Draft">Draft</SelectItem>
+                </SelectContent>
+              </Select>
             </div>
           </div>
-          {/* View Job Modal */}
-          {viewJob && (
-            <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50">
-              <div className="bg-card p-6 rounded-xl shadow-card w-full max-w-md relative">
-                <button className="absolute top-3 right-3 text-muted-foreground hover:text-foreground" onClick={() => setViewJob(null)}>
-                  <X className="h-5 w-5" />
-                </button>
-                <h3 className="text-lg font-semibold mb-4 text-foreground">Job Vacancy Details</h3>
-                <div className="space-y-2">
-                  <div><span className="font-medium">Title:</span> {viewJob.title}</div>
-                  <div><span className="font-medium">Department:</span> {viewJob.department}</div>
-                  <div><span className="font-medium">Location:</span> {viewJob.location}</div>
-                  <div><span className="font-medium">Type:</span> {viewJob.type}</div>
-                  <div><span className="font-medium">Experience:</span> {viewJob.experience || "-"}</div>
-                  <div><span className="font-medium">Requirements:</span> {viewJob.requirements || "-"}</div>
-                  <div><span className="font-medium">Start Date:</span> {viewJob.startDate || viewJob.posted}</div>
-                  <div><span className="font-medium">End Date:</span> {viewJob.endDate || viewJob.deadline}</div>
-                  <div><span className="font-medium">Specification:</span> {viewJob.specification || "-"}</div>
-                  <div><span className="font-medium">Salary:</span> {viewJob.salary}</div>
-                  <div><span className="font-medium">Status:</span> {viewJob.status}</div>
-                </div>
-                <div className="flex justify-end space-x-2 mt-4">
-                  <Button type="button" variant="outline" onClick={() => setViewJob(null)} className="border-border hover:bg-muted/50 text-xs sm:text-sm">Close</Button>
-                </div>
-              </div>
-            </div>
-          )}
-          {/* Edit/Create Job Modal: department field read-only for manager */}
-          {(editJob || createJobOpen) && (
-            <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50">
-              <div className="bg-card p-6 rounded-xl shadow-card w-full max-w-md relative">
-                <button className="absolute top-3 right-3 text-muted-foreground hover:text-foreground" onClick={() => { setEditJob(null); setCreateJobOpen(false) }}>
-                  <X className="h-5 w-5" />
-                </button>
-                <h3 className="text-lg font-semibold mb-4 text-foreground">{editJob ? "Edit Job Vacancy" : "Create Job Vacancy"}</h3>
-                <form
-                  onSubmit={e => {
-                    e.preventDefault();
-                    if (editJob) {
-                      setJobVacancies(prev => prev.map(j => j === editJob ? { ...editJob, ...jobForm } : j))
-                      setEditJob(null)
-                    } else {
-                      setJobVacancies(prev => [...prev, { ...jobForm, status: "Active", applications: 0, views: 0, posted: jobForm.startDate, deadline: jobForm.endDate }])
-                      setCreateJobOpen(false)
-                    }
-                  }}
-                  className="space-y-3"
-                >
-                  <Input value={jobForm.title} onChange={e => setJobForm(f => ({ ...f, title: e.target.value }))} placeholder="Title" required className="bg-background border-border text-foreground" />
-                  <Input value={jobForm.experience} onChange={e => setJobForm(f => ({ ...f, experience: e.target.value }))} placeholder="Experience (e.g., 3+ years)" className="bg-background border-border text-foreground" />
-                  <Input value={jobForm.requirements} onChange={e => setJobForm(f => ({ ...f, requirements: e.target.value }))} placeholder="Requirements" className="bg-background border-border text-foreground" />
-                  <Input type="date" value={jobForm.startDate} onChange={e => setJobForm(f => ({ ...f, startDate: e.target.value }))} placeholder="Application Start Date" className="bg-background border-border text-foreground" required />
-                  <Input type="date" value={jobForm.endDate} onChange={e => setJobForm(f => ({ ...f, endDate: e.target.value }))} placeholder="Application End Date" className="bg-background border-border text-foreground" required />
-                  {/* Rich text editor placeholder for job specification */}
-                  <textarea value={jobForm.specification} onChange={e => setJobForm(f => ({ ...f, specification: e.target.value }))} placeholder="Job Specification (Rich Text Supported)" className="bg-background border-border text-foreground h-24" />
-                  <div className="flex justify-end space-x-2 mt-4">
-                    <Button type="button" variant="outline" onClick={() => { setEditJob(null); setCreateJobOpen(false) }} className="border-border hover:bg-muted/50 text-xs sm:text-sm">Cancel</Button>
-                    <Button type="submit" className="bg-primary hover:bg-primary/80 text-xs sm:text-sm">{editJob ? "Save" : "Create"}</Button>
-                  </div>
-                </form>
-              </div>
-            </div>
-          )}
-          {/* Delete Job Modal */}
-          {deleteJob && (
-            <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50">
-              <div className="bg-card p-6 rounded-xl shadow-card w-full max-w-sm relative">
-                <button className="absolute top-3 right-3 text-muted-foreground hover:text-foreground" onClick={() => setDeleteJob(null)}>
-                  <X className="h-5 w-5" />
-                </button>
-                <h3 className="text-lg font-semibold mb-4 text-foreground">Delete Job Vacancy</h3>
-                <p className="mb-4 text-muted-foreground">Are you sure you want to delete this job vacancy?</p>
-                <div className="flex justify-end space-x-2">
-                  <Button type="button" variant="outline" onClick={() => setDeleteJob(null)} className="border-border hover:bg-muted/50 text-xs sm:text-sm">Cancel</Button>
-                  <Button type="button" className="bg-red-600 hover:bg-red-700 text-white text-xs sm:text-sm" onClick={() => { setJobVacancies(prev => prev.filter(j => j !== deleteJob)); setDeleteJob(null); }}>Delete</Button>
-                </div>
-              </div>
-            </div>
-          )}
-        </TabsContent>
-        <TabsContent value="requests">
-          {/* Only Super Admin, HR, and Manager can see this tab */}
-          {(isSuperAdmin || isHR || isManager) && (
-            <div className="bg-card p-6 rounded-xl border border-border mb-8">
-              <div className="flex items-center justify-between mb-4">
-                <h3 className="text-lg font-semibold text-foreground">Hiring Requests</h3>
-                {/* Manager can request new hire with rich text */}
-                {isManager && (
-                  <Button className="bg-primary hover:bg-primary/80" onClick={() => setShowManagerHireModal(true)}>
-                    <Plus className="h-4 w-4 mr-2" />
-                    Request New Hire
-                  </Button>
-                )}
-                {isManager && (
-                  <Button className="bg-primary hover:bg-primary/80" onClick={() => setHiringRequestOpen(true)}>
-                    <Plus className="h-4 w-4 mr-2" />
-                    New Hiring Request
-                  </Button>
-                )}
-              </div>
+
+          {/* Job Postings */}
+          <Card className="bg-card border-border">
+            <CardHeader>
+              <CardTitle className="text-foreground">
+                {user.role === 'manager' ? 'Department Job Openings' : 'Active Job Postings'}
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
               <div className="space-y-4">
-                {filteredHiringRequests.map((request, index) => (
-                  <div key={index} className="p-4 bg-muted/30 rounded-lg">
-                    <div className="flex items-center justify-between mb-3">
-                      <div className="flex items-center space-x-3">
-                        <div className="w-10 h-10 bg-primary/10 rounded-full flex items-center justify-center">
-                          <span className="text-sm font-medium text-primary">
-                            {request.requestedBy.split(' ').map((n) => n[0]).join('')}
-                          </span>
-                        </div>
-                        <div>
-                          <p className="text-sm font-medium text-foreground">{request.position}</p>
-                          <p className="text-xs text-muted-foreground">{request.requestedBy} • {request.department}</p>
-                        </div>
-                      </div>
-                      <div className="flex items-center space-x-2">
-                        <Badge
-                          variant={request.urgency === 'High' ? 'destructive' : request.urgency === 'Medium' ? 'secondary' : 'default'}
-                          className={request.urgency === 'High' ? 'bg-red-500/20 text-red-400' : request.urgency === 'Medium' ? 'bg-orange-500/20 text-orange-400' : 'bg-blue-500/20 text-blue-400'}
-                        >
-                          {request.urgency}
-                        </Badge>
-                        <Badge
-                          variant={request.status === 'Approved' ? 'default' : 'secondary'}
-                          className={request.status === 'Approved' ? 'bg-green-500/20 text-green-400' : request.status === 'Pending' ? 'bg-orange-500/20 text-orange-400' : 'bg-blue-500/20 text-blue-400'}
-                        >
-                          {request.status}
-                        </Badge>
-                      </div>
-                    </div>
-                    <p className="text-xs text-foreground mb-2">{request.justification}</p>
-                    <div className="flex items-center justify-between">
-                      <div className="flex items-center space-x-4 text-xs text-muted-foreground">
-                        <span>Budget: {request.budget}</span>
-                        <span>•</span>
-                        <span>{request.requestDate}</span>
-                      </div>
-                      <div className="flex space-x-2">
-                        {/* Only Super Admin and HR can approve/reject requests */}
-                        {(isSuperAdmin || isHR) && request.status === 'Pending' && (
-                          <div className="flex flex-col sm:flex-row gap-2 w-full">
-                            <Button size="sm" className="bg-green-600 hover:bg-green-700 text-white w-full sm:w-auto" onClick={() => setApproveModal({ open: true, request })}>
-                              <CheckCircle className="h-3 w-3 mr-1" />
-                              Approve
-                            </Button>
-                            <Button size="sm" variant="outline" className="border-red-500 text-red-400 hover:bg-red-500/10 bg-transparent w-full sm:w-auto" onClick={() => setRejectModal({ open: true, request })}>
-                              <X className="h-3 w-3 mr-1" />
-                              Reject
-                            </Button>
+                {filteredJobs.length === 0 ? (
+                  <div className="text-center py-8 text-muted-foreground">
+                    <Briefcase className="h-12 w-12 mx-auto mb-4 opacity-50" />
+                    <p>No job postings found</p>
+                  </div>
+                ) : (
+                  filteredJobs.map((job) => (
+                    <div key={job.id} className="p-4 border border-border rounded-lg hover:bg-muted/20 transition-colors">
+                      {/* Mobile Layout */}
+                      <div className="block sm:hidden space-y-3">
+                        <div className="flex items-start justify-between">
+                          <div className="flex-1">
+                            <h3 className="font-semibold text-foreground">{job.title}</h3>
+                            <div className="flex items-center gap-2 text-sm text-muted-foreground mt-1">
+                              <Building className="h-4 w-4" />
+                              <span>{job.department}</span>
+                            </div>
+                            <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                              <MapPin className="h-4 w-4" />
+                              <span>{job.location} • {job.type}</span>
+                            </div>
                           </div>
-                        )}
-                        <Button size="sm" variant="outline" className="border-border hover:bg-muted/50 bg-transparent">
-                          <Eye className="h-4 w-4" />
-                        </Button>
-                      </div>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </div>
-          )}
-          {/* Hiring Request Modal for Manager */}
-          {hiringRequestOpen && (
-            <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50">
-              <div className="bg-card p-6 rounded-xl shadow-card w-full max-w-md relative">
-                <button className="absolute top-3 right-3 text-muted-foreground hover:text-foreground" onClick={() => setHiringRequestOpen(false)}>
-                  <X className="h-5 w-5" />
-                </button>
-                <h3 className="text-lg font-semibold mb-4 text-foreground">New Hiring Request</h3>
-                <form
-                  onSubmit={e => {
-                    e.preventDefault();
-                    // Add hiring request logic here
-                    setHiringRequestOpen(false);
-                  }}
-                  className="space-y-3"
-                >
-                  <Input value={hiringRequestForm.position} onChange={e => setHiringRequestForm(f => ({ ...f, position: e.target.value }))} placeholder="Position" required className="bg-background border-border text-foreground" />
-                  <Input value={hiringRequestForm.justification} onChange={e => setHiringRequestForm(f => ({ ...f, justification: e.target.value }))} placeholder="Justification" required className="bg-background border-border text-foreground" />
-                  <Select value={hiringRequestForm.urgency} onValueChange={val => setHiringRequestForm(f => ({ ...f, urgency: val }))}>
-                    <SelectTrigger className="w-full bg-background border-border text-foreground">
-                      <SelectValue placeholder="Select urgency" />
-                    </SelectTrigger>
-                    <SelectContent className="bg-card border-border">
-                      <SelectItem value="High">High</SelectItem>
-                      <SelectItem value="Medium">Medium</SelectItem>
-                      <SelectItem value="Low">Low</SelectItem>
-                    </SelectContent>
-                  </Select>
-                  <Input value={hiringRequestForm.budget} onChange={e => setHiringRequestForm(f => ({ ...f, budget: e.target.value }))} placeholder="Budget" className="bg-background border-border text-foreground" />
-                  <div className="flex justify-end space-x-2 mt-4">
-                    <Button type="button" variant="outline" onClick={() => setHiringRequestOpen(false)} className="border-border hover:bg-muted/50 text-xs sm:text-sm">Cancel</Button>
-                    <Button type="submit" className="bg-primary hover:bg-primary/80 text-xs sm:text-sm">Submit</Button>
-                  </div>
-                </form>
-              </div>
-            </div>
-          )}
-        </TabsContent>
-        <TabsContent value="documents">
-          {/* Only Super Admin, HR, and Manager can see this tab */}
-          {(isSuperAdmin || isHR || isManager) && (
-            <div className="bg-card p-6 rounded-xl border border-border mb-8">
-              <div className="flex items-center justify-between mb-4">
-                <h3 className="text-lg font-semibold text-foreground">Document Management</h3>
-                <Button className="bg-primary hover:bg-primary/80" onClick={() => { setCreateDocOpen(true); setDocForm({ name: "", type: "PDF", status: "Pending", requestedBy: user?.email || "", department: userDepartment || "", date: new Date().toISOString().slice(0, 10), id: 0 }) }}>
-                  <Plus className="h-4 w-4 mr-2" />
-                  {isManager ? "Request Department Document" : "New Document Request"}
-                </Button>
-              </div>
-              <Input
-                placeholder="Search approved documents..."
-                value={docSearch}
-                onChange={e => setDocSearch(e.target.value)}
-                className="w-64 bg-background border-border text-foreground placeholder:text-muted-foreground focus:ring-1 focus:ring-primary text-xs sm:text-sm py-2 mb-4"
-              />
-              <div className="overflow-x-auto">
-                <table className="min-w-full text-xs sm:text-sm">
-                  <thead>
-                    <tr className="bg-muted/30">
-                      <th className="px-3 py-2 text-left font-medium">Name</th>
-                      <th className="px-3 py-2 text-left font-medium">Type</th>
-                      <th className="px-3 py-2 text-left font-medium">Status</th>
-                      <th className="px-3 py-2 text-left font-medium">Requested By</th>
-                      <th className="px-3 py-2 text-left font-medium">Department</th>
-                      <th className="px-3 py-2 text-left font-medium">Date</th>
-                      <th className="px-3 py-2 text-left font-medium">Actions</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {filteredDocs.length > 0 ? (
-                      filteredDocs.map((doc) => (
-                        <tr key={doc.id} className="border-b border-border last:border-0">
-                          <td className="px-3 py-2">{doc.name}</td>
-                          <td className="px-3 py-2">{doc.type}</td>
-                          <td className="px-3 py-2">{doc.status}</td>
-                          <td className="px-3 py-2">{doc.requestedBy}</td>
-                          <td className="px-3 py-2">{doc.department}</td>
-                          <td className="px-3 py-2">{doc.date}</td>
-                          <td className="px-3 py-2 space-x-2">
-                            <Button size="sm" variant="outline" className="p-1.5" onClick={() => setViewDoc(doc)}>
+                          <Badge
+                            variant={job.status === 'Active' ? 'default' : 'secondary'}
+                            className="ml-2"
+                          >
+                            {job.status}
+                          </Badge>
+                        </div>
+                        <div className="flex items-center justify-between text-sm">
+                          <div className="flex items-center gap-4">
+                            <div className="flex items-center gap-1">
+                              <DollarSign className="h-4 w-4 text-green-500" />
+                              <span className="text-foreground">{job.salary}</span>
+                            </div>
+                            <div className="flex items-center gap-1">
+                              <Users className="h-4 w-4 text-blue-500" />
+                              <span className="text-foreground">{job.applications}</span>
+                            </div>
+                          </div>
+                          <div className="flex gap-1">
+                            <Button size="sm" variant="outline" className="border-border hover:bg-muted/50" onClick={() => setViewingJob(job)}>
                               <Eye className="h-4 w-4" />
                             </Button>
-                            {/* Only Super Admin, HR, or Manager (for their department) can edit. Only Super Admin/HR can delete. */}
-                            {(isSuperAdmin || isHR || (isManager && doc.department === userDepartment)) && (
-                              <Button size="sm" variant="outline" className="p-1.5" onClick={() => { setEditDoc(doc); setDocForm(doc) }}>
+                            {user.role === 'hr' && (
+                              <Button size="sm" variant="outline" className="border-border hover:bg-muted/50" onClick={() => setEditingJob(job)}>
                                 <Edit className="h-4 w-4" />
                               </Button>
                             )}
-                            {(isSuperAdmin || isHR) && (
-                              <Button size="sm" variant="outline" className="p-1.5 text-red-500 border-red-500" onClick={() => setDeleteDoc(doc)}>
-                                <X className="h-4 w-4" />
+                            <Button size="sm" variant="outline" className="border-border hover:bg-muted/50 text-red-500 hover:text-red-400" onClick={() => setJobPostings(prev => prev.filter(j => j.id !== job.id))}>
+                              <Trash2 className="h-4 w-4" />
+                            </Button>
+                          </div>
+                        </div>
+                      </div>
+
+                      {/* Desktop Layout */}
+                      <div className="hidden sm:block">
+                        <div className="flex items-center justify-between mb-3">
+                          <div className="flex items-center space-x-4">
+                            <div className="w-12 h-12 bg-primary/10 rounded-lg flex items-center justify-center">
+                              <Building className="h-6 w-6 text-primary" />
+                            </div>
+                            <div>
+                              <h3 className="font-semibold text-foreground">{job.title}</h3>
+                              <div className="flex items-center gap-4 text-sm text-muted-foreground">
+                                <span>{job.department}</span>
+                                <span>•</span>
+                                <span>{job.location}</span>
+                                <span>•</span>
+                                <span>{job.type}</span>
+                              </div>
+                              <div className="flex items-center gap-4 text-sm text-muted-foreground mt-1">
+                                <span>{job.salary}</span>
+                                <span>•</span>
+                                <span>{job.experience}</span>
+                              </div>
+                            </div>
+                          </div>
+                          <div className="flex items-center space-x-3">
+                            <div className="text-center">
+                              <p className="text-sm font-medium text-foreground">{job.applications}</p>
+                              <p className="text-xs text-muted-foreground">Applications</p>
+                            </div>
+                            <Badge variant={job.status === 'Active' ? 'default' : 'secondary'}>
+                              {job.status}
+                            </Badge>
+                            <div className="flex gap-2">
+                              <Button size="sm" variant="outline" className="border-border hover:bg-muted/50" onClick={() => setViewingJob(job)}>
+                                <Eye className="h-4 w-4" />
                               </Button>
-                            )}
+                              {user.role === 'hr' && (
+                                <Button size="sm" variant="outline" className="border-border hover:bg-muted/50" onClick={() => setEditingJob(job)}>
+                                  <Edit className="h-4 w-4" />
+                                </Button>
+                              )}
+                              <Button size="sm" variant="outline" className="border-border hover:bg-muted/50 text-red-500 hover:text-red-400" onClick={() => setJobPostings(prev => prev.filter(j => j.id !== job.id))}>
+                                <Trash2 className="h-4 w-4" />
+                              </Button>
+                            </div>
+                          </div>
+                        </div>
+                        <div className="grid grid-cols-3 gap-4 mt-3 pt-3 border-t border-border text-xs">
+                          <div>
+                            <span className="text-muted-foreground">Posted: </span>
+                            <span className="text-foreground">{job.posted}</span>
+                          </div>
+                          <div>
+                            <span className="text-muted-foreground">Deadline: </span>
+                            <span className="text-foreground">{job.deadline || job.applicationEnd}</span>
+                          </div>
+                          <div>
+                            <span className="text-muted-foreground">Requirements: </span>
+                            <span className="text-foreground">{job.requirements}</span>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  ))
+                )}
+              </div>
+            </CardContent>
+          </Card>
+        </TabsContent>
+
+        {/* Job Postings Tab (HR Only) */}
+        {user.role === 'hr' && (
+          <TabsContent value="jobs" className="space-y-6">
+            <Card className="bg-card border-border">
+              <CardHeader>
+                <div className="flex items-center justify-between">
+                  <CardTitle className="text-foreground">Manage Job Postings</CardTitle>
+                  <Button
+                    onClick={() => setShowJobForm(true)}
+                    className="bg-primary hover:bg-primary/80"
+                  >
+                    <Plus className="h-4 w-4 mr-2" />
+                    Create New Job
+                  </Button>
+                </div>
+              </CardHeader>
+              <CardContent>
+                <div className="overflow-x-auto">
+                  <table className="w-full">
+                    <thead>
+                      <tr className="border-b border-border text-left text-sm text-muted-foreground">
+                        <th className="pb-3 px-4 font-medium">Position</th>
+                        <th className="pb-3 px-4 font-medium">Department</th>
+                        <th className="pb-3 px-4 font-medium">Applications</th>
+                        <th className="pb-3 px-4 font-medium">Status</th>
+                        <th className="pb-3 px-4 font-medium">Deadline</th>
+                        <th className="pb-3 px-4 font-medium">Actions</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {filteredJobs.map(job => (
+                        <tr key={job.id} className="border-b border-border/50 hover:bg-muted/20">
+                          <td className="py-3 px-4">
+                            <div>
+                              <div className="font-medium text-foreground">{job.title}</div>
+                              <div className="text-sm text-muted-foreground">{job.location} • {job.type}</div>
+                            </div>
+                          </td>
+                          <td className="py-3 px-4 text-foreground">{job.department}</td>
+                          <td className="py-3 px-4 text-foreground">{job.applications}</td>
+                          <td className="py-3 px-4">
+                            <Badge variant={job.status === 'Active' ? 'default' : 'secondary'}>
+                              {job.status}
+                            </Badge>
+                          </td>
+                          <td className="py-3 px-4 text-foreground">{job.deadline || job.applicationEnd}</td>
+                          <td className="py-3 px-4">
+                            <div className="flex gap-2">
+                              <Button size="sm" variant="outline" className="border-border hover:bg-muted/50">
+                                <Eye className="h-4 w-4" />
+                              </Button>
+                              <Button size="sm" variant="outline" className="border-border hover:bg-muted/50" onClick={() => setEditingJob(job)}>
+                                <Edit className="h-4 w-4" />
+                              </Button>
+                              <Button size="sm" variant="outline" className="border-border hover:bg-muted/50 text-red-500 hover:text-red-400" onClick={() => setJobPostings(prev => prev.filter(j => j.id !== job.id))}>
+                                <Trash2 className="h-4 w-4" />
+                              </Button>
+                            </div>
                           </td>
                         </tr>
-                      ))
-                    ) : (
-                      <tr>
-                        <td colSpan={7} className="text-center py-6 text-muted-foreground">No approved documents found.</td>
-                      </tr>
-                    )}
-                  </tbody>
-                </table>
-              </div>
-            </div>
-          )}
-          {/* View Document Modal */}
-          {viewDoc && (
-            <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50">
-              <div className="bg-card p-6 rounded-xl shadow-card w-full max-w-md relative">
-                <button className="absolute top-3 right-3 text-muted-foreground hover:text-foreground" onClick={() => setViewDoc(null)}>
-                  <X className="h-5 w-5" />
-                </button>
-                <h3 className="text-lg font-semibold mb-4 text-foreground">Document Details</h3>
-                <div className="space-y-2">
-                  <div><span className="font-medium">Name:</span> {viewDoc.name}</div>
-                  <div><span className="font-medium">Type:</span> {viewDoc.type}</div>
-                  <div><span className="font-medium">Status:</span> {viewDoc.status}</div>
-                  <div><span className="font-medium">Requested By:</span> {viewDoc.requestedBy}</div>
-                  <div><span className="font-medium">Department:</span> {viewDoc.department}</div>
-                  <div><span className="font-medium">Date:</span> {viewDoc.date}</div>
+                      ))}
+                    </tbody>
+                  </table>
                 </div>
-                <div className="flex justify-end space-x-2 mt-4">
-                  <Button type="button" variant="outline" onClick={() => setViewDoc(null)} className="border-border hover:bg-muted/50 text-xs sm:text-sm">Close</Button>
-                </div>
-              </div>
-            </div>
-          )}
-          {/* Create/Edit Document Modal */}
-          {(editDoc || createDocOpen) && (
-            <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50">
-              <div className="bg-card p-6 rounded-xl shadow-card w-full max-w-md relative">
-                <button className="absolute top-3 right-3 text-muted-foreground hover:text-foreground" onClick={() => { setEditDoc(null); setCreateDocOpen(false) }}>
-                  <X className="h-5 w-5" />
-                </button>
-                <h3 className="text-lg font-semibold mb-4 text-foreground">{editDoc ? "Edit Document" : "New Document Request"}</h3>
-                <form
-                  onSubmit={e => {
-                    e.preventDefault();
-                    if (editDoc) {
-                      setDocuments(prev => prev.map(d => d.id === editDoc.id ? { ...editDoc, ...docForm } : d))
-                      setEditDoc(null)
-                    } else {
-                      setDocuments(prev => [...prev, { ...docForm, id: Date.now() }])
-                      setCreateDocOpen(false)
-                    }
-                  }}
-                  className="space-y-3"
-                >
-                  <Input value={docForm.name} onChange={e => setDocForm(f => ({ ...f, name: e.target.value }))} placeholder="Document Name" required className="bg-background border-border text-foreground" />
-                  <Select value={docForm.type} onValueChange={val => setDocForm(f => ({ ...f, type: val }))}>
-                    <SelectTrigger className="w-full bg-background border-border text-foreground">
-                      <SelectValue placeholder="Select type" />
-                    </SelectTrigger>
-                    <SelectContent className="bg-card border-border">
-                      <SelectItem value="PDF">PDF</SelectItem>
-                      <SelectItem value="DOCX">DOCX</SelectItem>
-                      <SelectItem value="XLSX">XLSX</SelectItem>
-                    </SelectContent>
-                  </Select>
-                  <Select value={docForm.status} onValueChange={val => setDocForm(f => ({ ...f, status: val }))}>
-                    <SelectTrigger className="w-full bg-background border-border text-foreground">
-                      <SelectValue placeholder="Select status" />
-                    </SelectTrigger>
-                    <SelectContent className="bg-card border-border">
-                      <SelectItem value="Pending">Pending</SelectItem>
-                      <SelectItem value="Approved">Approved</SelectItem>
-                      <SelectItem value="Rejected">Rejected</SelectItem>
-                    </SelectContent>
-                  </Select>
-                  <Input value={docForm.requestedBy} onChange={e => setDocForm(f => ({ ...f, requestedBy: e.target.value }))} placeholder="Requested By" required className="bg-background border-border text-foreground" />
-                  <Input value={docForm.department} onChange={e => setDocForm(f => ({ ...f, department: e.target.value }))} placeholder="Department" required className="bg-background border-border text-foreground" />
-                  <Input type="date" value={docForm.date} onChange={e => setDocForm(f => ({ ...f, date: e.target.value }))} placeholder="Date" className="bg-background border-border text-foreground" required />
-                  <div className="flex justify-end space-x-2 mt-4">
-                    <Button type="button" variant="outline" onClick={() => { setEditDoc(null); setCreateDocOpen(false) }} className="border-border hover:bg-muted/50 text-xs sm:text-sm">Cancel</Button>
-                    <Button type="submit" className="bg-primary hover:bg-primary/80 text-xs sm:text-sm">{editDoc ? "Save" : "Create"}</Button>
-                  </div>
-                </form>
-              </div>
-            </div>
-          )}
-          {/* Delete Document Modal */}
-          {deleteDoc && (
-            <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50">
-              <div className="bg-card p-6 rounded-xl shadow-card w-full max-w-sm relative">
-                <button className="absolute top-3 right-3 text-muted-foreground hover:text-foreground" onClick={() => setDeleteDoc(null)}>
-                  <X className="h-5 w-5" />
-                </button>
-                <h3 className="text-lg font-semibold mb-4 text-foreground">Delete Document</h3>
-                <p className="mb-4 text-muted-foreground">Are you sure you want to delete this document?</p>
-                <div className="flex justify-end space-x-2">
-                  <Button type="button" variant="outline" onClick={() => setDeleteDoc(null)} className="border-border hover:bg-muted/50 text-xs sm:text-sm">Cancel</Button>
-                  <Button type="button" className="bg-red-600 hover:bg-red-700 text-white text-xs sm:text-sm" onClick={() => { setDocuments(prev => prev.filter(d => d.id !== deleteDoc.id)); setDeleteDoc(null); }}>Delete</Button>
-                </div>
-              </div>
-            </div>
-          )}
-        </TabsContent>
-      </Tabs>
+              </CardContent>
+            </Card>
+          </TabsContent>
+        )}
 
-      {/* Interview Schedule */}
-      <div className="bg-card p-6 rounded-xl border border-border">
-        <h3 className="text-lg font-semibold text-foreground mb-4">Upcoming Interviews</h3>
-        <div className="space-y-4">
-          {interviewSchedule.map((interview, index) => (
-            <div key={index} className="p-3 bg-muted/30 rounded-lg">
-              <div className="flex items-center justify-between mb-2">
-                <div className="flex items-center space-x-3">
-                  <div className="w-8 h-8 bg-primary/10 rounded-full flex items-center justify-center">
-                    <UserCheck className="h-4 w-4 text-primary" />
-                  </div>
-                  <div>
-                    <p className="text-sm font-medium text-foreground">{interview.candidate}</p>
-                    <p className="text-xs text-muted-foreground">{interview.position}</p>
-                  </div>
-                </div>
-                <Badge
-                  variant={interview.status === "Completed" ? "default" : "secondary"}
-                  className={
-                    interview.status === "Completed"
-                      ? "bg-green-500/20 text-green-400"
-                      : "bg-blue-500/20 text-blue-400"
-                  }
-                >
-                  {interview.status}
-                </Badge>
-              </div>
-              <div className="text-xs text-muted-foreground space-y-1">
-                <div className="flex items-center space-x-1">
-                  <Calendar className="h-3 w-3" />
-                  <span>
-                    {interview.date} at {interview.time}
-                  </span>
-                </div>
-                <p>Interviewer: {interview.interviewer}</p>
-                <p>Type: {interview.type}</p>
-              </div>
-              <div className="flex space-x-2 mt-3">
-                <Button size="sm" variant="outline" className="flex-1 border-border hover:bg-muted/50 bg-transparent">
-                  <Eye className="h-3 w-3 mr-1" />
-                  Details
-                </Button>
-                {interview.status === "Scheduled" && (
-                  <Button size="sm" variant="outline" className="border-border hover:bg-muted/50 bg-transparent">
-                    <Edit className="h-3 w-3" />
+        {/* Hiring Requests Tab */}
+        <TabsContent value="requests" className="space-y-6">
+          <Card className="bg-card border-border">
+            <CardHeader>
+              <div className="flex items-center justify-between">
+                <CardTitle className="text-foreground">
+                  {user.role === 'manager' ? 'My Hiring Requests' : 'Hiring Requests from Managers'}
+                </CardTitle>
+                {user.role === 'manager' && (
+                  <Button
+                    onClick={() => setShowRequestForm(true)}
+                    className="bg-primary hover:bg-primary/80"
+                  >
+                    <Plus className="h-4 w-4 mr-2" />
+                    New Request
                   </Button>
                 )}
               </div>
-            </div>
-          ))}
-        </div>
-        <Button className="w-full mt-4 bg-primary hover:bg-primary/80">
-          <Calendar className="h-4 w-4 mr-2" />
-          Schedule Interview
-        </Button>
-      </div>
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-4">
+                {filteredRequests.length === 0 ? (
+                  <div className="text-center py-8 text-muted-foreground">
+                    <UserCheck className="h-12 w-12 mx-auto mb-4 opacity-50" />
+                    <p>No hiring requests found</p>
+                  </div>
+                ) : (
+                  filteredRequests.map((request) => (
+                    <div key={request.id} className="p-4 border border-border rounded-lg hover:bg-muted/20 transition-colors">
+                      {/* Mobile Layout */}
+                      <div className="block sm:hidden space-y-3">
+                        <div className="flex items-start justify-between">
+                          <div>
+                            <h3 className="font-semibold text-foreground">{request.position}</h3>
+                            <p className="text-sm text-muted-foreground">by {request.requestedBy}</p>
+                            <p className="text-sm text-muted-foreground">{request.department}</p>
+                          </div>
+                          <Badge
+                            variant={
+                              request.urgency === 'High' ? 'destructive' :
+                                request.urgency === 'Medium' ? 'secondary' :
+                                  'default'
+                            }
+                          >
+                            {request.urgency}
+                          </Badge>
+                        </div>
+                        <div className="text-sm text-muted-foreground">
+                          <p><strong>Needed:</strong> {request.numberOfEmployees} employee(s)</p>
+                          <p><strong>Budget:</strong> {request.expectedSalary}</p>
+                          <p className="mt-2">{request.justification}</p>
+                        </div>
+                        <div className="flex items-center justify-between">
+                          <Badge variant={request.status === 'Approved' ? 'default' : 'secondary'}>
+                            {request.status}
+                          </Badge>
+                          <div className="flex gap-2">
+                            {user.role === 'hr' && request.status === 'Pending' && (
+                              <div className="flex flex-col sm:flex-row gap-2 w-full">
+                                <Button
+                                  size="sm"
+                                  className="bg-green-600 hover:bg-green-700 text-white font-semibold flex-1 flex items-center justify-center gap-1"
+                                  style={{ minWidth: 100 }}
+                                  onClick={() => setHiringRequests(prev => prev.map(r => r.id === request.id ? { ...r, status: 'Approved' } : r))}
+                                >
+                                  <CheckCircle className="h-4 w-4" /> Approve
+                                </Button>
+                                <Button
+                                  size="sm"
+                                  variant="outline"
+                                  className="border-red-500 text-red-600 hover:bg-red-50 font-semibold flex-1 flex items-center justify-center gap-1"
+                                  style={{ minWidth: 100 }}
+                                  onClick={() => setHiringRequests(prev => prev.map(r => r.id === request.id ? { ...r, status: 'Rejected' } : r))}
+                                >
+                                  <AlertCircle className="h-4 w-4 bg-red-500 text-white" /> Reject
+                                </Button>
+                              </div>
+                            )}
+                            <Button size="sm" variant="outline" className="border-border hover:bg-muted/50" onClick={() => setViewingRequest(request)}>
+                              <Eye className="h-4 w-4" />
+                            </Button>
+                          </div>
+                        </div>
+                      </div>
 
-      {/* Manager New Hire Modal */}
-      {showManagerHireModal && (
-        <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50">
-          <div className="bg-card p-6 rounded-xl shadow-card w-full max-w-md relative">
-            <button className="absolute top-3 right-3 text-muted-foreground hover:text-foreground" onClick={() => setShowManagerHireModal(false)}>
-              <X className="h-5 w-5" />
-            </button>
-            <h3 className="text-lg font-semibold mb-4 text-foreground">Request New Hire</h3>
-            <form
-              onSubmit={e => {
-                e.preventDefault();
-                // Add logic to submit new hire request
-                setShowManagerHireModal(false);
-              }}
-              className="space-y-3"
-            >
-              <Input value={managerHireForm.title} onChange={e => setManagerHireForm(f => ({ ...f, title: e.target.value }))} placeholder="Job Title" required className="bg-background border-border text-foreground" />
-              <Input value={managerHireForm.department} readOnly placeholder="Department" required className="bg-background border-border text-foreground" />
-              <Input type="number" value={managerHireForm.numEmployees} onChange={e => setManagerHireForm(f => ({ ...f, numEmployees: Number(e.target.value) }))} placeholder="Number of Employees" required className="bg-background border-border text-foreground" min={1} />
-              {/* Rich text editor placeholder for job description */}
-              <textarea value={managerHireForm.description} onChange={e => setManagerHireForm(f => ({ ...f, description: e.target.value }))} placeholder="Job Description (Rich Text Supported)" className="bg-background border-border text-foreground h-24" />
-              <Input value={managerHireForm.justification} onChange={e => setManagerHireForm(f => ({ ...f, justification: e.target.value }))} placeholder="Justification" required className="bg-background border-border text-foreground" />
-              <Select value={managerHireForm.urgency} onValueChange={val => setManagerHireForm(f => ({ ...f, urgency: val }))}>
-                <SelectTrigger className="w-full bg-background border-border text-foreground">
-                  <SelectValue placeholder="Select urgency" />
-                </SelectTrigger>
-                <SelectContent className="bg-card border-border">
-                  <SelectItem value="High">High</SelectItem>
-                  <SelectItem value="Medium">Medium</SelectItem>
-                  <SelectItem value="Low">Low</SelectItem>
-                </SelectContent>
-              </Select>
-              <Input value={managerHireForm.budget} onChange={e => setManagerHireForm(f => ({ ...f, budget: e.target.value }))} placeholder="Budget" className="bg-background border-border text-foreground" />
-              <div className="flex justify-end space-x-2 mt-4">
-                <Button type="button" variant="outline" onClick={() => setShowManagerHireModal(false)} className="border-border hover:bg-muted/50 text-xs sm:text-sm">Cancel</Button>
-                <Button type="submit" className="bg-primary hover:bg-primary/80 text-xs sm:text-sm">Submit</Button>
+                      {/* Desktop Layout */}
+                      <div className="hidden sm:flex items-center justify-between">
+                        <div className="flex items-center space-x-4">
+                          <div className="w-12 h-12 bg-primary/10 rounded-full flex items-center justify-center">
+                            <span className="text-sm font-medium text-primary">
+                              {request.requestedBy.split(' ').map(n => n[0]).join('')}
+                            </span>
+                          </div>
+                          <div>
+                            <h3 className="font-semibold text-foreground">{request.position}</h3>
+                            <p className="text-sm text-muted-foreground">
+                              Requested by {request.requestedBy} • {request.department}
+                            </p>
+                            <p className="text-sm text-muted-foreground">
+                              {request.numberOfEmployees} employee(s) • {request.expectedSalary}
+                            </p>
+                            <p className="text-xs text-muted-foreground mt-1 max-w-md truncate">
+                              {request.justification}
+                            </p>
+                          </div>
+                        </div>
+                        <div className="flex items-center space-x-4">
+                          <div className="text-center">
+                            <Badge
+                              variant={
+                                request.urgency === 'High' ? 'destructive' :
+                                  request.urgency === 'Medium' ? 'secondary' :
+                                    'default'
+                              }
+                            >
+                              {request.urgency}
+                            </Badge>
+                            <p className="text-xs text-muted-foreground mt-1">{request.requestDate}</p>
+                          </div>
+                          <Badge variant={request.status === 'Approved' ? 'default' : 'secondary'}>
+                            {request.status}
+                          </Badge>
+                          <div className="flex space-x-2">
+                            {user.role === 'hr' && request.status === 'Pending' && (
+                              <div className="flex flex-col sm:flex-row gap-2 w-full">
+                                <Button
+                                  size="sm"
+                                  className="bg-green-600 hover:bg-green-700 text-white font-semibold flex-1 flex items-center justify-center gap-1"
+                                  style={{ minWidth: 100 }}
+                                  onClick={() => setHiringRequests(prev => prev.map(r => r.id === request.id ? { ...r, status: 'Approved' } : r))}
+                                >
+                                  <CheckCircle className="h-4 w-4" /> Approve
+                                </Button>
+                                <Button
+                                  size="sm"
+                                  variant="outline"
+                                  className="border-red-500 text-red-600 hover:bg-red-50 font-semibold flex-1 flex items-center justify-center gap-1"
+                                  style={{ minWidth: 100 }}
+                                  onClick={() => setHiringRequests(prev => prev.map(r => r.id === request.id ? { ...r, status: 'Rejected' } : r))}
+                                >
+                                  <AlertCircle className="h-4 w-4" /> Reject
+                                </Button>
+                              </div>
+                            )}
+                            <Button size="sm" variant="outline" className="border-border hover:bg-muted/50" onClick={() => setViewingRequest(request)}>
+                              <Eye className="h-4 w-4" />
+                            </Button>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  ))
+                )}
               </div>
-            </form>
-          </div>
-        </div>
-      )}
+            </CardContent>
+          </Card>
+        </TabsContent>
 
-      {/* HR Job Posting Modal */}
-      {showHRJobModal && (
-        <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50">
-          <div className="bg-card p-6 rounded-xl shadow-card w-full max-w-md relative max-h-[80vh] overflow-y-auto">
-            <button className="absolute top-3 right-3 text-muted-foreground hover:text-foreground" onClick={() => setShowHRJobModal(false)}>
-              <X className="h-5 w-5" />
-            </button>
-            <h3 className="text-lg font-semibold mb-4 text-foreground">Create Job Posting</h3>
-            <form
-              onSubmit={e => {
-                e.preventDefault();
-                // Add logic to create job posting
-                setShowHRJobModal(false);
-              }}
-              className="space-y-3"
-            >
-              <Input value={hrJobForm.title} onChange={e => setHRJobForm(f => ({ ...f, title: e.target.value }))} placeholder="Title" required className="bg-background border-border text-foreground" />
-              <Input value={hrJobForm.department} onChange={e => setHRJobForm(f => ({ ...f, department: e.target.value }))} placeholder="Department" required className="bg-background border-border text-foreground" />
-              <Select value={hrJobForm.type} onValueChange={val => setHRJobForm(f => ({ ...f, type: val }))}>
-                <SelectTrigger className="w-full bg-background border-border text-foreground">
-                  <SelectValue placeholder="Select type" />
-                </SelectTrigger>
-                <SelectContent className="bg-card border-border">
-                  <SelectItem value="Full-time">Full-time</SelectItem>
-                  <SelectItem value="Part-time">Part-time</SelectItem>
-                  <SelectItem value="Contract">Contract</SelectItem>
-                  <SelectItem value="Internship">Internship</SelectItem>
-                </SelectContent>
-              </Select>
-              <Input value={hrJobForm.experience} onChange={e => setHRJobForm(f => ({ ...f, experience: e.target.value }))} placeholder="Experience (e.g., 3+ years)" className="bg-background border-border text-foreground" />
-              <Input value={hrJobForm.requirements} onChange={e => setHRJobForm(f => ({ ...f, requirements: e.target.value }))} placeholder="Requirements" className="bg-background border-border text-foreground" />
-              <Input type="date" value={hrJobForm.startDate} onChange={e => setHRJobForm(f => ({ ...f, startDate: e.target.value }))} placeholder="Application Start Date" className="bg-background border-border text-foreground" required />
-              <Input type="date" value={hrJobForm.endDate} onChange={e => setHRJobForm(f => ({ ...f, endDate: e.target.value }))} placeholder="Application End Date" className="bg-background border-border text-foreground" required />
-              {/* Rich text editor placeholder for job specification */}
-              <textarea value={hrJobForm.specification} onChange={e => setHRJobForm(f => ({ ...f, specification: e.target.value }))} placeholder="Job Specification (Rich Text Supported)" className="bg-background border-border text-foreground h-24" />
-              <Input value={hrJobForm.salary} onChange={e => setHRJobForm(f => ({ ...f, salary: e.target.value }))} placeholder="Salary" className="bg-background border-border text-foreground" />
-              <Select value={hrJobForm.status} onValueChange={val => setHRJobForm(f => ({ ...f, status: val }))}>
-                <SelectTrigger className="w-full bg-background border-border text-foreground">
-                  <SelectValue placeholder="Select status" />
-                </SelectTrigger>
-                <SelectContent className="bg-card border-border">
-                  <SelectItem value="Active">Active</SelectItem>
-                  <SelectItem value="Closed">Closed</SelectItem>
-                </SelectContent>
-              </Select>
-              {/* Internal/External toggle */}
-              <div className="flex items-center space-x-2">
-                <label className="text-foreground">Internal</label>
-                <input type="checkbox" checked={hrJobForm.internal} onChange={e => setHRJobForm(f => ({ ...f, internal: e.target.checked }))} />
-                <label className="text-foreground">External</label>
-              </div>
-              <div className="flex justify-end space-x-2 mt-4">
-                <Button type="button" variant="outline" onClick={() => setShowHRJobModal(false)} className="border-border hover:bg-muted/50 text-xs sm:text-sm">Cancel</Button>
-                <Button type="submit" className="bg-primary hover:bg-primary/80 text-xs sm:text-sm">Create</Button>
-              </div>
-            </form>
-          </div>
-        </div>
-      )}
-
-      {/* Approve Modal */}
-      {approveModal.open && (
-        <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50">
-          <div className="bg-card p-6 rounded-xl shadow-card w-full max-w-md relative">
-            <button className="absolute top-3 right-3 text-muted-foreground hover:text-foreground" onClick={() => setApproveModal({ open: false, request: null })}>
-              <X className="h-5 w-5" />
-            </button>
-            <h3 className="text-lg font-semibold mb-4 text-foreground">Approve Hiring Request</h3>
-            <p className="mb-4 text-foreground">Are you sure you want to approve the request for <span className="font-bold">{approveModal.request?.position}</span>?</p>
-            <div className="flex justify-end space-x-2 mt-4">
-              <Button type="button" variant="outline" onClick={() => setApproveModal({ open: false, request: null })} className="border-border hover:bg-muted/50 text-xs sm:text-sm">Cancel</Button>
-              <Button type="button" className="bg-green-600 hover:bg-green-700 text-white text-xs sm:text-sm" onClick={() => {
-                if (approveModal.request) {
-                  setHiringRequests((prev: typeof initialHiringRequests) => prev.map((req) => req === approveModal.request ? { ...req, status: 'Approved' } : req));
-                }
-                setApproveModal({ open: false, request: null });
-              }}>Approve</Button>
+        {/* Documents Tab (HR Only) */}
+        {user.role === 'hr' && (
+          <TabsContent value="documents" className="space-y-6">
+            <Card className="bg-card border-border">
+              <CardHeader>
+                <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+                  <CardTitle className="text-foreground">Application Documents</CardTitle>
+                  <div className="flex flex-col sm:flex-row gap-2">
+                    <div className="relative">
+                      <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground w-4 h-4" />
+                      <Input
+                        placeholder="Search documents..."
+                        className="pl-10 w-full sm:w-64 bg-background border-border text-foreground"
+                      />
+                    </div>
+                    <Button variant="outline" className="border-border hover:bg-muted/50">
+                      <Filter className="h-4 w-4 mr-2" />
+                      Filter
+                    </Button>
+                  </div>
+                </div>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-4">
+                  {mockDocuments.map((doc) => (
+                    <div key={doc.id} className="p-4 border border-border rounded-lg hover:bg-muted/20 transition-colors">
+                      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+                        <div className="flex items-start space-x-3">
+                          <div className="w-10 h-10 bg-primary/10 rounded-lg flex items-center justify-center flex-shrink-0">
+                            <FileText className="h-5 w-5 text-primary" />
+                          </div>
+                          <div className="min-w-0 flex-1">
+                            <h3 className="font-medium text-foreground truncate">{doc.name}</h3>
+                            <div className="text-sm text-muted-foreground space-y-1">
+                              <p>Applicant: {doc.applicant}</p>
+                              <p>Position: {doc.position}</p>
+                              <p>Type: {doc.type} • Size: {doc.size}</p>
+                              <p>Uploaded: {doc.uploadDate}</p>
+                            </div>
+                          </div>
+                        </div>
+                        <div className="flex items-center justify-between sm:justify-end gap-3">
+                          <Badge
+                            variant={doc.status === 'Approved' ? 'default' : 'secondary'}
+                            className="flex-shrink-0"
+                          >
+                            {doc.status}
+                          </Badge>
+                          <div className="flex gap-2">
+                            <Button size="sm" variant="outline" className="border-border hover:bg-muted/50">
+                              <Download className="h-4 w-4" />
+                            </Button>
+                            <Button size="sm" variant="outline" className="border-border hover:bg-muted/50" onClick={() => setShowDocumentModal(doc)}>
+                              <Eye className="h-4 w-4" />
+                            </Button>
+                            {doc.status === 'Pending' && (
+                              <Button size="sm" className="bg-green-600 hover:bg-green-700">
+                                <CheckCircle className="h-4 w-4" />
+                              </Button>
+                            )}
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+                {mockDocuments.length === 0 && (
+                  <div className="text-center py-8 text-muted-foreground">
+                    <FileText className="h-12 w-12 mx-auto mb-4 opacity-50" />
+                    <p>No documents found</p>
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+          </TabsContent>
+        )}
+      </Tabs>
+      {showDocumentModal && (
+        <Dialog open={!!showDocumentModal} onOpenChange={() => setShowDocumentModal(null)}>
+          <DialogContent>
+            <DialogHeader>
+              <DialogTitle>Document Details</DialogTitle>
+            </DialogHeader>
+            <div>
+              <p><strong>Name:</strong> {showDocumentModal.name}</p>
+              <p><strong>Applicant:</strong> {showDocumentModal.applicant}</p>
+              <p><strong>Position:</strong> {showDocumentModal.position}</p>
+              <p><strong>Type:</strong> {showDocumentModal.type}</p>
+              <p><strong>Status:</strong> {showDocumentModal.status}</p>
+              <p><strong>Size:</strong> {showDocumentModal.size}</p>
+              <p><strong>Uploaded:</strong> {showDocumentModal.uploadDate}</p>
             </div>
-          </div>
-        </div>
+            <DialogFooter>
+              <Button onClick={() => setShowDocumentModal(null)}>Close</Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
       )}
-
-      {/* Reject Modal */}
-      {rejectModal.open && (
-        <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50">
-          <div className="bg-card p-6 rounded-xl shadow-card w-full max-w-md relative">
-            <button className="absolute top-3 right-3 text-muted-foreground hover:text-foreground" onClick={() => setRejectModal({ open: false, request: null })}>
-              <X className="h-5 w-5" />
-            </button>
-            <h3 className="text-lg font-semibold mb-4 text-foreground">Reject Hiring Request</h3>
-            <p className="mb-4 text-foreground">Are you sure you want to reject the request for <span className="font-bold">{rejectModal.request?.position}</span>?</p>
-            <textarea value={rejectComment} onChange={e => setRejectComment(e.target.value)} placeholder="Optional comment" className="bg-background border-border text-foreground w-full h-20 mb-2" />
-            <div className="flex justify-end space-x-2 mt-4">
-              <Button type="button" variant="outline" onClick={() => setRejectModal({ open: false, request: null })} className="border-border hover:bg-muted/50 text-xs sm:text-sm">Cancel</Button>
-              <Button type="button" className="bg-red-600 hover:bg-red-700 text-white text-xs sm:text-sm" onClick={() => {
-                if (rejectModal.request) {
-                  setHiringRequests((prev: typeof initialHiringRequests) => prev.map((req) => req === rejectModal.request ? { ...req, status: 'Rejected', rejectComment } : req));
-                }
-                setRejectModal({ open: false, request: null });
-                setRejectComment("");
-              }}>Reject</Button>
+      {viewingJob && (
+        <Dialog open={!!viewingJob} onOpenChange={() => setViewingJob(null)}>
+          <DialogContent>
+            <DialogHeader>
+              <DialogTitle>Job Details</DialogTitle>
+            </DialogHeader>
+            <div className="space-y-2">
+              <p><strong>Title:</strong> {viewingJob.title}</p>
+              <p><strong>Department:</strong> {viewingJob.department}</p>
+              <p><strong>Location:</strong> {viewingJob.location}</p>
+              <p><strong>Type:</strong> {viewingJob.type}</p>
+              <p><strong>Salary:</strong> {viewingJob.salary}</p>
+              <p><strong>Experience:</strong> {viewingJob.experience}</p>
+              <p><strong>Requirements:</strong> {viewingJob.requirements}</p>
+              <p><strong>Description:</strong> {viewingJob.description}</p>
+              <p><strong>Benefits:</strong> {viewingJob.benefits}</p>
+              <p><strong>Applications:</strong> {viewingJob.applications}</p>
+              <p><strong>Status:</strong> {viewingJob.status}</p>
+              <p><strong>Posted:</strong> {viewingJob.posted}</p>
+              <p><strong>Deadline:</strong> {viewingJob.deadline || viewingJob.applicationEnd}</p>
             </div>
-          </div>
-        </div>
+            <DialogFooter>
+              <Button onClick={() => setViewingJob(null)}>Close</Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
+      )}
+      {editingJob && (
+        <Dialog open={!!editingJob} onOpenChange={() => setEditingJob(null)}>
+          <DialogContent>
+            <DialogHeader>
+              <DialogTitle>Edit Job</DialogTitle>
+            </DialogHeader>
+            <EditJobForm job={editingJob} onCancel={() => setEditingJob(null)} onSave={(updatedJob) => { setEditingJob(null); /* Optionally update mockJobPostings here */ }} />
+          </DialogContent>
+        </Dialog>
+      )}
+      {viewingRequest && (
+        <Dialog open={!!viewingRequest} onOpenChange={() => setViewingRequest(null)}>
+          <DialogContent>
+            <DialogHeader>
+              <DialogTitle>Hiring Request Details</DialogTitle>
+            </DialogHeader>
+            <div className="space-y-2">
+              <div className="flex items-center gap-2">
+                <span className={`font-semibold ${viewingRequest.status === 'Rejected' ? 'text-red-600' : 'text-foreground'}`}>{viewingRequest.position}</span>
+                <Badge variant={viewingRequest.status === 'Approved' ? 'default' : viewingRequest.status === 'Rejected' ? 'destructive' : 'secondary'}>
+                  {viewingRequest.status}
+                </Badge>
+              </div>
+              <p className="text-sm text-muted-foreground">Requested by <span className="font-medium text-foreground">{viewingRequest.requestedBy}</span></p>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                <div>
+                  <span className="text-muted-foreground">Department:</span> <span className={viewingRequest.status === 'Rejected' ? 'text-red-600' : 'text-foreground'}>{viewingRequest.department}</span>
+                </div>
+                <div>
+                  <span className="text-muted-foreground">Urgency:</span> <span>{viewingRequest.urgency}</span>
+                </div>
+                <div>
+                  <span className="text-muted-foreground">Requested on:</span> <span>{viewingRequest.requestDate}</span>
+                </div>
+                <div>
+                  <span className="text-muted-foreground">Employees Needed:</span> <span>{viewingRequest.numberOfEmployees}</span>
+                </div>
+                <div>
+                  <span className="text-muted-foreground">Expected Salary:</span> <span>{viewingRequest.expectedSalary}</span>
+                </div>
+                <div>
+                  <span className="text-muted-foreground">Skills:</span> <span>{viewingRequest.skills}</span>
+                </div>
+              </div>
+              <div className="mt-2">
+                <span className="text-muted-foreground">Justification:</span>
+                <p className={`mt-1 ${viewingRequest.status === 'Rejected' ? 'text-red-600' : 'text-foreground'}`}>{viewingRequest.justification}</p>
+              </div>
+            </div>
+            <DialogFooter>
+              <Button onClick={() => setViewingRequest(null)}>Close</Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
       )}
     </div>
-  )
+  );
+};
+
+function EditJobForm({ job, onCancel, onSave }: { job: typeof mockJobPostings[0], onCancel: () => void, onSave: (job: typeof mockJobPostings[0]) => void }) {
+  const [form, setForm] = useState({ ...job });
+  const departmentOptions = [
+    'Engineering', 'Marketing', 'Sales', 'Design', 'Finance', 'HR', 'Human Resources'
+  ];
+  const typeOptions = [
+    'Full-time', 'Part-time', 'Contract', 'Freelance'
+  ];
+  return (
+    <form className="space-y-4 max-h-[70vh] overflow-y-auto" onSubmit={e => { e.preventDefault(); onSave(form); }}>
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+        <div>
+          <Label htmlFor="title">Job Title</Label>
+          <Input id="title" value={form.title} onChange={e => setForm({ ...form, title: e.target.value })} placeholder="e.g., Senior Software Engineer" className="mt-1 bg-background border border-border text-foreground placeholder:text-muted-foreground" />
+        </div>
+        <div>
+          <Label htmlFor="department">Department</Label>
+          <Select value={form.department} onValueChange={value => setForm({ ...form, department: value })}>
+            <SelectTrigger className="mt-1 bg-background border border-border text-foreground placeholder:text-muted-foreground">
+              <SelectValue placeholder="Select Department" />
+            </SelectTrigger>
+            <SelectContent>
+              {departmentOptions.map(opt => (
+                <SelectItem key={opt} value={opt}>{opt}</SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
+        <div>
+          <Label htmlFor="location">Location</Label>
+          <Input id="location" value={form.location} onChange={e => setForm({ ...form, location: e.target.value })} placeholder="e.g., Remote, New York" className="mt-1 bg-background border border-border text-foreground placeholder:text-muted-foreground" />
+        </div>
+        <div>
+          <Label htmlFor="type">Employment Type</Label>
+          <Select value={form.type} onValueChange={value => setForm({ ...form, type: value })}>
+            <SelectTrigger className="mt-1 bg-background border border-border text-foreground placeholder:text-muted-foreground">
+              <SelectValue placeholder="Select Type" />
+            </SelectTrigger>
+            <SelectContent>
+              {typeOptions.map(opt => (
+                <SelectItem key={opt} value={opt}>{opt}</SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
+        <div>
+          <Label htmlFor="salary">Salary Range</Label>
+          <Input id="salary" value={form.salary} onChange={e => setForm({ ...form, salary: e.target.value })} placeholder="e.g., $70k - $90k" className="mt-1 bg-background border border-border text-foreground placeholder:text-muted-foreground" />
+        </div>
+        <div>
+          <Label htmlFor="experience">Experience Required</Label>
+          <Input id="experience" value={form.experience} onChange={e => setForm({ ...form, experience: e.target.value })} placeholder="e.g., 3-5 years" className="mt-1 bg-background border border-border text-foreground placeholder:text-muted-foreground" />
+        </div>
+        <div className="sm:col-span-2">
+          <Label htmlFor="requirements">Key Requirements</Label>
+          <Input id="requirements" value={form.requirements} onChange={e => setForm({ ...form, requirements: e.target.value })} placeholder="e.g., React, Node.js, 5+ years" className="mt-1 bg-background border border-border text-foreground placeholder:text-muted-foreground" />
+        </div>
+        <div className="sm:col-span-2">
+          <Label htmlFor="description">Job Description</Label>
+          <Textarea id="description" value={form.description} onChange={e => setForm({ ...form, description: e.target.value })} placeholder="Detailed job description, responsibilities, and company information..." className="mt-1 bg-background border border-border text-foreground placeholder:text-muted-foreground resize-none" rows={4} />
+        </div>
+        <div className="sm:col-span-2">
+          <Label htmlFor="benefits">Benefits & Perks</Label>
+          <Textarea id="benefits" value={form.benefits} onChange={e => setForm({ ...form, benefits: e.target.value })} placeholder="Health insurance, retirement plans, vacation policy, etc..." className="mt-1 bg-background border border-border text-foreground placeholder:text-muted-foreground resize-none" rows={2} />
+        </div>
+      </div>
+      <div className="flex flex-col sm:flex-row gap-2 pt-2">
+        <Button type="button" variant="outline" onClick={onCancel} className="flex-1 h-11 border-border hover:bg-muted/50 bg-transparent">Cancel</Button>
+        <Button type="submit" className="flex-1 h-11 bg-primary hover:bg-primary/80">Save</Button>
+      </div>
+    </form>
+  );
 }
+
+export default Recruitment;
