@@ -1,10 +1,9 @@
 import React, { useState } from 'react';
-import { 
-  Users, 
-  Building, 
-  Shield, 
-  Activity, 
-  TrendingUp, 
+import {
+  Users,
+  Building,
+  Shield,
+  Activity,
   FileText,
   PlusCircle,
   Download,
@@ -17,6 +16,8 @@ import {
   Gauge
 } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
+import { Button } from '../ui/button';
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '../ui/dialog';
 
 // Type definitions
 interface StatItem {
@@ -25,6 +26,7 @@ interface StatItem {
   icon: LucideIcon;
   change: string;
   changeType: 'positive' | 'negative';
+  color: string; // Add this line
 }
 
 interface AuditLog {
@@ -56,11 +58,11 @@ interface ModalProps {
 
 // Stats data
 const stats: StatItem[] = [
-  { name: 'Total Employees', value: '1,234', icon: Users, change: '+12%', changeType: 'positive' },
-  { name: 'Departments', value: '8', icon: Building, change: '+1', changeType: 'positive' },
-  { name: 'Active Sessions', value: '456', icon: Activity, change: '+5%', changeType: 'positive' },
-  { name: 'Pending Approvals', value: '23', icon: FileText, change: '-3', changeType: 'negative' },
-  { name: 'System Health', value: 'Good', icon: Gauge, change: 'Stable', changeType: 'positive' } // Added System Health stat
+  { name: 'Total Employees', value: '1,234', icon: Users, change: '+12%', changeType: 'positive', color: 'text-green-500' },
+  { name: 'Departments', value: '8', icon: Building, change: '+1', changeType: 'positive', color: 'text-blue-500' },
+  { name: 'Active Sessions', value: '456', icon: Activity, change: '+5%', changeType: 'positive', color: 'text-purple-500' },
+  { name: 'Pending Approvals', value: '23', icon: FileText, change: '-3', changeType: 'negative', color: 'text-red-500' },
+  { name: 'System Health', value: 'Good', icon: Gauge, change: 'Stable', changeType: 'positive', color: 'text-green-500' } // Added System Health stat
 ];
 
 // Audit logs data
@@ -84,63 +86,34 @@ const departments: Department[] = [
   { id: 5, name: 'Operations', employees: 27, manager: 'Emily Thompson' },
 ];
 
-// Dashboard Switcher Component
-const DashboardSwitcher = () => {
-  const [activeDashboard, setActiveDashboard] = useState<string>('super-admin');
-  
-  return (
-    <div className="flex items-center space-x-2 mb-6">
-      <span className="text-sm text-[hsl(0,0%,20%)]">View as:</span>
-      <div className="flex bg-muted rounded-lg p-1">
-        <button 
-          className={`px-3 py-1 rounded-md text-sm font-medium transition-colors ${
-            activeDashboard === 'super-admin' 
-              ? 'bg-[hsl(142,76%,36%)] text-[hsl(0,0%,98%)]' 
-              : 'hover:bg-[hsl(0,0%,20%)]'
-          }`}
-          onClick={() => setActiveDashboard('super-admin')}
+// Import HRDashboard as a named export
+import { HRDashboard } from './HRDashboard';
+// Refactor DashboardSwitcher to accept props
+const DashboardSwitcher = ({ activeDashboard, setActiveDashboard }: { activeDashboard: string, setActiveDashboard: (role: string) => void }) => (
+  <div className="flex items-center space-x-2 mb-6">
+    <span className="text-sm text-[hsl(0,0%,20%)]">View as:</span>
+    <div className="flex bg-muted rounded-lg p-1">
+      {['super-admin', 'hr', 'manager', 'employee'].map((role) => (
+        <button
+          key={role}
+          className={`px-3 py-1 rounded-md text-sm font-medium transition-colors e  ${activeDashboard === role
+            ? 'bg-[hsl(142,76%,36%)] text-[hsl(0,0%,98%)] shadow'
+            : 'hover:bg-[hsl(0,0%,20%)] text-foreground'
+            }`}
+          onClick={() => setActiveDashboard(role)}
+          tabIndex={0}
         >
-          Super Admin
+          {role === 'super-admin' ? 'Super Admin' : role.charAt(0).toUpperCase() + role.slice(1)}
         </button>
-        <button 
-          className={`px-3 py-1 rounded-md text-sm font-medium transition-colors ${
-            activeDashboard === 'hr' 
-              ? 'bg-[hsl(142,76%,36%)] text-[hsl(0,0%,98%)]' 
-              : 'hover:bg-[hsl(0,0%,20%)]'
-          }`}
-          onClick={() => setActiveDashboard('hr')}
-        >
-          HR
-        </button>
-        <button 
-          className={`px-3 py-1 rounded-md text-sm font-medium transition-colors ${
-            activeDashboard === 'manager' 
-              ? 'bg-[hsl(142,76%,36%)] text-[hsl(0,0%,98%)]' 
-              : 'hover:bg-[hsl(0,0%,20%)]'
-          }`}
-          onClick={() => setActiveDashboard('manager')}
-        >
-          Manager
-        </button>
-        <button 
-          className={`px-3 py-1 rounded-md text-sm font-medium transition-colors ${
-            activeDashboard === 'employee' 
-              ? 'bg-[hsl(142,76%,36%)] text-[hsl(0,0%,98%)]' 
-              : 'hover:bg-[hsl(0,0%,20%)]'
-          }`}
-          onClick={() => setActiveDashboard('employee')}
-        >
-          Employee
-        </button>
-      </div>
+      ))}
     </div>
-  );
-};
+  </div>
+);
 
 // Create HR Account Modal Component
 const CreateHRAccountModal: React.FC<ModalProps> = ({ isOpen, onClose }) => {
   if (!isOpen) return null;
-  
+
   return (
     <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-50">
       <div className="bg-card rounded-xl p-6 w-full max-w-md">
@@ -150,26 +123,26 @@ const CreateHRAccountModal: React.FC<ModalProps> = ({ isOpen, onClose }) => {
             &times;
           </button>
         </div>
-        
+
         <div className="space-y-4">
           <div>
             <label className="block text-sm font-medium mb-1">Full Name</label>
-            <input 
-              type="text" 
+            <input
+              type="text"
               className="w-full bg-[hsl(0,0%,6%)] border border-[hsl(0,0%,15%)] rounded-md px-3 py-2 text-sm text-[hsl(0,0%,98%)] placeholder:text-[hsl(0,0%,40%)] focus:outline-none focus:ring-1 focus:ring-[hsl(142,76%,36%)]"
               placeholder="Enter full name"
             />
           </div>
-          
+
           <div>
             <label className="block text-sm font-medium mb-1">Email</label>
-            <input 
-              type="email" 
+            <input
+              type="email"
               className="w-full bg-[hsl(0,0%,6%)] border border-[hsl(0,0%,15%)] rounded-md px-3 py-2 text-sm text-[hsl(0,0%,98%)] placeholder:text-[hsl(0,0%,40%)] focus:outline-none focus:ring-1 focus:ring-[hsl(142,76%,36%)]"
               placeholder="Enter email address"
             />
           </div>
-          
+
           <div>
             <label className="block text-sm font-medium mb-1">Department</label>
             <select className="w-full bg-[hsl(0,0%,6%)] border border-[hsl(0,0%,15%)] rounded-md px-3 py-2 text-sm text-[hsl(0,0%,98%)] focus:outline-none focus:ring-1 focus:ring-[hsl(142,76%,36%)]">
@@ -179,15 +152,15 @@ const CreateHRAccountModal: React.FC<ModalProps> = ({ isOpen, onClose }) => {
               <option className="bg-[hsl(0,0%,10%)]">Recruitment</option>
             </select>
           </div>
-          
+
           <div className="flex justify-end space-x-2 pt-4">
-            <button 
+            <button
               onClick={onClose}
               className="px-4 py-2 text-sm border border-[hsl(0,0%,15%)] rounded-md hover:bg-[hsl(0,0%,10%)] text-[hsl(0,0%,98%)] transition-colors"
             >
               Cancel
             </button>
-            <button 
+            <button
               className="px-4 py-2 text-sm bg-[hsl(142,76%,36%)] text-[hsl(0,0%,98%)] rounded-md hover:bg-[hsl(142,76%,40%)] transition-colors"
             >
               Create Account
@@ -212,12 +185,12 @@ const CreateNewDepartmentModal: React.FC<ModalProps> = ({ isOpen, onClose }) => 
             &times;
           </button>
         </div>
-        
+
         <div className="space-y-4">
           <div>
             <label className="block text-sm font-medium mb-1">Department Name</label>
-            <input 
-              type="text" 
+            <input
+              type="text"
               className="w-full bg-[hsl(0,0%,6%)] border border-[hsl(0,0%,15%)] rounded-md px-3 py-2 text-sm text-[hsl(0,0%,98%)] placeholder:text-[hsl(0,0%,40%)] focus:outline-none focus:ring-1 focus:ring-[hsl(142,76%,36%)]"
               placeholder="Enter department name"
             />
@@ -234,7 +207,7 @@ const CreateNewDepartmentModal: React.FC<ModalProps> = ({ isOpen, onClose }) => 
             </select>
           </div>
           <div className="flex justify-end space-x-2 pt-4">
-            <button 
+            <button
               onClick={onClose}
               className="px-4 py-2 text-sm border border-[hsl(0,0%,15%)] rounded-md hover:bg-[hsl(0,0%,10%)] text-[hsl(0,0%,98%)] transition-colors"
             >
@@ -254,7 +227,7 @@ const CreateNewDepartmentModal: React.FC<ModalProps> = ({ isOpen, onClose }) => 
 // System Health Details Component
 const SystemHealthDetails: React.FC<ModalProps> = ({ isOpen, onClose }) => {
   if (!isOpen) return null;
-  
+
   const healthMetrics: HealthMetric[] = [
     { name: 'API Response Time', value: '142ms', status: 'good' },
     { name: 'Database Uptime', value: '99.98%', status: 'excellent' },
@@ -263,7 +236,7 @@ const SystemHealthDetails: React.FC<ModalProps> = ({ isOpen, onClose }) => {
     { name: 'Pending Jobs', value: '24', status: 'warning' },
     { name: 'Security Threats', value: '0', status: 'excellent' },
   ];
-  
+
   return (
     <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-50">
       <div className="bg-card rounded-xl p-6 w-full max-w-2xl">
@@ -273,7 +246,7 @@ const SystemHealthDetails: React.FC<ModalProps> = ({ isOpen, onClose }) => {
             &times;
           </button>
         </div>
-        
+
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
           {healthMetrics.map((metric, index) => (
             <div key={index} className="bg-[hsl(0,0%,6%)] p-4 rounded-lg border border-[hsl(0,0%,15%)]">
@@ -282,18 +255,17 @@ const SystemHealthDetails: React.FC<ModalProps> = ({ isOpen, onClose }) => {
                   <h4 className="font-medium text-[hsl(0,0%,98%)]">{metric.name}</h4>
                   <p className="text-2xl font-bold mt-1 text-[hsl(0,0%,98%)]">{metric.value}</p>
                 </div>
-                <span className={`px-2 py-1 rounded-full text-xs font-medium ${
-                  metric.status === 'excellent' ? 'bg-green-600/20 text-green-400' :
+                <span className={`px-2 py-1 rounded-full text-xs font-medium ${metric.status === 'excellent' ? 'bg-green-600/20 text-green-400' :
                   metric.status === 'good' ? 'bg-blue-600/20 text-blue-400' :
-                  'bg-yellow-600/20 text-yellow-400'
-                }`}>
+                    'bg-yellow-600/20 text-yellow-400'
+                  }`}>
                   {metric.status.charAt(0).toUpperCase() + metric.status.slice(1)}
                 </span>
               </div>
             </div>
           ))}
         </div>
-        
+
         <div className="bg-[hsl(0,0%,6%)] p-4 rounded-lg border border-[hsl(0,0%,15%)]">
           <h4 className="font-medium mb-2 text-[hsl(0,0%,98%)]">System Recommendations</h4>
           <ul className="text-sm space-y-1 text-[hsl(0,0%,65%)]">
@@ -311,9 +283,9 @@ const SystemHealthDetails: React.FC<ModalProps> = ({ isOpen, onClose }) => {
             </li>
           </ul>
         </div>
-        
+
         <div className="flex justify-end pt-6">
-          <button 
+          <button
             onClick={onClose}
             className="px-4 py-2 text-sm bg-[hsl(142,76%,36%)] text-[hsl(0,0%,98%)] rounded-md hover:bg-[hsl(142,76%,40%)] transition-colors"
           >
@@ -328,14 +300,14 @@ const SystemHealthDetails: React.FC<ModalProps> = ({ isOpen, onClose }) => {
 // Audit Logs Section Component
 const AuditLogsSection = () => {
   return (
-    <div className="bg-card p-6 rounded-xl border border-border">
+    <div className="bg-card p-4 sm:p-6 rounded-xl shadow-sm hover:shadow-md transition-shadow">
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-4">
         <h3 className="text-lg font-semibold text-[hsl(0,0%,98%)] mb-3 sm:mb-0">Audit Logs</h3>
         <div className="flex flex-wrap gap-2">
           <div className="relative w-full sm:w-auto">
-            <input 
-              type="text" 
-              placeholder="Search logs..." 
+            <input
+              type="text"
+              placeholder="Search logs..."
               className="bg-[hsl(0,0%,6%)] border border-[hsl(0,0%,15%)] rounded-md pl-8 pr-3 py-1.5 text-sm w-full sm:w-48 text-[hsl(0,0%,98%)] placeholder:text-[hsl(0,0%,40%)] focus:outline-none focus:ring-1 focus:ring-[hsl(142,76%,36%)]"
             />
             <Search className="h-4 w-4 text-[hsl(0,0%,65%)] absolute left-2.5 top-2.5" />
@@ -348,7 +320,7 @@ const AuditLogsSection = () => {
           </button>
         </div>
       </div>
-      
+
       <div className="overflow-x-auto">
         <table className="w-full">
           <thead>
@@ -379,7 +351,7 @@ const AuditLogsSection = () => {
           </tbody>
         </table>
       </div>
-      
+
       <div className="flex flex-col sm:flex-row justify-between items-center pt-4">
         <div className="text-sm text-[hsl(0,0%,65%)] mb-2 sm:mb-0">
           Showing 1 to 8 of 1,245 entries
@@ -409,13 +381,13 @@ const AuditLogsSection = () => {
 // Employee Management Section Component
 const EmployeeManagementSection = () => {
   const [showCreateDeptModal, setShowCreateDeptModal] = useState<boolean>(false);
-  
+
   return (
-    <div className="bg-card p-6 rounded-xl border border-border">
+    <div className="bg-card p-4 sm:p-6 rounded-xl shadow-sm hover:shadow-md transition-shadow">
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-4">
         <h3 className="text-lg font-semibold text-[hsl(0,0%,98%)] mb-3 sm:mb-0">Departments & Employees</h3>
         <div className="flex flex-wrap gap-2">
-          <button 
+          <button
             onClick={() => setShowCreateDeptModal(true)}
             className="flex items-center text-sm bg-[hsl(142,76%,36%)] text-[hsl(0,0%,98%)] rounded-md px-3 py-1.5 hover:bg-[hsl(142,76%,40%)] transition-colors"
           >
@@ -426,10 +398,10 @@ const EmployeeManagementSection = () => {
           </button>
         </div>
       </div>
-      
+
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
         {departments.map(dept => (
-          <div key={dept.id} className="bg-[hsl(0,0%,6%)] border border-[hsl(0,0%,15%)] rounded-lg p-4">
+          <div key={dept.id} className="bg-muted/30 p-4 sm:p-6 rounded-lg border border-border">
             <div className="flex justify-between items-start">
               <div>
                 <h4 className="font-semibold text-[hsl(0,0%,98%)]">{dept.name}</h4>
@@ -456,10 +428,10 @@ const EmployeeManagementSection = () => {
           </div>
         ))}
       </div>
-      
-      <CreateNewDepartmentModal 
-        isOpen={showCreateDeptModal} 
-        onClose={() => setShowCreateDeptModal(false)} 
+
+      <CreateNewDepartmentModal
+        isOpen={showCreateDeptModal}
+        onClose={() => setShowCreateDeptModal(false)}
       />
     </div>
   );
@@ -469,11 +441,61 @@ const EmployeeManagementSection = () => {
 export const SuperAdminDashboard = () => {
   const [showHRAccountModal, setShowHRAccountModal] = useState<boolean>(false);
   const [showSystemHealth, setShowSystemHealth] = useState<boolean>(false);
-  
+  // Add state for viewing department details
+  const [viewingDept, setViewingDept] = useState<null | Department>(null);
+  // Add activeDashboard state if not present
+  const [activeDashboard, setActiveDashboard] = useState('super-admin');
+
   return (
     <div className="space-y-8 p-6 bg-background min-h-screen text-foreground font-inter">
-      {/* Tailwind CSS configuration for custom colors and font */}
-      
+      <style>
+        {`
+          @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
+          :root {
+            --background: 0 0% 3.9%;
+            --foreground: 0 0% 98%;
+            --card: 0 0% 6%;
+            --card-foreground: 0 0% 98%;
+            --popover: 0 0% 6%;
+            --popover-foreground: 0 0% 98%;
+            --primary: 142 76% 36%;
+            --primary-foreground: 0 0% 98%;
+            --secondary: 0 0% 14.9%;
+            --secondary-foreground: 0 0% 98%;
+            --muted: 0 0% 14.9%;
+            --muted-foreground: 0 0% 65%;
+            --accent: 0 0% 14.9%;
+            --accent-foreground: 0 0% 98%;
+            --destructive: 0 62.8% 30.6%;
+            --destructive-foreground: 0 0% 98%;
+            --border: 0 0% 15%;
+            --input: 0 0% 15%;
+            --ring: 142 76% 36%;
+          }
+          .bg-background { background-color: hsl(var(--background)); }
+          .text-foreground { color: hsl(var(--foreground)); }
+          .bg-card { background-color: hsl(var(--card)); }
+          .text-card-foreground { color: hsl(var(--card-foreground)); }
+          .bg-primary { background-color: hsl(var(--primary)); }
+          .text-primary { color: hsl(var(--primary)); }
+          .text-primary-foreground { color: hsl(var(--primary-foreground)); }
+          .bg-muted { background-color: hsl(var(--muted)); }
+          .text-muted-foreground { color: hsl(var(--muted-foreground)); }
+          .border-border { border-color: hsl(var(--border)); }
+          .hover\\:bg-primary\\/80:hover { background-color: hsl(142 76% 36% / 0.8); }
+          .hover\\:bg-muted\\/50:hover { background-color: hsl(0 0% 14.9% / 0.5); }
+          .font-inter { font-family: 'Inter', sans-serif; }
+          .bg-yellow-500\\/20 { background-color: rgba(234, 179, 8, 0.2); }
+          .text-yellow-500 { color: #eab308; }
+          .bg-blue-500\\/20 { background-color: rgba(59, 130, 246, 0.2); }
+          .text-blue-500 { color: #3b82f6; }
+          .bg-green-500\\/20 { background-color: rgba(34, 197, 94, 0.2); }
+          .text-green-500 { color: #22c55e; }
+          .bg-orange-500\\/20 { background-color: rgba(249, 115, 22, 0.2); }
+          .text-orange-500 { color: #f97316; }
+        `}
+      </style>
+
 
       <div>
         <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center">
@@ -481,103 +503,123 @@ export const SuperAdminDashboard = () => {
             <h1 className="text-3xl font-bold text-[hsl(0,0%,98%)]">Super Admin Dashboard</h1>
             <p className="text-[hsl(0,0%,65%)] mt-2">System overview and administration controls</p>
           </div>
-          <DashboardSwitcher />
+          <DashboardSwitcher activeDashboard={activeDashboard} setActiveDashboard={setActiveDashboard} />
         </div>
       </div>
 
-      {/* Stats Grid */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-        {stats.map((stat) => {
-          const Icon = stat.icon;
-          const isSystemHealth = stat.name === 'System Health';
-          
-          return (
-            <div 
-              key={stat.name} 
-              className={`bg-card p-6 rounded-xl border border-border ${
-                isSystemHealth ? 'cursor-pointer hover:border-[hsl(142,76%,36%)] transition-colors' : ''
-              }`}
-              onClick={isSystemHealth ? () => setShowSystemHealth(true) : undefined}
-            >
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-sm font-medium text-[hsl(0,0%,65%)]">{stat.name}</p>
-                  <p className="text-2xl font-bold text-[hsl(0,0%,98%)] mt-2">{stat.value}</p>
-                </div>
-                <div className={`h-12 w-12 rounded-lg flex items-center justify-center ${
-                  stat.name === 'Audit Events' ? 'bg-purple-600/20' : 'bg-[hsl(142,76%,36%)]/20'
-                }`}>
-                  <Icon className={`h-6 w-6 ${
-                    stat.name === 'Audit Events' ? 'text-purple-400' : 'text-[hsl(142,76%,36%)]'
-                  }`} />
-                </div>
-              </div>
-              <div className="flex items-center mt-4">
-                {stat.changeType === 'positive' ? (
-                  <TrendingUp className="h-4 w-4 text-green-500 mr-1" />
-                ) : (
-                  <TrendingUp className="h-4 w-4 text-red-500 mr-1 rotate-180" />
-                )}
-                <span className={`text-sm ${
-                  stat.changeType === 'positive' ? 'text-green-500' : 'text-red-500'
-                } font-medium`}>
-                  {stat.change}
-                </span>
-                <span className="text-sm text-[hsl(0,0%,65%)] ml-1">from last month</span>
-              </div>
-            </div>
-          );
-        })}
-      </div>
-
-      {/* Employee Management */}
-      <EmployeeManagementSection />
-
-      {/* Audit Logs & Quick Actions */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-        <div className="lg:col-span-2">
-          <AuditLogsSection />
-        </div>
-        
-        <div className="bg-card p-6 rounded-xl border border-border">
-          <h3 className="text-lg font-semibold text-foreground mb-4">Quick Actions</h3>
-          <div className="grid grid-cols-2 gap-4">
-            {[
-              { name: 'Create HR Account', icon: Users, action: () => setShowHRAccountModal(true) },
-              { name: 'System Settings', icon: Settings, action: () => {} },
-              { name: 'View Reports', icon: Activity, action: () => {} },
-              { name: 'Manage Roles', icon: Shield, action: () => {} },
-              { name: 'Create Department', icon: Building, action: () => {} },
-              { name: 'Bulk Import', icon: FileSpreadsheet, action: () => {} },
-              { name: 'Audit Settings', icon: Shield, action: () => {} },
-              { name: 'Backup System', icon: Download, action: () => {} },
-            ].map((action) => {
-              const Icon = action.icon;
+      {activeDashboard === 'super-admin' && (
+        <>
+          {/* Stats Grid */}
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+            {stats.map((stat) => {
+              const Icon = stat.icon;
               return (
-                <button
-                  key={action.name}
-                  className="flex flex-col items-center p-4 bg-[hsl(0,0%,10%)]/30 rounded-lg hover:bg-[hsl(0,0%,10%)]/50 transition-colors"
-                  onClick={action.action}
-                >
-                  <Icon className="h-6 w-6 text-[hsl(0,0%,98%)] mb-2" />
-                  <span className="text-sm font-medium text-[hsl(0,0%,98%)] text-center">{action.name}</span>
-                </button>
+                <div key={stat.name} className="bg-card p-6 rounded-xl border border-border flex flex-col justify-between">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <p className="text-sm font-medium text-muted-foreground">{stat.name}</p>
+                      <p className="text-2xl font-bold text-foreground mt-2">{stat.value}</p>
+                    </div>
+                    <div className="h-12 w-12 bg-primary/10 rounded-lg flex items-center justify-center">
+                      <Icon className={`h-6 w-6 ${stat.color}`} />
+                    </div>
+                  </div>
+                  {stat.name === 'System Health' && (
+                    <Button variant="outline" size="sm" className="mt-4 border-border hover:bg-muted/50 bg-transparent text-muted-foreground" onClick={() => setShowSystemHealth(true)}>
+                      <Eye className="h-4 w-4 mr-2" /> View Details
+                    </Button>
+                  )}
+                </div>
               );
             })}
           </div>
-        </div>
-      </div>
-      
+
+
+
+          {/* Employee Management */}
+          <EmployeeManagementSection />
+
+          {/* Audit Logs & Quick Actions */}
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+            <div className="lg:col-span-2">
+              <AuditLogsSection />
+            </div>
+
+            <div className="bg-card p-4 sm:p-6 rounded-xl shadow-sm hover:shadow-md transition-shadow">
+              <h3 className="text-lg font-semibold text-foreground mb-4">Quick Actions</h3>
+              <div className="grid grid-cols-2 gap-4">
+                {[
+                  { name: 'Create HR Account', icon: Users, action: () => setShowHRAccountModal(true) },
+                  { name: 'System Settings', icon: Settings, action: () => { } },
+                  { name: 'View Reports', icon: Activity, action: () => { } },
+                  { name: 'Manage Roles', icon: Shield, action: () => { } },
+                  { name: 'Create Department', icon: Building, action: () => { } },
+                  { name: 'Bulk Import', icon: FileSpreadsheet, action: () => { } },
+                  { name: 'Audit Settings', icon: Shield, action: () => { } },
+                  { name: 'Backup System', icon: Download, action: () => { } },
+                ].map((action) => {
+                  const Icon = action.icon;
+                  return (
+                    <button
+                      key={action.name}
+                      className="flex flex-col items-center p-4 bg-[hsl(0,0%,10%)]/30 rounded-lg hover:bg-[hsl(0,0%,10%)]/50 transition-colors"
+                      onClick={action.action}
+                    >
+                      <Icon className="h-6 w-6 text-[hsl(0,0%,98%)] mb-2" />
+                      <span className="text-sm font-medium text-[hsl(0,0%,98%)] text-center">{action.name}</span>
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+          </div>
+        </>
+      )}
+      {activeDashboard === 'hr' && <HRDashboard />}
+
       {/* Modals */}
-      <CreateHRAccountModal 
-        isOpen={showHRAccountModal} 
-        onClose={() => setShowHRAccountModal(false)} 
+
+
+      <CreateHRAccountModal
+        isOpen={showHRAccountModal}
+        onClose={() => setShowHRAccountModal(false)}
       />
-      
-      <SystemHealthDetails 
-        isOpen={showSystemHealth} 
-        onClose={() => setShowSystemHealth(false)} 
+
+      <SystemHealthDetails
+        isOpen={showSystemHealth}
+        onClose={() => setShowSystemHealth(false)}
       />
+
+      {viewingDept && (
+        <Dialog open={!!viewingDept} onOpenChange={() => setViewingDept(null)}>
+          <DialogContent>
+            <DialogHeader>
+              <DialogTitle>Department Details</DialogTitle>
+              <Button onClick={() => setViewingDept(null)} variant="outline" size="sm" className="absolute top-4 right-4">Close</Button>
+            </DialogHeader>
+            <div className="space-y-2">
+              <p><strong>Name:</strong> {viewingDept.name}</p>
+              <p><strong>Manager:</strong> {viewingDept.manager}</p>
+              <p><strong>Employees:</strong> {viewingDept.employees}</p>
+              {/* For demo, show fake reviews, avgScore, completion */}
+              <p><strong>Reviews:</strong> {20 + viewingDept.id * 5}</p>
+              <p><strong>Avg Score:</strong> {(4 + (viewingDept.id % 2 ? 0.3 : 0)).toFixed(1)}/5.0</p>
+              <p><strong>Completion Rate:</strong> {Math.round(((20 + viewingDept.id * 5 - (viewingDept.id % 3)) / (20 + viewingDept.id * 5)) * 100)}%</p>
+              {activeDashboard === 'hr' && (
+                <div className="mt-4 p-3 bg-muted/30 rounded-lg border border-border">
+                  <p className="font-semibold text-primary mb-2">HR Quick Actions</p>
+                  <ul className="list-disc list-inside text-sm text-muted-foreground space-y-1">
+                    <li>View employee list</li>
+                    <li>Assign new manager</li>
+                    <li>Review department performance</li>
+                    <li>Send department announcement</li>
+                  </ul>
+                </div>
+              )}
+            </div>
+          </DialogContent>
+        </Dialog>
+      )}
     </div>
   );
 };
