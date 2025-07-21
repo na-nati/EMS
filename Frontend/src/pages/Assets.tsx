@@ -218,6 +218,9 @@ export default function AssetsDashboard({ userRole, currentUser }: AssetsDashboa
   // Add state for loading status of approve/reject actions in asset requests
   const [requestActionLoading, setRequestActionLoading] = useState<{ [key: number]: 'approve' | 'reject' | null }>({})
 
+  // Add state for loading status of approve/reject actions in assignments
+  const [assignmentActionLoading, setAssignmentActionLoading] = useState<{ [key: number]: 'approve' | 'reject' | null }>({})
+
   // Add state for maintenance schedule modal
   const [scheduleMaintenance, setScheduleMaintenance] = useState<MaintenanceAlert | null>(null)
 
@@ -760,7 +763,57 @@ export default function AssetsDashboard({ userRole, currentUser }: AssetsDashboa
                   >
                     {assignment.status}
                   </Badge>
-                  {isHR && (
+                  {isHR && assignment.status === 'Pending' ? (
+                    <div className="flex space-x-2 flex-shrink-0 mt-1 sm:mt-0">
+                      <Button
+                        size="sm"
+                        className="bg-green-600 hover:bg-green-700 text-white text-xs sm:text-sm"
+                        disabled={assignmentActionLoading[index] === 'approve'}
+                        onClick={async () => {
+                          setAssignmentActionLoading(prev => ({ ...prev, [index]: 'approve' }))
+                          setTimeout(() => {
+                            setAssignments(prev => prev.map((a, i) => i === index ? { ...a, status: 'Active' } : a))
+                            setAssignmentActionLoading(prev => ({ ...prev, [index]: null }))
+                          }, 1000)
+                        }}
+                      >
+                        {assignmentActionLoading[index] === 'approve' ? <span className="animate-spin mr-2">⏳</span> : null}
+                        Approve
+                      </Button>
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        className="border-red-500 text-red-400 hover:bg-red-500/10 bg-transparent text-xs sm:text-sm"
+                        disabled={assignmentActionLoading[index] === 'reject'}
+                        onClick={async () => {
+                          setAssignmentActionLoading(prev => ({ ...prev, [index]: 'reject' }))
+                          setTimeout(() => {
+                            setAssignments(prev => prev.map((a, i) => i === index ? { ...a, status: 'Rejected' } : a))
+                            setAssignmentActionLoading(prev => ({ ...prev, [index]: null }))
+                          }, 1000)
+                        }}
+                      >
+                        {assignmentActionLoading[index] === 'reject' ? <span className="animate-spin mr-2">⏳</span> : null}
+                        Reject
+                      </Button>
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        className="border-border hover:bg-muted/50 bg-transparent p-1.5 sm:p-2"
+                        onClick={() => setViewAssignment(assignment)}
+                      >
+                        <Eye className="h-3 w-3 sm:h-4 sm:w-4" />
+                      </Button>
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        className="border-border hover:bg-muted/50 bg-transparent p-1.5 sm:p-2"
+                        onClick={() => setEditAssignment(assignment)}
+                      >
+                        <Edit className="h-3 w-3 sm:h-4 sm:w-4" />
+                      </Button>
+                    </div>
+                  ) : isHR ? (
                     <div className="flex space-x-2 flex-shrink-0 mt-1 sm:mt-0">
                       <Button
                         size="sm"
@@ -779,7 +832,7 @@ export default function AssetsDashboard({ userRole, currentUser }: AssetsDashboa
                         <Edit className="h-3 w-3 sm:h-4 sm:w-4" />
                       </Button>
                     </div>
-                  )}
+                  ) : null}
                 </div>
               </div>
             ))
@@ -996,11 +1049,11 @@ export default function AssetsDashboard({ userRole, currentUser }: AssetsDashboa
             </button>
             <h3 className="text-lg font-semibold mb-4 text-foreground">Asset Details</h3>
             <div className="space-y-2">
-              <div><span className="font-medium">Name:</span> {viewAsset.name}</div>
-              <div><span className="font-medium">Asset ID:</span> {viewAsset.assetId}</div>
-              <div><span className="font-medium">Category:</span> {viewAsset.category}</div>
-              <div><span className="font-medium">Status:</span> {viewAsset.status}</div>
-              <div><span className="font-medium">Location:</span> {viewAsset.location}</div>
+              <div><span className="font-medium">Name:</span> {viewAsset?.name}</div>
+              <div><span className="font-medium">Asset ID:</span> {viewAsset?.assetId}</div>
+              <div><span className="font-medium">Category:</span> {viewAsset?.category}</div>
+              <div><span className="font-medium">Status:</span> {viewAsset?.status}</div>
+              <div><span className="font-medium">Location:</span> {viewAsset?.location}</div>
             </div>
             <div className="flex justify-end space-x-2 mt-4">
               <Button type="button" variant="outline" onClick={() => setViewAsset(null)} className="border-border hover:bg-muted/50 text-xs sm:text-sm">Close</Button>
@@ -1019,34 +1072,34 @@ export default function AssetsDashboard({ userRole, currentUser }: AssetsDashboa
             <form
               onSubmit={e => {
                 e.preventDefault();
-                setAssets(prev => prev.map(a => a.assetId === editAsset.assetId ? { ...a, ...editAsset } : a));
+                setAssets(prev => prev.map(a => a.assetId === editAsset?.assetId ? { ...a, ...editAsset } : a));
                 setEditAsset(null);
               }}
               className="space-y-3"
             >
               <Input
-                value={editAsset.name}
+                value={editAsset?.name || ''}
                 onChange={e => setEditAsset(d => d ? { ...d, name: e.target.value } : d)}
                 placeholder="Asset Name"
                 className="bg-background border-border text-foreground"
                 required
               />
               <Input
-                value={editAsset.category}
+                value={editAsset?.category || ''}
                 onChange={e => setEditAsset(d => d ? { ...d, category: e.target.value } : d)}
                 placeholder="Category"
                 className="bg-background border-border text-foreground"
                 required
               />
               <Input
-                value={editAsset.status}
+                value={editAsset?.status || ''}
                 onChange={e => setEditAsset(d => d ? { ...d, status: e.target.value } : d)}
                 placeholder="Status"
                 className="bg-background border-border text-foreground"
                 required
               />
               <Input
-                value={editAsset.location}
+                value={editAsset?.location || ''}
                 onChange={e => setEditAsset(d => d ? { ...d, location: e.target.value } : d)}
                 placeholder="Location"
                 className="bg-background border-border text-foreground"
@@ -1214,6 +1267,7 @@ export default function AssetsDashboard({ userRole, currentUser }: AssetsDashboa
           </div>
         </div>
       )}
+
     </div>
   )
 }
