@@ -10,8 +10,6 @@ import {
   Edit,
   Plus,
   Search,
-  Filter,
-  Download,
   Trash2,
   MapPin,
   DollarSign,
@@ -168,6 +166,22 @@ const Recruitment = () => {
   const [jobPostings, setJobPostings] = useState(mockJobPostings);
   // Add state for viewing a hiring request
   const [viewingRequest, setViewingRequest] = useState<null | typeof mockHiringRequests[0]>(null);
+  // Add state for document management
+  const [documents, setDocuments] = useState(mockDocuments);
+  const [documentSearch, setDocumentSearch] = useState('');
+  const [documentStatus, setDocumentStatus] = useState('All');
+  const [editingDocument, setEditingDocument] = useState<null | typeof mockDocuments[0]>(null);
+  const [addingDocument, setAddingDocument] = useState(false);
+
+  // Filtered documents
+  const filteredDocuments = documents.filter(doc => {
+    const matchesSearch =
+      doc.name.toLowerCase().includes(documentSearch.toLowerCase()) ||
+      doc.applicant.toLowerCase().includes(documentSearch.toLowerCase()) ||
+      doc.position.toLowerCase().includes(documentSearch.toLowerCase());
+    const matchesStatus = documentStatus === 'All' || doc.status === documentStatus;
+    return matchesSearch && matchesStatus;
+  });
 
   // Role-based data filtering
   const getFilteredData = () => {
@@ -1049,61 +1063,69 @@ const Recruitment = () => {
                       <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground w-4 h-4" />
                       <Input
                         placeholder="Search documents..."
+                        value={documentSearch}
+                        onChange={e => setDocumentSearch(e.target.value)}
                         className="pl-10 w-full sm:w-64 bg-background border-border text-foreground"
                       />
                     </div>
-                    <Button variant="outline" className="border-border hover:bg-muted/50">
-                      <Filter className="h-4 w-4 mr-2" />
-                      Filter
+                    <Select value={documentStatus} onValueChange={setDocumentStatus}>
+                      <SelectTrigger className="w-full sm:w-40 bg-background border-border text-foreground">
+                        <SelectValue placeholder="Status" />
+                      </SelectTrigger>
+                      <SelectContent className="bg-card border-border">
+                        <SelectItem value="All">All</SelectItem>
+                        <SelectItem value="Approved">Approved</SelectItem>
+                        <SelectItem value="Pending">Pending</SelectItem>
+                        <SelectItem value="Rejected">Rejected</SelectItem>
+                      </SelectContent>
+                    </Select>
+                    <Button className="bg-primary hover:bg-primary/80" onClick={() => setAddingDocument(true)}>
+                      <Plus className="h-4 w-4 mr-2" /> Add Document
                     </Button>
                   </div>
                 </div>
               </CardHeader>
               <CardContent>
                 <div className="space-y-4">
-                  {mockDocuments.map((doc) => (
-                    <div key={doc.id} className="p-4 border border-border rounded-lg hover:bg-muted/20 transition-colors">
-                      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
-                        <div className="flex items-start space-x-3">
-                          <div className="w-10 h-10 bg-primary/10 rounded-lg flex items-center justify-center flex-shrink-0">
-                            <FileText className="h-5 w-5 text-primary" />
-                          </div>
-                          <div className="min-w-0 flex-1">
-                            <h3 className="font-medium text-foreground truncate">{doc.name}</h3>
-                            <div className="text-sm text-muted-foreground space-y-1">
-                              <p>Applicant: {doc.applicant}</p>
-                              <p>Position: {doc.position}</p>
-                              <p>Type: {doc.type} • Size: {doc.size}</p>
-                              <p>Uploaded: {doc.uploadDate}</p>
-                            </div>
+                  {filteredDocuments.map(doc => (
+                    <div key={doc.id} className="p-4 border border-border rounded-lg hover:bg-muted/20 transition-colors flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+                      <div className="flex items-start space-x-3 flex-1">
+                        <div className="w-10 h-10 bg-primary/10 rounded-lg flex items-center justify-center flex-shrink-0">
+                          <FileText className="h-5 w-5 text-primary" />
+                        </div>
+                        <div className="min-w-0 flex-1">
+                          <h3 className="font-medium text-foreground truncate">{doc.name}</h3>
+                          <div className="text-sm text-muted-foreground space-y-1">
+                            <p>Applicant: {doc.applicant}</p>
+                            <p>Position: {doc.position}</p>
+                            <p>Type: {doc.type} • Size: {doc.size}</p>
+                            <p>Uploaded: {doc.uploadDate}</p>
                           </div>
                         </div>
-                        <div className="flex items-center justify-between sm:justify-end gap-3">
-                          <Badge
-                            variant={doc.status === 'Approved' ? 'default' : 'secondary'}
-                            className="flex-shrink-0"
-                          >
-                            {doc.status}
-                          </Badge>
-                          <div className="flex gap-2">
-                            <Button size="sm" variant="outline" className="border-border hover:bg-muted/50">
-                              <Download className="h-4 w-4" />
-                            </Button>
-                            <Button size="sm" variant="outline" className="border-border hover:bg-muted/50" onClick={() => setShowDocumentModal(doc)}>
-                              <Eye className="h-4 w-4" />
-                            </Button>
-                            {doc.status === 'Pending' && (
-                              <Button size="sm" className="bg-green-600 hover:bg-green-700">
-                                <CheckCircle className="h-4 w-4" />
-                              </Button>
-                            )}
-                          </div>
+                      </div>
+                      <div className="flex items-center justify-between sm:justify-end gap-3">
+                        <Badge
+                          variant={doc.status === 'Approved' ? 'default' : doc.status === 'Rejected' ? 'destructive' : 'secondary'}
+                          className="flex-shrink-0"
+                        >
+                          {doc.status}
+                        </Badge>
+                        <div className="flex gap-2">
+                          <Button size="sm" variant="outline" className="border-border hover:bg-muted/50" onClick={() => setShowDocumentModal(doc)}>
+                            <Eye className="h-4 w-4" />
+                          </Button>
+                          <Button size="sm" variant="outline" className="border-border hover:bg-muted/50" onClick={() => setEditingDocument(doc)}>
+                            <Edit className="h-4 w-4" />
+                          </Button>
+                          <Button size="sm" variant="outline" className="border-border hover:bg-muted/50 text-red-500 hover:text-red-400" onClick={() => setDocuments(prev => prev.filter(d => d.id !== doc.id))}>
+                            <Trash2 className="h-4 w-4" />
+                          </Button>
                         </div>
                       </div>
                     </div>
                   ))}
                 </div>
-                {mockDocuments.length === 0 && (
+                {filteredDocuments.length === 0 && (
                   <div className="text-center py-8 text-muted-foreground">
                     <FileText className="h-12 w-12 mx-auto mb-4 opacity-50" />
                     <p>No documents found</p>
@@ -1217,6 +1239,39 @@ const Recruitment = () => {
           </DialogContent>
         </Dialog>
       )}
+      {addingDocument && (
+        <Dialog open={addingDocument} onOpenChange={setAddingDocument}>
+          <DialogContent>
+            <DialogHeader>
+              <DialogTitle>Add Document</DialogTitle>
+            </DialogHeader>
+            <DocumentForm
+              onCancel={() => setAddingDocument(false)}
+              onSave={doc => {
+                setDocuments(prev => [...prev, { ...doc, id: Date.now(), status: 'Pending', uploadDate: new Date().toISOString().slice(0, 10) }]);
+                setAddingDocument(false);
+              }}
+            />
+          </DialogContent>
+        </Dialog>
+      )}
+      {editingDocument && (
+        <Dialog open={!!editingDocument} onOpenChange={() => setEditingDocument(null)}>
+          <DialogContent>
+            <DialogHeader>
+              <DialogTitle>Edit Document</DialogTitle>
+            </DialogHeader>
+            <DocumentForm
+              doc={editingDocument}
+              onCancel={() => setEditingDocument(null)}
+              onSave={doc => {
+                setDocuments(prev => prev.map(d => d.id === editingDocument.id ? { ...d, ...doc } : d));
+                setEditingDocument(null);
+              }}
+            />
+          </DialogContent>
+        </Dialog>
+      )}
     </div>
   );
 };
@@ -1287,6 +1342,28 @@ function EditJobForm({ job, onCancel, onSave }: { job: typeof mockJobPostings[0]
           <Textarea id="benefits" value={form.benefits} onChange={e => setForm({ ...form, benefits: e.target.value })} placeholder="Health insurance, retirement plans, vacation policy, etc..." className="mt-1 bg-background border border-border text-foreground placeholder:text-muted-foreground resize-none" rows={2} />
         </div>
       </div>
+      <div className="flex flex-col sm:flex-row gap-2 pt-2">
+        <Button type="button" variant="outline" onClick={onCancel} className="flex-1 h-11 border-border hover:bg-muted/50 bg-transparent">Cancel</Button>
+        <Button type="submit" className="flex-1 h-11 bg-primary hover:bg-primary/80">Save</Button>
+      </div>
+    </form>
+  );
+}
+
+function DocumentForm({ doc, onCancel, onSave }: { doc?: typeof mockDocuments[0], onCancel: () => void, onSave: (doc: any) => void }) {
+  const [form, setForm] = useState(doc ? { ...doc } : { name: '', type: '', applicant: '', position: '', size: '', status: 'Pending' });
+  return (
+    <form className="space-y-3" onSubmit={e => { e.preventDefault(); onSave(form); }}>
+      <Label htmlFor="name">Document Name</Label>
+      <Input id="name" value={form.name} onChange={e => setForm({ ...form, name: e.target.value })} placeholder="e.g., Resume - John Doe.pdf" />
+      <Label htmlFor="type">Type</Label>
+      <Input id="type" value={form.type} onChange={e => setForm({ ...form, type: e.target.value })} placeholder="e.g., Resume, Cover Letter" />
+      <Label htmlFor="applicant">Applicant</Label>
+      <Input id="applicant" value={form.applicant} onChange={e => setForm({ ...form, applicant: e.target.value })} placeholder="e.g., John Doe" />
+      <Label htmlFor="position">Position</Label>
+      <Input id="position" value={form.position} onChange={e => setForm({ ...form, position: e.target.value })} placeholder="e.g., Software Engineer" />
+      <Label htmlFor="size">File Size</Label>
+      <Input id="size" value={form.size} onChange={e => setForm({ ...form, size: e.target.value })} placeholder="e.g., 2.4 MB" />
       <div className="flex flex-col sm:flex-row gap-2 pt-2">
         <Button type="button" variant="outline" onClick={onCancel} className="flex-1 h-11 border-border hover:bg-muted/50 bg-transparent">Cancel</Button>
         <Button type="submit" className="flex-1 h-11 bg-primary hover:bg-primary/80">Save</Button>
