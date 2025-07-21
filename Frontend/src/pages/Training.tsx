@@ -171,6 +171,11 @@ export default function TrainingEmp({ userRole, currentUser = "Robert Wilson" }:
   const [requests, setRequests] = useState(initialTrainingRequests);
   const [newRequestModalOpen, setNewRequestModalOpen] = useState(false);
   const [addProgramModalOpen, setAddProgramModalOpen] = useState(false); // State for Add Program modal
+  // Add state for viewing enrolled employees modal
+  const [viewEnrolledProgram, setViewEnrolledProgram] = useState<null | typeof programs[0]>(null);
+  const [enrolledEmployees, setEnrolledEmployees] = useState<string[]>([]); // Mocked for now
+  // Add state for viewing program details modal
+  const [viewProgram, setViewProgram] = useState<null | typeof programs[0]>(null);
 
   const [newRequestData, setNewRequestData] = useState({
     course: "",
@@ -201,7 +206,7 @@ export default function TrainingEmp({ userRole, currentUser = "Robert Wilson" }:
         return matchesCategory && matchesStatus;
       });
     }
-    
+
     return result;
   }, [programs, selectedCategory, selectedStatus, userRole]);
 
@@ -250,7 +255,7 @@ export default function TrainingEmp({ userRole, currentUser = "Robert Wilson" }:
       alert("Course name is required for a new request.");
       return;
     }
-    
+
     const newRequest = {
       id: `treq${Date.now()}-${Math.floor(Math.random() * 1000)}`, // More unique ID
       employee: currentUser,
@@ -260,9 +265,9 @@ export default function TrainingEmp({ userRole, currentUser = "Robert Wilson" }:
       requestDate: new Date().toISOString().split('T')[0],
       cost: newRequestData.cost || "$0",
       status: "Pending",
-      currentUser: true 
+      currentUser: true
     };
-    
+
     setRequests(prev => [...prev, newRequest]);
     setNewRequestModalOpen(false);
     setNewRequestData({ course: "", reason: "", cost: "" });
@@ -272,10 +277,10 @@ export default function TrainingEmp({ userRole, currentUser = "Robert Wilson" }:
   // Handler for enrolling in a program (Employee only)
   const handleEnrollInProgram = (programId: string) => {
     if (userRole === 'employee') {
-      setPrograms(prev => 
-        prev.map(prog => 
-          prog.id === programId 
-            ? { ...prog, enrolled: prog.enrolled + 1, currentUserEnrolled: true } 
+      setPrograms(prev =>
+        prev.map(prog =>
+          prog.id === programId
+            ? { ...prog, enrolled: prog.enrolled + 1, currentUserEnrolled: true }
             : prog
         )
       );
@@ -303,7 +308,7 @@ export default function TrainingEmp({ userRole, currentUser = "Robert Wilson" }:
         startDate: newProgramData.startDate,
         currentUserEnrolled: false,
       };
-      
+
       setPrograms(prev => [...prev, newProgram]);
       setAddProgramModalOpen(false);
       setNewProgramData({ // Reset form
@@ -318,22 +323,48 @@ export default function TrainingEmp({ userRole, currentUser = "Robert Wilson" }:
     }
   };
 
+  // Mock function to get enrolled employees for a program
+  function getEnrolledEmployees(programId: string) {
+    // In a real app, fetch from backend. Here, return mock data based on programId
+    const mock: { [key: string]: string[] } = {
+      'prog001': ['Alice Smith', 'Bob Johnson', 'Carol Lee', 'David Kim', 'Eve Adams'],
+      'prog002': ['Sarah Lead', 'Tom Brown', 'Lisa White'],
+      'prog003': ['Mike Digital', 'Nina Black'],
+      'prog004': ['Anna Data', 'Oscar Green', 'Paul Red'],
+      'prog005': ['David PM', 'Quinn Blue'],
+      'prog006': ['Emma Design', 'Sam Orange', 'Tina Violet'],
+    };
+    return mock[programId] || [];
+  }
+
+  // Handler to open enrolled employees modal
+  function handleViewEnrolled(program: typeof programs[0]) {
+    setViewEnrolledProgram(program);
+    setEnrolledEmployees(getEnrolledEmployees(program.id));
+  }
+
+  // Handler to remove an employee from a program
+  function handleRemoveEnrolled(employee: string) {
+    setEnrolledEmployees(prev => prev.filter(e => e !== employee));
+    // In a real app, also update backend and program's enrolled count
+  }
+
   // New Request Modal Component
   const renderNewRequestModal = () => (
     <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
       <div className="bg-card p-6 rounded-xl border border-border w-full max-w-md">
         <div className="flex justify-between items-center mb-4">
           <h3 className="text-lg font-semibold">New Training Request</h3>
-          <Button 
-            variant="ghost" 
-            size="icon" 
+          <Button
+            variant="ghost"
+            size="icon"
             onClick={() => setNewRequestModalOpen(false)}
             className="text-muted-foreground hover:bg-muted/50"
           >
             <X className="h-4 w-4" />
           </Button>
         </div>
-        
+
         <div className="space-y-4">
           <div>
             <label className="block text-sm font-medium mb-1 text-foreground">Course Name <span className="text-red-500">*</span></label>
@@ -341,35 +372,35 @@ export default function TrainingEmp({ userRole, currentUser = "Robert Wilson" }:
               type="text"
               className="w-full bg-background border-border text-foreground"
               value={newRequestData.course}
-              onChange={(e) => setNewRequestData({...newRequestData, course: e.target.value})}
+              onChange={(e) => setNewRequestData({ ...newRequestData, course: e.target.value })}
               placeholder="e.g., Advanced Python Programming"
               required
             />
           </div>
-          
+
           <div>
             <label className="block text-sm font-medium mb-1 text-foreground">Reason</label>
             <Textarea
               className="w-full bg-background border-border text-foreground"
               value={newRequestData.reason}
-              onChange={(e) => setNewRequestData({...newRequestData, reason: e.target.value})}
+              onChange={(e) => setNewRequestData({ ...newRequestData, reason: e.target.value })}
               placeholder="Why do you need this training? (Optional)"
               rows={3}
             />
           </div>
-          
+
           <div>
             <label className="block text-sm font-medium mb-1 text-foreground">Estimated Cost</label>
             <Input
               type="text"
               className="w-full bg-background border-border text-foreground"
               value={newRequestData.cost}
-              onChange={(e) => setNewRequestData({...newRequestData, cost: e.target.value})}
+              onChange={(e) => setNewRequestData({ ...newRequestData, cost: e.target.value })}
               placeholder="$0 (Optional)"
             />
           </div>
-          
-          <Button 
+
+          <Button
             className="w-full mt-4 bg-primary hover:bg-primary/80 text-primary-foreground"
             onClick={handleNewRequestSubmit}
             disabled={!newRequestData.course.trim()}
@@ -387,16 +418,16 @@ export default function TrainingEmp({ userRole, currentUser = "Robert Wilson" }:
       <div className="bg-card p-6 rounded-xl border border-border w-full max-w-md">
         <div className="flex justify-between items-center mb-4">
           <h3 className="text-lg font-semibold">Add New Training Program</h3>
-          <Button 
-            variant="ghost" 
-            size="icon" 
+          <Button
+            variant="ghost"
+            size="icon"
             onClick={() => setAddProgramModalOpen(false)}
             className="text-muted-foreground hover:bg-muted/50"
           >
             <X className="h-4 w-4" />
           </Button>
         </div>
-        
+
         <div className="space-y-4">
           <div>
             <label className="block text-sm font-medium mb-1 text-foreground">Program Name <span className="text-red-500">*</span></label>
@@ -404,15 +435,15 @@ export default function TrainingEmp({ userRole, currentUser = "Robert Wilson" }:
               type="text"
               className="w-full bg-background border-border text-foreground"
               value={newProgramData.name}
-              onChange={(e) => setNewProgramData({...newProgramData, name: e.target.value})}
+              onChange={(e) => setNewProgramData({ ...newProgramData, name: e.target.value })}
               placeholder="e.g., Data Science Fundamentals"
               required
             />
           </div>
-          
+
           <div>
             <label className="block text-sm font-medium mb-1 text-foreground">Category <span className="text-red-500">*</span></label>
-            <Select value={newProgramData.category} onValueChange={(value) => setNewProgramData({...newProgramData, category: value})}>
+            <Select value={newProgramData.category} onValueChange={(value) => setNewProgramData({ ...newProgramData, category: value })}>
               <SelectTrigger className="w-full bg-background border-border text-foreground">
                 <SelectValue placeholder="Select category" />
               </SelectTrigger>
@@ -433,7 +464,7 @@ export default function TrainingEmp({ userRole, currentUser = "Robert Wilson" }:
               type="text"
               className="w-full bg-background border-border text-foreground"
               value={newProgramData.duration}
-              onChange={(e) => setNewProgramData({...newProgramData, duration: e.target.value})}
+              onChange={(e) => setNewProgramData({ ...newProgramData, duration: e.target.value })}
               placeholder="e.g., 40 hours or 2 weeks"
               required
             />
@@ -445,7 +476,7 @@ export default function TrainingEmp({ userRole, currentUser = "Robert Wilson" }:
               type="text"
               className="w-full bg-background border-border text-foreground"
               value={newProgramData.instructor}
-              onChange={(e) => setNewProgramData({...newProgramData, instructor: e.target.value})}
+              onChange={(e) => setNewProgramData({ ...newProgramData, instructor: e.target.value })}
               placeholder="e.g., Jane Smith"
               required
             />
@@ -457,18 +488,100 @@ export default function TrainingEmp({ userRole, currentUser = "Robert Wilson" }:
               type="date"
               className="w-full bg-background border-border text-foreground"
               value={newProgramData.startDate}
-              onChange={(e) => setNewProgramData({...newProgramData, startDate: e.target.value})}
+              onChange={(e) => setNewProgramData({ ...newProgramData, startDate: e.target.value })}
               required
             />
           </div>
-          
-          <Button 
+
+          <Button
             className="w-full mt-4 bg-primary hover:bg-primary/80 text-primary-foreground"
             onClick={handleAddProgramSubmit}
             disabled={!newProgramData.name.trim() || !newProgramData.category.trim() || !newProgramData.duration.trim() || !newProgramData.instructor.trim() || !newProgramData.startDate.trim()}
           >
             Add Program
           </Button>
+        </div>
+      </div>
+    </div>
+  );
+
+  // Enrolled Employees Modal
+  const renderEnrolledModal = () => viewEnrolledProgram && (
+    <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
+      <div className="bg-card p-6 rounded-xl border border-border w-full max-w-md">
+        <div className="flex justify-between items-center mb-4">
+          <h3 className="text-lg font-semibold flex items-center gap-2">
+            <Users className="h-5 w-5 text-primary" /> Enrolled Employees
+          </h3>
+          <Button
+            variant="ghost"
+            size="icon"
+            onClick={() => setViewEnrolledProgram(null)}
+            className="text-muted-foreground hover:bg-muted/50"
+          >
+            <X className="h-4 w-4" />
+          </Button>
+        </div>
+        <div className="space-y-2">
+          {enrolledEmployees.length > 0 ? (
+            enrolledEmployees.map(emp => {
+              const initials = emp.split(' ').map(n => n[0]).join('').toUpperCase();
+              return (
+                <div key={emp} className="flex items-center justify-between p-2 bg-muted/30 rounded">
+                  <div className="flex items-center gap-3">
+                    <span className="inline-flex items-center justify-center h-8 w-8 rounded-full bg-primary/10 text-primary font-bold text-base">
+                      {initials}
+                    </span>
+                    <span className="text-foreground font-medium flex items-center gap-1">
+                      {/* Optionally add a user icon here */}
+                      {/* <User className="h-4 w-4 text-muted-foreground" /> */}
+                      {emp}
+                    </span>
+                  </div>
+                  <Button size="icon" variant="outline" className="border-red-500 text-red-400 hover:bg-red-500/10 bg-transparent" onClick={() => handleRemoveEnrolled(emp)} aria-label={`Remove ${emp}`}>
+                    <X className="h-4 w-4" />
+                  </Button>
+                </div>
+              );
+            })
+          ) : (
+            <div className="text-center text-muted-foreground p-4">No employees enrolled.</div>
+          )}
+        </div>
+        <div className="flex justify-end mt-4">
+          <Button variant="outline" onClick={() => setViewEnrolledProgram(null)} className="border-border hover:bg-muted/50">Close</Button>
+        </div>
+      </div>
+    </div>
+  );
+
+  // Program Details Modal
+  const renderProgramDetailsModal = () => viewProgram && (
+    <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
+      <div className="bg-card p-6 rounded-xl border border-border w-full max-w-md">
+        <div className="flex justify-between items-center mb-4">
+          <h3 className="text-lg font-semibold">Program Details</h3>
+          <Button
+            variant="ghost"
+            size="icon"
+            onClick={() => setViewProgram(null)}
+            className="text-muted-foreground hover:bg-muted/50"
+          >
+            <X className="h-4 w-4" />
+          </Button>
+        </div>
+        <div className="space-y-2">
+          <div><span className="font-medium">Name:</span> {viewProgram?.name}</div>
+          <div><span className="font-medium">Category:</span> {viewProgram?.category}</div>
+          <div><span className="font-medium">Duration:</span> {viewProgram?.duration}</div>
+          <div><span className="font-medium">Instructor:</span> {viewProgram?.instructor}</div>
+          <div><span className="font-medium">Status:</span> {viewProgram?.status}</div>
+          <div><span className="font-medium">Start Date:</span> {viewProgram?.startDate}</div>
+          <div><span className="font-medium">Enrolled:</span> {viewProgram?.enrolled}</div>
+          <div><span className="font-medium">Completed:</span> {viewProgram?.completed}</div>
+        </div>
+        <div className="flex justify-end mt-4">
+          <Button variant="outline" onClick={() => setViewProgram(null)} className="border-border hover:bg-muted/50">Close</Button>
         </div>
       </div>
     </div>
@@ -525,18 +638,20 @@ export default function TrainingEmp({ userRole, currentUser = "Robert Wilson" }:
   return (
     <div className="space-y-8 p-6 bg-background min-h-screen text-foreground font-inter">
       <style>{styleContent}</style>
-      
+
       {/* Modals */}
       {newRequestModalOpen && renderNewRequestModal()}
       {addProgramModalOpen && renderAddProgramModal()}
+      {renderEnrolledModal()}
+      {renderProgramDetailsModal()}
 
       {/* --- Header Section --- */}
       <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
         <div>
           <h1 className="text-3xl font-bold text-foreground">Training & Education</h1>
           <p className="text-muted-foreground mt-2">
-            {userRole === 'employee' 
-              ? "Manage your learning and development" 
+            {userRole === 'employee'
+              ? "Manage your learning and development"
               : "Manage employee learning and development programs"}
           </p>
         </div>
@@ -551,7 +666,7 @@ export default function TrainingEmp({ userRole, currentUser = "Robert Wilson" }:
                 <Award className="h-4 w-4 mr-2" />
                 My Certifications
               </Button>
-              <Button 
+              <Button
                 className="bg-primary hover:bg-primary/80 text-primary-foreground"
                 onClick={() => setNewRequestModalOpen(true)}
               >
@@ -569,7 +684,7 @@ export default function TrainingEmp({ userRole, currentUser = "Robert Wilson" }:
                 <Award className="h-4 w-4 mr-2" />
                 Certifications
               </Button>
-              <Button 
+              <Button
                 className="bg-primary hover:bg-primary/80 text-primary-foreground"
                 onClick={() => setAddProgramModalOpen(true)} // Open Add Program modal
               >
@@ -609,7 +724,7 @@ export default function TrainingEmp({ userRole, currentUser = "Robert Wilson" }:
           <h3 className="text-lg font-semibold text-foreground">
             {userRole === 'employee' ? "Available Training Programs" : "Training Programs"}
           </h3>
-          
+
           {(userRole === 'hr' || userRole === 'super_admin') && (
             <div className="flex flex-wrap gap-3">
               <Select value={selectedCategory} onValueChange={setSelectedCategory}>
@@ -659,7 +774,7 @@ export default function TrainingEmp({ userRole, currentUser = "Robert Wilson" }:
             </div>
           )}
         </div>
-        
+
         <div className="space-y-4">
           {filteredPrograms.length > 0 ? (
             filteredPrograms.map((program) => (
@@ -688,29 +803,34 @@ export default function TrainingEmp({ userRole, currentUser = "Robert Wilson" }:
                     >
                       {program.status}
                     </Badge>
-                    
+
                     {userRole === 'employee' ? (
                       program.currentUserEnrolled ? (
                         <Badge className="bg-blue-500/20 text-blue-400">
                           Enrolled
                         </Badge>
                       ) : (
-                        <Button 
-                          size="sm" 
+                        <Button
+                          size="sm"
                           className="bg-primary hover:bg-primary/80 text-primary-foreground"
                           onClick={() => handleEnrollInProgram(program.id)}
                         >
                           Enroll Now
                         </Button>
                       )
-                    ) : ( // HR and Admin roles see view details button
-                      <Button size="sm" variant="outline" className="border-border hover:bg-muted/50 bg-transparent">
-                        <Eye className="h-4 w-4" />
-                      </Button>
+                    ) : (
+                      <>
+                        <Button size="sm" variant="outline" className="border-border hover:bg-muted/50 bg-transparent" onClick={() => setViewProgram(program)}>
+                          <Eye className="h-4 w-4" />
+                        </Button>
+                        <Button size="sm" variant="outline" className="border-border hover:bg-muted/50 bg-transparent" onClick={() => handleViewEnrolled(program)}>
+                          <Users className="h-4 w-4 mr-1" /> View Enrolled
+                        </Button>
+                      </>
                     )}
                   </div>
                 </div>
-                
+
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mt-3 pt-3 border-t border-border">
                   <div>
                     <p className="text-xs text-muted-foreground">Start Date</p>
@@ -720,14 +840,14 @@ export default function TrainingEmp({ userRole, currentUser = "Robert Wilson" }:
                     <p className="text-xs text-muted-foreground">Enrolled</p>
                     <p className="text-sm font-medium text-foreground">{program.enrolled} employees</p>
                   </div>
-                 
+
                 </div>
               </div>
             ))
           ) : (
             <div className="text-center text-muted-foreground p-8">
-              {userRole === 'employee' 
-                ? "No available training programs at this time." 
+              {userRole === 'employee'
+                ? "No available training programs at this time."
                 : "No training programs found for the selected criteria."}
             </div>
           )}
@@ -741,7 +861,7 @@ export default function TrainingEmp({ userRole, currentUser = "Robert Wilson" }:
           <h3 className="text-lg font-semibold text-foreground mb-4">
             {userRole === 'employee' ? "My Training Requests" : "Training Requests"}
           </h3>
-          
+
           <div className="space-y-4">
             {filteredRequests.length > 0 ? (
               filteredRequests.map((request) => (
@@ -799,7 +919,7 @@ export default function TrainingEmp({ userRole, currentUser = "Robert Wilson" }:
                           </Button>
                         </>
                       )}
-                      
+
                       {userRole === 'employee' && request.status === "Pending" && (
                         <Button
                           size="sm"
@@ -811,7 +931,7 @@ export default function TrainingEmp({ userRole, currentUser = "Robert Wilson" }:
                           Cancel
                         </Button>
                       )}
-                      
+
                       <Button size="sm" variant="outline" className="border-border hover:bg-muted/50 bg-transparent">
                         <Eye className="h-4 w-4" />
                       </Button>
@@ -821,8 +941,8 @@ export default function TrainingEmp({ userRole, currentUser = "Robert Wilson" }:
               ))
             ) : (
               <div className="text-center text-muted-foreground p-8">
-                {userRole === 'employee' 
-                  ? "You haven't submitted any training requests." 
+                {userRole === 'employee'
+                  ? "You haven't submitted any training requests."
                   : "No training requests found."}
               </div>
             )}
@@ -860,8 +980,8 @@ export default function TrainingEmp({ userRole, currentUser = "Robert Wilson" }:
               ))
             ) : (
               <div className="text-center text-muted-foreground p-8">
-                {userRole === 'employee' 
-                  ? "You have no upcoming certifications." 
+                {userRole === 'employee'
+                  ? "You have no upcoming certifications."
                   : "No upcoming certifications."}
               </div>
             )}
