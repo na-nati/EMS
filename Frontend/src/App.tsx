@@ -18,6 +18,7 @@ import Report from "./pages/Report";
 import Employee from "./pages/Employee";
 import TrainingEmp from "./pages/TrainingEmp";
 import Recruitment from "./pages/Recruitment";
+import Documents from "./pages/Documents";
 
 
 // Import UserRole type
@@ -76,13 +77,13 @@ const InnerApp = () => {
             }
           />
           <Route
-  path="/employees"
-  element={
-    <ProtectedRoute allowedRoles={["super_admin", "hr", "manager"]}>
-      <Employees/>
-    </ProtectedRoute>
-  }
-/>
+            path="/employees"
+            element={
+              <ProtectedRoute allowedRoles={["super_admin", "hr", "manager"]}>
+                <Employees />
+              </ProtectedRoute>
+            }
+          />
 
           <Route
             path="/employee"
@@ -92,11 +93,11 @@ const InnerApp = () => {
               </ProtectedRoute>
             }
           />
-          <Route path="/payroll" 
-          element={
-          <ProtectedRoute allowedRoles={['super_admin', 'hr', 'employee','manager']}>
-            <Payroll />
-            </ProtectedRoute>} />
+          <Route path="/payroll"
+            element={
+              <ProtectedRoute allowedRoles={['super_admin', 'hr', 'employee', 'manager']}>
+                <Payroll />
+              </ProtectedRoute>} />
           <Route
             path="/attendance"
             element={
@@ -117,7 +118,7 @@ const InnerApp = () => {
             path="/training"
             element={
               <ProtectedRoute allowedRoles={["super_admin", "hr"]}>
-                
+
                 <TrainingDashboard userRole={effectiveUserRole} />
               </ProtectedRoute>
             }
@@ -153,6 +154,14 @@ const InnerApp = () => {
             element={
               <ProtectedRoute allowedRoles={["super_admin", "hr", "manager"]}>
                 <Report />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/documents"
+            element={
+              <ProtectedRoute allowedRoles={["super_admin", "hr", "employee"]}>
+                <Documents />
               </ProtectedRoute>
             }
           />
