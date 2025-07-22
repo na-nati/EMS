@@ -47,6 +47,69 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
 
   const login = async (email: string, password: string): Promise<boolean> => {
     setIsLoading(true);
+
+    // DEMO MODE: Demo logins for all roles
+    if (email === "hr@company.com") {
+      const demoUser = {
+        id: "demo-hr",
+        firstName: "Demo",
+        lastName: "HR",
+        email: "demo-hr@ems.com",
+        role: "hr" as UserRole,
+        department: "Engineering",
+        position: "HR Manager"
+      };
+      setUser(demoUser);
+      localStorage.setItem('ems_user', JSON.stringify(demoUser));
+      setIsLoading(false);
+      return true;
+    }
+    if (email === "employee@company.com") {
+      const demoUser = {
+        id: "demo-employee",
+        firstName: "Demo",
+        lastName: "Employee",
+        email: "demo-employee@ems.com",
+        role: "employee" as UserRole,
+        department: "Marketing",
+        position: "Sales Rep"
+      };
+      setUser(demoUser);
+      localStorage.setItem('ems_user', JSON.stringify(demoUser));
+      setIsLoading(false);
+      return true;
+    }
+    if (email === "manager@company.com") {
+      const demoUser = {
+        id: "demo-manager",
+        firstName: "Demo",
+        lastName: "Manager",
+        email: "demo-manager@ems.com",
+        role: "manager" as UserRole,
+        department: "Sales",
+        position: "Sales Manager"
+      };
+      setUser(demoUser);
+      localStorage.setItem('ems_user', JSON.stringify(demoUser));
+      setIsLoading(false);
+      return true;
+    }
+    if (email === "admin@company.com") {
+      const demoUser = {
+        id: "demo-admin",
+        firstName: "Demo",
+        lastName: "Admin",
+        email: "demo-admin@ems.com",
+        role: "super_admin" as UserRole,
+        department: "Administration",
+        position: "System Admin"
+      };
+      setUser(demoUser);
+      localStorage.setItem('ems_user', JSON.stringify(demoUser));
+      setIsLoading(false);
+      return true;
+    }
+
     try {
       const res = await fetch('http://localhost:5001/api/users/login', {
         method: 'POST',
