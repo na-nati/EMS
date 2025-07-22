@@ -28,7 +28,9 @@ const navigation = [
   { name: 'Training Programs', href: '/training-emp', icon: GraduationCap, roles: ['employee'] },
   { name: 'Assets', href: '/assets', icon: Monitor, roles: ['super_admin', 'hr', 'employee'] },
   { name: 'Recruitment', href: '/recruitment', icon: Building, roles: ['super_admin', 'hr', 'manager'] },
+  { name: 'Documents', href: '/documents', icon: FileText, roles: ['super_admin', 'hr','employee'] },
   { name: 'Reports', href: '/reports', icon: BarChart3, roles: ['super_admin', 'hr', 'manager'] },
+  
 ];
 
 export const Sidebar = () => {

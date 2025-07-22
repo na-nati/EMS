@@ -167,21 +167,9 @@ const Recruitment = () => {
   // Add state for viewing a hiring request
   const [viewingRequest, setViewingRequest] = useState<null | typeof mockHiringRequests[0]>(null);
   // Add state for document management
-  const [documents, setDocuments] = useState(mockDocuments);
-  const [documentSearch, setDocumentSearch] = useState('');
-  const [documentStatus, setDocumentStatus] = useState('All');
+  const [_, setDocuments] = useState(mockDocuments);
   const [editingDocument, setEditingDocument] = useState<null | typeof mockDocuments[0]>(null);
   const [addingDocument, setAddingDocument] = useState(false);
-
-  // Filtered documents
-  const filteredDocuments = documents.filter(doc => {
-    const matchesSearch =
-      doc.name.toLowerCase().includes(documentSearch.toLowerCase()) ||
-      doc.applicant.toLowerCase().includes(documentSearch.toLowerCase()) ||
-      doc.position.toLowerCase().includes(documentSearch.toLowerCase());
-    const matchesStatus = documentStatus === 'All' || doc.status === documentStatus;
-    return matchesSearch && matchesStatus;
-  });
 
   // Role-based data filtering
   const getFilteredData = () => {
@@ -639,14 +627,6 @@ const Recruitment = () => {
           >
             {user.role === 'manager' ? 'My Requests' : 'Hiring Requests'}
           </TabsTrigger>
-          {user.role === 'hr' && (
-            <TabsTrigger
-              value="documents"
-              className="text-sm data-[state=active]:bg-card data-[state=active]:text-foreground"
-            >
-              Documents
-            </TabsTrigger>
-          )}
         </TabsList>
 
         {/* Overview Tab */}
@@ -1050,91 +1030,6 @@ const Recruitment = () => {
             </CardContent>
           </Card>
         </TabsContent>
-
-        {/* Documents Tab (HR Only) */}
-        {user.role === 'hr' && (
-          <TabsContent value="documents" className="space-y-6">
-            <Card className="bg-card border-border">
-              <CardHeader>
-                <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-                  <CardTitle className="text-foreground">Application Documents</CardTitle>
-                  <div className="flex flex-col sm:flex-row gap-2">
-                    <div className="relative">
-                      <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground w-4 h-4" />
-                      <Input
-                        placeholder="Search documents..."
-                        value={documentSearch}
-                        onChange={e => setDocumentSearch(e.target.value)}
-                        className="pl-10 w-full sm:w-64 bg-background border-border text-foreground"
-                      />
-                    </div>
-                    <Select value={documentStatus} onValueChange={setDocumentStatus}>
-                      <SelectTrigger className="w-full sm:w-40 bg-background border-border text-foreground">
-                        <SelectValue placeholder="Status" />
-                      </SelectTrigger>
-                      <SelectContent className="bg-card border-border">
-                        <SelectItem value="All">All</SelectItem>
-                        <SelectItem value="Approved">Approved</SelectItem>
-                        <SelectItem value="Pending">Pending</SelectItem>
-                        <SelectItem value="Rejected">Rejected</SelectItem>
-                      </SelectContent>
-                    </Select>
-                    <Button className="bg-primary hover:bg-primary/80" onClick={() => setAddingDocument(true)}>
-                      <Plus className="h-4 w-4 mr-2" /> Add Document
-                    </Button>
-                  </div>
-                </div>
-              </CardHeader>
-              <CardContent>
-                <div className="space-y-4">
-                  {filteredDocuments.map(doc => (
-                    <div key={doc.id} className="p-4 border border-border rounded-lg hover:bg-muted/20 transition-colors flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
-                      <div className="flex items-start space-x-3 flex-1">
-                        <div className="w-10 h-10 bg-primary/10 rounded-lg flex items-center justify-center flex-shrink-0">
-                          <FileText className="h-5 w-5 text-primary" />
-                        </div>
-                        <div className="min-w-0 flex-1">
-                          <h3 className="font-medium text-foreground truncate">{doc.name}</h3>
-                          <div className="text-sm text-muted-foreground space-y-1">
-                            <p>Applicant: {doc.applicant}</p>
-                            <p>Position: {doc.position}</p>
-                            <p>Type: {doc.type} • Size: {doc.size}</p>
-                            <p>Uploaded: {doc.uploadDate}</p>
-                          </div>
-                        </div>
-                      </div>
-                      <div className="flex items-center justify-between sm:justify-end gap-3">
-                        <Badge
-                          variant={doc.status === 'Approved' ? 'default' : doc.status === 'Rejected' ? 'destructive' : 'secondary'}
-                          className="flex-shrink-0"
-                        >
-                          {doc.status}
-                        </Badge>
-                        <div className="flex gap-2">
-                          <Button size="sm" variant="outline" className="border-border hover:bg-muted/50" onClick={() => setShowDocumentModal(doc)}>
-                            <Eye className="h-4 w-4" />
-                          </Button>
-                          <Button size="sm" variant="outline" className="border-border hover:bg-muted/50" onClick={() => setEditingDocument(doc)}>
-                            <Edit className="h-4 w-4" />
-                          </Button>
-                          <Button size="sm" variant="outline" className="border-border hover:bg-muted/50 text-red-500 hover:text-red-400" onClick={() => setDocuments(prev => prev.filter(d => d.id !== doc.id))}>
-                            <Trash2 className="h-4 w-4" />
-                          </Button>
-                        </div>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-                {filteredDocuments.length === 0 && (
-                  <div className="text-center py-8 text-muted-foreground">
-                    <FileText className="h-12 w-12 mx-auto mb-4 opacity-50" />
-                    <p>No documents found</p>
-                  </div>
-                )}
-              </CardContent>
-            </Card>
-          </TabsContent>
-        )}
       </Tabs>
       {showDocumentModal && (
         <Dialog open={!!showDocumentModal} onOpenChange={() => setShowDocumentModal(null)}>

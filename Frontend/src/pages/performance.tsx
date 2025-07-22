@@ -1,145 +1,266 @@
-import { useState, useMemo } from "react"
-import { BarChart3, TrendingUp, Award, Users, Star, Eye, Download, Search, PlusCircle } from "lucide-react"
-import { Button } from "../components/ui/button"
+import { useState } from "react"
 import { Badge } from "../components/ui/badge"
-// import { Progress } from "@/components/ui/progress" // Removed
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "../components/ui/select"
-import { Input } from "../components/ui/input" // Assuming you have an Input component
+import { Button } from "../components/ui/button"
 
-const performanceStats = [
-  { name: "Avg Performance", value: "89.2/100", icon: Star, color: "text-yellow-500" },
-  { name: "Top Performers", value: "156", icon: Award, color: "text-green-500" },
-  { name: "Needs Improvement", value: "23", icon: TrendingUp, color: "text-orange-500" },
+import { Progress } from "../components/ui/progress"
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "../components/ui/select"
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogFooter } from "../components/ui/dialog"
+import { Input } from "../components/ui/input"
+import { Label } from "../components/ui/lable"
+import { Textarea } from "../components/ui/textarea"
+import { Users, Award, BarChart3, Star, ArrowUpRight, FileText, Plus, Edit, Eye, Search } from "lucide-react"
+import { useAuth } from "../contexts/AuthContext"
+
+// Mock data for self-assessments and performance reviews
+const selfAssessments = [
+  {
+    id: 1,
+    employee: "John Doe",
+    period: "H2 2024",
+    submittedDate: "2024-12-15",
+    status: "Submitted",
+    tasks: [
+      { task: "Led mobile app redesign project", achievement: "Delivered 2 weeks ahead of schedule with 95% client satisfaction" },
+      { task: "Mentored junior developers", achievement: "Successfully onboarded 3 new team members" }
+    ],
+    managerRating: null,
+    managerFeedback: ""
+  },
+  {
+    id: 2,
+    employee: "Jane Smith",
+    period: "H2 2024",
+    submittedDate: "2024-12-10",
+    status: "Rated",
+    tasks: [
+      { task: "Improved sales conversion rate", achievement: "Increased conversion by 23% through new strategy implementation" }
+    ],
+    managerRating: 85,
+    managerFeedback: "Excellent performance in sales optimization. Great strategic thinking."
+  }
 ]
 
-const initialPerformanceReviews = [
+const performanceReviews = [
   {
+    id: 1,
     employee: "John Smith",
-    department: "Engineering",
+    employeeId: "EMP001",
     manager: "Sarah Johnson",
-    score: 4.5,
-    status: "Complete",
-    reviewDate: "2024-12-10",
-    strengths: "Technical leadership, Code quality, Mentorship",
-    improvements: "Communication skills in cross-functional teams",
+    period: "H2 2024",
+    rating: 4.5,
+    status: "Completed",
+    feedback: "Excellent performance with strong leadership skills.",
+    submittedDate: "2024-12-01",
+    department: "Engineering"
   },
   {
+    id: 2,
     employee: "Emily Davis",
-    department: "Marketing",
-    manager: "Mike Wilson",
-    score: 4.2,
-    status: "Complete",
-    reviewDate: "2024-12-08",
-    strengths: "Creative thinking, Campaign management, Market analysis",
-    improvements: "Data analysis for campaign optimization",
+    employeeId: "EMP002",
+    manager: "Michael Brown",
+    period: "H2 2024",
+    rating: 4.2,
+    status: "In Progress",
+    feedback: "Good technical skills, needs improvement in communication.",
+    submittedDate: "2024-11-28",
+    department: "Design"
   },
   {
-    employee: "Robert Brown",
-    department: "Sales",
-    manager: "Jennifer Lee",
-    score: 3.8,
-    status: "Pending", // This review is pending
-    reviewDate: "2024-12-15", // Future date for a pending review
-    strengths: "Client relations, Negotiation, Closing deals",
-    improvements: "Time management, CRM tool proficiency",
-  },
-  {
-    employee: "Lisa Chen",
-    department: "HR",
-    manager: "David Kim",
-    score: 4.7,
-    status: "Complete",
-    reviewDate: "2024-12-05",
-    strengths: "Employee engagement, Process improvement, Conflict resolution",
-    improvements: "Technology adoption for HR analytics",
-  },
-  {
-    employee: "Michael Green",
-    department: "Finance",
-    manager: "Sophia Rodriguez",
-    score: 3.5,
-    status: "Complete",
-    reviewDate: "2024-12-01",
-    strengths: "Financial reporting, Budget management",
-    improvements: "Strategic financial planning, Cross-department collaboration",
-  },
-  {
-    employee: "Anna Lee",
-    department: "Engineering",
+    id: 3,
+    employee: "Alex Wilson",
+    employeeId: "EMP003",
     manager: "Sarah Johnson",
-    score: 4.1,
-    status: "Complete",
-    reviewDate: "2024-11-28",
-    strengths: "Problem-solving, Team collaboration",
-    improvements: "Project documentation",
-  },
-  {
-    employee: "Daniel White",
-    department: "Sales",
-    manager: "Jennifer Lee",
-    score: 3.2,
-    status: "Pending", // Another pending review
-    reviewDate: "2024-12-20",
-    strengths: "Product knowledge, Customer service",
-    improvements: "Lead generation, Sales pipeline management",
+    period: "H2 2024",
+    rating: 3.8,
+    status: "Pending",
+    feedback: "Meets expectations, room for growth in project management.",
+    submittedDate: "2024-11-25",
+    department: "Marketing"
   },
 ]
 
 const departmentPerformance = [
-  { department: "Engineering", avgScore: 4.3, reviews: 45, completed: 42 },
-  { department: "Sales", avgScore: 3.7, reviews: 38, completed: 35 }, // Adjusted avgScore for Sales
-  { department: "Marketing", avgScore: 4.2, reviews: 25, completed: 23 },
-  { department: "HR", avgScore: 4.5, reviews: 12, completed: 12 },
-  { department: "Finance", avgScore: 4.0, reviews: 15, completed: 13 },
+  { name: "Engineering", performance: 92, employees: 45, completed: 42 },
+  { name: "Marketing", performance: 88, employees: 25, completed: 23 },
+  { name: "Sales", performance: 85, employees: 30, completed: 28 },
+  { name: "HR", performance: 95, employees: 12, completed: 12 },
 ]
 
-export default function PerformanceDashboard() {
-  const [selectedPeriod, setSelectedPeriod] = useState("Q4 2024")
-  const [selectedDepartment, setSelectedDepartment] = useState("All Departments")
-  const [reviewStatusFilter, setReviewStatusFilter] = useState("All")
-  const [searchQuery, setSearchQuery] = useState("")
+const Performance = () => {
+  const { user } = useAuth()
+  const [selectedPeriod, setSelectedPeriod] = useState("H2 2024")
+  const [selectedDepartment, setSelectedDepartment] = useState("all")
+  const [showSelfAssessmentModal, setShowSelfAssessmentModal] = useState(false)
+  const [showRatingModal, setShowRatingModal] = useState(false)
+  const [searchTerm, setSearchTerm] = useState("")
 
-  // Filtered performance reviews based on selected filters and search query
-  const filteredPerformanceReviews = useMemo(() => {
-    let tempReviews = initialPerformanceReviews
+  if (!user) {
+    return (
+      <div className="flex items-center justify-center min-h-screen">
+        <div className="text-center">
+          <h2 className="text-xl font-semibold text-foreground">Please log in to access performance management</h2>
+          <p className="text-muted-foreground">You need to be authenticated to view this page.</p>
+        </div>
+      </div>
+    );
+  }
 
-    if (selectedDepartment !== "All Departments") {
-      tempReviews = tempReviews.filter((review) => review.department === selectedDepartment)
+  // Role-based data filtering
+  const getFilteredData = () => {
+    let data = performanceReviews
+    let assessments = selfAssessments
+
+    if (user?.role === "employee") {
+      data = data.filter((review) => review.employee === `${user.firstName} ${user.lastName}`)
+      assessments = assessments.filter((assessment) => assessment.employee === `${user.firstName} ${user.lastName}`)
+    } else if (user?.role === "manager") {
+      data = data.filter((review) => review.department === user.department)
+      assessments = assessments.filter((assessment) => {
+        const reviewForEmployee = performanceReviews.find(r => r.employee === assessment.employee)
+        return reviewForEmployee?.department === user.department
+      })
     }
+    // HR can see all data
 
-    if (reviewStatusFilter !== "All") {
-      tempReviews = tempReviews.filter((review) => review.status === reviewStatusFilter)
+    return {
+      reviews: data.filter(review =>
+        review.employee.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        review.employeeId.toLowerCase().includes(searchTerm.toLowerCase())
+      ),
+      assessments: assessments.filter(assessment =>
+        assessment.employee.toLowerCase().includes(searchTerm.toLowerCase())
+      )
     }
+  }
 
-    if (searchQuery) {
-      tempReviews = tempReviews.filter(
-        (review) =>
-          review.employee.toLowerCase().includes(searchQuery.toLowerCase()) ||
-          review.manager.toLowerCase().includes(searchQuery.toLowerCase())
+  const { reviews: filteredReviews, assessments: filteredAssessments } = getFilteredData()
+
+  const getPerformanceStats = () => ([
+    { title: "Average Rating", value: "4.2/5", icon: Star, trend: "+0.3", color: "text-yellow-500" },
+    { title: "Top Performers", value: "156", icon: Award, trend: "+12", color: "text-green-500" },
+    { title: "Needs Improvement", value: "23", icon: BarChart3, trend: "-2", color: "text-orange-500" },
+    { title: "Total Reviews", value: "245", icon: Users, trend: "+18", color: "text-blue-500" },
+  ]);
+
+  const renderRoleSpecificActions = () => {
+    if (user?.role === "employee") {
+      return (
+        <div className="flex flex-col sm:flex-row gap-2">
+          <Dialog open={showSelfAssessmentModal} onOpenChange={setShowSelfAssessmentModal}>
+            <DialogTrigger asChild>
+              <Button className="bg-primary hover:bg-primary/80">
+                <Plus className="w-4 h-4 mr-2" />
+                Submit Self-Assessment
+              </Button>
+            </DialogTrigger>
+            <DialogContent className="max-w-2xl bg-card border-border text-foreground">
+              <DialogHeader>
+                <DialogTitle>Submit Self-Assessment - {selectedPeriod}</DialogTitle>
+              </DialogHeader>
+              <div className="space-y-4 max-h-[60vh] overflow-y-auto">
+                <div>
+                  <Label htmlFor="period">Period</Label>
+                  <Select defaultValue={selectedPeriod}>
+                    <SelectTrigger className="bg-background border-border text-foreground">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent className="bg-card border-border">
+                      <SelectItem value="H1 2024">H1 2024</SelectItem>
+                      <SelectItem value="H2 2024">H2 2024</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div>
+                  <Label>Tasks & Achievements</Label>
+                  <div className="space-y-3 mt-2">
+                    <div className="border border-border rounded-lg p-3 bg-muted/30">
+                      <Label htmlFor="task1">Task 1</Label>
+                      <Input
+                        id="task1"
+                        placeholder="Describe your main task or responsibility"
+                        className="bg-background border-border text-foreground mt-1"
+                      />
+                      <Label htmlFor="achievement1" className="mt-2 block">Achievement</Label>
+                      <Textarea
+                        id="achievement1"
+                        placeholder="Describe what you achieved and the impact"
+                        className="bg-background border-border text-foreground mt-1"
+                        rows={3}
+                      />
+                    </div>
+                    <div className="border border-border rounded-lg p-3 bg-muted/30">
+                      <Label htmlFor="task2">Task 2</Label>
+                      <Input
+                        id="task2"
+                        placeholder="Describe your main task or responsibility"
+                        className="bg-background border-border text-foreground mt-1"
+                      />
+                      <Label htmlFor="achievement2" className="mt-2 block">Achievement</Label>
+                      <Textarea
+                        id="achievement2"
+                        placeholder="Describe what you achieved and the impact"
+                        className="bg-background border-border text-foreground mt-1"
+                        rows={3}
+                      />
+                    </div>
+                  </div>
+                  <Button variant="outline" className="mt-2 border-border hover:bg-muted/50">
+                    <Plus className="w-4 h-4 mr-2" />
+                    Add More Tasks
+                  </Button>
+                </div>
+              </div>
+              <DialogFooter>
+                <Button variant="outline" onClick={() => setShowSelfAssessmentModal(false)} className="border-border hover:bg-muted/50">
+                  Cancel
+                </Button>
+                <Button className="bg-primary hover:bg-primary/80">Submit Assessment</Button>
+              </DialogFooter>
+            </DialogContent>
+          </Dialog>
+          <Button variant="outline" className="border-border hover:bg-muted/50 bg-transparent">
+            <Eye className="w-4 h-4 mr-2" />
+            View My History
+          </Button>
+        </div>
       )
     }
 
-   // Sort by review date, most recent first
-return tempReviews.sort((a, b) => {
-  const dateA = new Date(a.reviewDate).getTime(); // Get timestamp for date A
-  const dateB = new Date(b.reviewDate).getTime(); // Get timestamp for date B
-  return dateB - dateA; // Sort in descending order (most recent first)
-});
-}, [selectedDepartment, reviewStatusFilter, searchQuery])
+    if (user?.role === "manager") {
+      return (
+        <div className="flex flex-col sm:flex-row gap-2">
+          <Button variant="outline" className="border-border hover:bg-muted/50 bg-transparent">
+            <BarChart3 className="w-4 h-4 mr-2" />
+            Team Analytics
+          </Button>
+          <Button variant="outline" className="border-border hover:bg-muted/50 bg-transparent">
+            <FileText className="w-4 h-4 mr-2" />
+            Export Team Report
+          </Button>
+        </div>
+      )
+    }
 
-  const handleViewNeedsImprovement = () => {
-    setSelectedDepartment("All Departments"); // Reset department filter if set
-    setReviewStatusFilter("Complete"); // Only look at completed reviews for improvement
-    setSearchQuery(""); // Clear search
-    // In a real app, you might also filter by score < 3.5 or similar logic
-    // For now, it will simply show all "Complete" reviews, and the user can then visually identify
-    // or we'd add more granular filtering here if scores were part of the status.
-  };
+    return (
+      <div className="flex flex-col sm:flex-row gap-2">
+        <Button variant="outline" className="border-border hover:bg-muted/50 bg-transparent">
+          <FileText className="w-4 h-4 mr-2" />
+          Export All Data
+        </Button>
+        <Button variant="outline" className="border-border hover:bg-muted/50 bg-transparent">
+          <BarChart3 className="w-4 h-4 mr-2" />
+          Generate Analytics
+        </Button>
+        <Button className="bg-primary hover:bg-primary/80">
+          <Award className="w-4 h-4 mr-2" />
+          Recognition Program
+        </Button>
+      </div>
+    )
+  }
 
   return (
-    <div className="space-y-8 p-6 bg-background min-h-screen text-foreground font-inter">
-      {/* Tailwind CSS configuration for custom colors and font */}
-      {/* This inline style block is for demonstration. In a real project, these vars belong in tailwind.config.js */}
+    <div className="space-y-4 sm:space-y-6 p-3 sm:p-4 lg:p-6 bg-background min-h-screen text-foreground font-inter">
       <style>
         {`
           @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
@@ -174,255 +295,260 @@ return tempReviews.sort((a, b) => {
           .bg-muted { background-color: hsl(var(--muted)); }
           .text-muted-foreground { color: hsl(var(--muted-foreground)); }
           .border-border { border-color: hsl(var(--border)); }
-          .hover\\:bg-primary\\/80:hover { background-color: hsl(142 76% 36% / 0.8); }
-          .hover\\:bg-muted\\/50:hover { background-color: hsl(0 0% 14.9% / 0.5); }
+          .input { background-color: hsl(var(--input)); }
+          .ring { border-color: hsl(var(--ring)); }
+          .hover\\:bg-primary\/80:hover { background-color: hsl(142 76% 36% / 0.8); }
+          .hover\\:bg-muted\/50:hover { background-color: hsl(0 0% 14.9% / 0.5); }
           .font-inter { font-family: 'Inter', sans-serif; }
-          .bg-yellow-500\\/20 { background-color: rgba(234, 179, 8, 0.2); }
-          .text-yellow-500 { color: #eab308; }
-          .bg-blue-500\\/20 { background-color: rgba(59, 130, 246, 0.2); }
-          .text-blue-500 { color: #3b82f6; }
-          .bg-green-500\\/20 { background-color: rgba(34, 197, 94, 0.2); }
-          .text-green-500 { color: #22c55e; }
-          .bg-orange-500\\/20 { background-color: rgba(249, 115, 22, 0.2); }
-          .text-orange-500 { color: #f97316; }
         `}
       </style>
-
-      {/* Header Section with Actions */}
-      <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
-        <div>
-          <h1 className="text-3xl font-bold text-foreground">Performance Management</h1>
-          <p className="text-muted-foreground mt-2">Track and analyze employee performance reviews for growth.</p>
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 sm:gap-4">
+        <div className="space-y-1">
+          <h1 className="text-xl sm:text-2xl lg:text-3xl font-bold text-foreground">Performance Management</h1>
+          <p className="text-muted-foreground text-xs sm:text-sm">
+            {user?.role === "employee" && "Submit self-assessments and track your performance"}
+            {user?.role === "manager" && "Rate team performance and provide feedback"}
+            {user?.role === "hr" && "View all evaluations and generate analytics"}
+          </p>
         </div>
-        <div className="flex flex-wrap gap-3">
-          <Button variant="outline" className="border-border hover:bg-muted/50 bg-transparent">
-            <Download className="h-4 w-4 mr-2" />
-            Export Analytics
-          </Button>
-          <Button variant="outline" className="border-border hover:bg-muted/50 bg-transparent" onClick={() => alert("Redirect to Performance Dashboard view")}>
-            <BarChart3 className="h-4 w-4 mr-2" />
-            Overall Dashboard
-          </Button>
-          <Button className="bg-primary hover:bg-primary/80" onClick={() => alert("Redirect to Recognition Program page")}>
-            <Award className="h-4 w-4 mr-2" />
-            Recognition Program
-          </Button>
-        </div>
+        {renderRoleSpecificActions()}
       </div>
-
       {/* Performance Stats */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-        {performanceStats.map((stat) => {
-          const Icon = stat.icon
-          return (
-            <div key={stat.name} className="bg-card p-6 rounded-xl border border-border flex flex-col justify-between">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-sm font-medium text-muted-foreground">{stat.name}</p>
-                  <p className="text-2xl font-bold text-foreground mt-2">{stat.value}</p>
-                </div>
-                <div className="h-12 w-12 bg-primary/10 rounded-lg flex items-center justify-center">
-                  <Icon className={`h-6 w-6 ${stat.color}`} />
-                </div>
+      <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-3 sm:gap-4">
+        {getPerformanceStats().map((stat) => (
+          <div key={stat.title} className="bg-card p-3 sm:p-4 lg:p-6 rounded-xl border border-border shadow-sm hover:shadow-md transition-shadow">
+            <div className="flex items-center justify-between">
+              <div className="min-w-0 flex-1">
+                <p className="text-xs sm:text-sm font-medium text-muted-foreground truncate">{stat.title}</p>
+                <p className="text-lg sm:text-xl lg:text-2xl font-bold text-foreground mt-1">{stat.value}</p>
               </div>
-              {stat.name === "Needs Improvement" && (
-                <Button variant="outline" size="sm" className="mt-4 border-border hover:bg-muted/50 bg-transparent text-muted-foreground" onClick={handleViewNeedsImprovement}>
-                  <Eye className="h-4 w-4 mr-2" /> View Employees
-                </Button>
-              )}
+              <stat.icon className={`w-5 h-5 sm:w-6 sm:h-6 lg:w-8 lg:h-8 ${stat.color} flex-shrink-0 ml-2`} />
             </div>
-          )
-        })}
+            {stat.trend && (
+              <div className="flex items-center mt-4 text-sm text-muted-foreground">
+                <ArrowUpRight className="h-4 w-4 mr-1 text-green-500" />
+                <span>{stat.trend} since last period</span>
+              </div>
+            )}
+          </div>
+        ))}
       </div>
-
-      {/* Department Performance Overview */}
-      <div className="bg-card p-6 rounded-xl border border-border">
-        <h3 className="text-lg font-semibold text-foreground mb-4">Department Performance Overview</h3>
-        <div className="space-y-6">
-          {departmentPerformance.map((dept, index) => {
-            const completionPercentage = (dept.completed / dept.reviews) * 100;
-            return (
-              <div key={index} className="flex flex-col sm:flex-row items-start sm:items-center justify-between p-4 bg-muted/30 rounded-lg border border-border">
-                <div className="flex items-center space-x-4 mb-3 sm:mb-0">
-                  <div className="w-12 h-12 bg-primary/10 rounded-lg flex items-center justify-center flex-shrink-0">
-                    <Users className="h-6 w-6 text-primary" />
-                  </div>
-                  <div>
-                    <p className="text-sm font-medium text-foreground">{dept.department}</p>
-                    <p className="text-xs text-muted-foreground">{dept.reviews} total reviews</p>
-                  </div>
-                </div>
-                <div className="flex flex-wrap items-center sm:justify-end gap-4 sm:gap-6 w-full sm:w-auto">
-                  <div className="text-center min-w-[80px]">
-                    <p className="text-xs text-muted-foreground">Avg Score</p>
-                    <div className="flex items-center justify-center space-x-1 mt-1">
-                      <Star className="h-4 w-4 text-yellow-500" />
-                      <span className="text-sm font-medium text-foreground">{dept.avgScore.toFixed(1)}/5.0</span>
+      {/* Main Content Sections (role-based) */}
+      {(user?.role === "employee" || user?.role === "manager") && (
+        <div className="space-y-4 sm:space-y-6 p-3 sm:p-4 lg:p-6 bg-background border border-border rounded-xl shadow-sm">
+          <h1 className="text-2xl font-bold text-primary mb-4">Self-Assessments</h1>
+          <h2 className="text-xl font-semibold text-foreground mb-2">
+            {user?.role === "employee" ? "My Self-Assessments" : "Team Self-Assessments"}
+          </h2>
+          <div className="space-y-4">
+            {filteredAssessments.map((assessment) => (
+              <div key={assessment.id} className="border border-border rounded-lg p-4 bg-muted/30">
+                <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+                  <div className="flex-1">
+                    <div className="flex items-center gap-2 mb-2">
+                      <h4 className="font-medium text-foreground">{assessment.employee}</h4>
+                      <Badge variant={assessment.status === "Submitted" ? "outline" : assessment.status === "Rated" ? "default" : "secondary"}>
+                        {assessment.status}
+                      </Badge>
                     </div>
+                    <p className="text-sm text-muted-foreground">{assessment.period} • Submitted: {assessment.submittedDate}</p>
+                    {assessment.managerRating && (
+                      <div className="mt-2">
+                        <p className="text-sm font-medium text-foreground">Manager Rating: {assessment.managerRating}%</p>
+                        <p className="text-sm text-muted-foreground">{assessment.managerFeedback}</p>
+                      </div>
+                    )}
                   </div>
-                  <div className="text-center w-full sm:w-32">
-                    <p className="text-xs text-muted-foreground">Completion Rate</p>
-                    {/* Custom progress bar */}
-                    <div className="h-2 w-full bg-muted rounded-full mt-2">
-                      <div
-                        className="h-full bg-primary rounded-full"
-                        style={{ width: `${completionPercentage}%` }}
-                      ></div>
-                    </div>
-                    <p className="text-xs mt-1 text-foreground">
-                      {Math.round(completionPercentage)}% ({dept.completed}/{dept.reviews})
-                    </p>
+                  <div className="flex gap-2">
+                    <Button variant="outline" size="sm" className="border-border hover:bg-muted/50">
+                      <Eye className="w-4 h-4 mr-2" />
+                      View Details
+                    </Button>
+                    {user?.role === "manager" && assessment.status === "Submitted" && (
+                      <Dialog open={showRatingModal} onOpenChange={setShowRatingModal}>
+                        <DialogTrigger asChild>
+                          <Button size="sm" className="bg-primary hover:bg-primary/80">
+                            <Edit className="w-4 h-4 mr-2" />
+                            Rate Performance
+                          </Button>
+                        </DialogTrigger>
+                        <DialogContent className="max-w-2xl bg-card border-border text-foreground">
+                          <DialogHeader>
+                            <DialogTitle>Rate Performance - {assessment.employee}</DialogTitle>
+                          </DialogHeader>
+                          <div className="space-y-4">
+                            <div>
+                              <Label>Assessment Tasks & Achievements</Label>
+                              <div className="space-y-3 mt-2 bg-muted/30 rounded-lg p-4">
+                                {assessment.tasks.map((task, index) => (
+                                  <div key={index} className="space-y-2">
+                                    <div>
+                                      <p className="text-sm font-medium text-foreground">Task: {task.task}</p>
+                                      <p className="text-sm text-muted-foreground">Achievement: {task.achievement}</p>
+                                    </div>
+                                  </div>
+                                ))}
+                              </div>
+                            </div>
+                            <div>
+                              <Label htmlFor="rating">Performance Rating (0-100%)</Label>
+                              <Input
+                                id="rating"
+                                type="number"
+                                min="0"
+                                max="100"
+                                placeholder="Enter rating percentage"
+                                className="bg-background border-border text-foreground"
+                              />
+                            </div>
+                            <div>
+                              <Label htmlFor="feedback">Feedback & Comments</Label>
+                              <Textarea
+                                id="feedback"
+                                placeholder="Provide detailed feedback on performance, strengths, and areas for improvement"
+                                className="bg-background border-border text-foreground"
+                                rows={4}
+                              />
+                            </div>
+                          </div>
+                          <DialogFooter>
+                            <Button variant="outline" onClick={() => setShowRatingModal(false)} className="border-border hover:bg-muted/50">
+                              Cancel
+                            </Button>
+                            <Button className="bg-primary hover:bg-primary/80">Submit Rating</Button>
+                          </DialogFooter>
+                        </DialogContent>
+                      </Dialog>
+                    )}
                   </div>
-                  <Button size="sm" variant="outline" className="border-border hover:bg-muted/50 bg-transparent flex-shrink-0" onClick={() => {
-                    setSelectedDepartment(dept.department);
-                    setReviewStatusFilter("All");
-                    setSearchQuery("");
-                  }}>
-                    <Eye className="h-4 w-4 mr-2" /> View
-                  </Button>
                 </div>
               </div>
-            );
-          })}
+            ))}
+            {filteredAssessments.length === 0 && (
+              <p className="text-center text-muted-foreground py-8">
+                {user?.role === "employee" ? "No self-assessments submitted yet." : "No team assessments to review."}
+              </p>
+            )}
+          </div>
         </div>
-      </div>
+      )}
+
+      {/* Department Performance Overview (HR Only) */}
+      {user?.role === "hr" && (
+        <div className="space-y-4 sm:space-y-6 p-3 sm:p-4 lg:p-6 bg-background border border-border rounded-xl shadow-sm">
+          <h1 className="text-2xl font-bold text-primary mb-4">Department Performance Overview</h1>
+          <h2 className="text-xl font-semibold text-foreground mb-2">Performance metrics by department</h2>
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            {departmentPerformance.map((dept) => (
+              <div key={dept.name} className="space-y-3">
+                <div className="flex items-center justify-between">
+                  <h4 className="font-medium text-foreground">{dept.name}</h4>
+                  <Badge variant="outline" className="border-border text-foreground">
+                    {dept.performance}%
+                  </Badge>
+                </div>
+                <Progress value={dept.performance} className="h-2" />
+                <div className="flex justify-between text-sm text-muted-foreground">
+                  <span>{dept.employees} employees</span>
+                  <span>{dept.completed} completed</span>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
 
       {/* Performance Reviews */}
-      <div className="bg-card p-6 rounded-xl border border-border">
-        <div className="flex flex-col md:flex-row items-start md:items-center justify-between mb-4 gap-4">
-          <h3 className="text-lg font-semibold text-foreground">Recent Performance Reviews</h3>
-          <div className="flex flex-wrap gap-3 w-full md:w-auto">
-            <div className="relative flex-grow md:flex-grow-0">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-              <Input
-                placeholder="Search employee or manager..."
-                className="pl-9 bg-background border-border w-full md:w-56"
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-              />
-            </div>
+      <div className="space-y-4 sm:space-y-6 p-3 sm:p-4 lg:p-6 bg-background border border-border rounded-xl shadow-sm">
+        <h1 className="text-2xl font-bold text-primary mb-4">Performance Reviews</h1>
+        <h2 className="text-xl font-semibold text-foreground mb-2">
+          {user?.role === "employee" ? "My Performance Reviews" : "Performance Reviews"}
+        </h2>
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+          <div>
+            <p className="text-muted-foreground">
+              {user?.role === "employee" ? "Your evaluation history and ratings" : "Employee evaluations and feedback"}
+            </p>
+          </div>
+          <div className="flex flex-col sm:flex-row gap-2">
+            {(user?.role === "manager" || user?.role === "hr") && (
+              <div className="relative">
+                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground w-4 h-4" />
+                <Input
+                  placeholder="Search employees..."
+                  value={searchTerm}
+                  onChange={(e) => setSearchTerm(e.target.value)}
+                  className="pl-10 w-full sm:w-48 bg-background border-border text-foreground"
+                />
+              </div>
+            )}
             <Select value={selectedPeriod} onValueChange={setSelectedPeriod}>
-              <SelectTrigger className="w-full md:w-40 bg-background border-border">
-                <SelectValue placeholder="Select period" />
+              <SelectTrigger className="w-full sm:w-32 bg-background border-border text-foreground">
+                <SelectValue />
               </SelectTrigger>
               <SelectContent className="bg-card border-border">
-                <SelectItem value="Q4 2024" className="text-foreground hover:bg-muted/50">
-                  Q4 2024
-                </SelectItem>
-                <SelectItem value="Q3 2024" className="text-foreground hover:bg-muted/50">
-                  Q3 2024
-                </SelectItem>
-                <SelectItem value="Q2 2024" className="text-foreground hover:bg-muted/50">
-                  Q2 2024
-                </SelectItem>
-                <SelectItem value="Q1 2024" className="text-foreground hover:bg-muted/50">
-                  Q1 2024
-                </SelectItem>
+                <SelectItem value="H2 2024" className="text-foreground hover:bg-muted/50">H2 2024</SelectItem>
+                <SelectItem value="H1 2024" className="text-foreground hover:bg-muted/50">H1 2024</SelectItem>
               </SelectContent>
             </Select>
-            <Select value={selectedDepartment} onValueChange={setSelectedDepartment}>
-              <SelectTrigger className="w-full md:w-48 bg-background border-border">
-                <SelectValue placeholder="Select department" />
-              </SelectTrigger>
-              <SelectContent className="bg-card border-border">
-                <SelectItem value="All Departments" className="text-foreground hover:bg-muted/50">
-                  All Departments
-                </SelectItem>
-                {/* Dynamically generated department select items */}
-                {departmentPerformance.map((dept) => (
-                  <SelectItem key={dept.department} value={dept.department} className="text-foreground hover:bg-muted/50">
-                    {dept.department}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-            <Select value={reviewStatusFilter} onValueChange={setReviewStatusFilter}>
-              <SelectTrigger className="w-full md:w-40 bg-background border-border">
-                <SelectValue placeholder="Filter by status" />
-              </SelectTrigger>
-              <SelectContent className="bg-card border-border">
-                <SelectItem value="All" className="text-foreground hover:bg-muted/50">
-                  All Statuses
-                </SelectItem>
-                <SelectItem value="Complete" className="text-foreground hover:bg-muted/50">
-                  Complete
-                </SelectItem>
-                <SelectItem value="Pending" className="text-foreground hover:bg-muted/50">
-                  Pending
-                </SelectItem>
-              </SelectContent>
-            </Select>
-            <Button className="bg-primary hover:bg-primary/80 w-full md:w-auto" onClick={() => alert("Initiate New Review workflow")}>
-              <PlusCircle className="h-4 w-4 mr-2" /> Initiate New Review
-            </Button>
+            {user?.role === "hr" && (
+              <Select value={selectedDepartment} onValueChange={setSelectedDepartment}>
+                <SelectTrigger className="w-full sm:w-40 bg-background border-border text-foreground">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent className="bg-card border-border">
+                  <SelectItem value="all" className="text-foreground hover:bg-muted/50">All Departments</SelectItem>
+                  <SelectItem value="Engineering" className="text-foreground hover:bg-muted/50">Engineering</SelectItem>
+                  <SelectItem value="Design" className="text-foreground hover:bg-muted/50">Design</SelectItem>
+                  <SelectItem value="Marketing" className="text-foreground hover:bg-muted/50">Marketing</SelectItem>
+                </SelectContent>
+              </Select>
+            )}
           </div>
         </div>
         <div className="space-y-4">
-          {filteredPerformanceReviews.length > 0 ? (
-            filteredPerformanceReviews.map((review, index) => (
-              <div key={index} className="p-4 bg-muted/30 rounded-lg border border-border flex flex-col">
-                <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between mb-3">
-                  <div className="flex items-center space-x-4 mb-3 sm:mb-0">
-                    <div className="w-12 h-12 bg-primary/10 rounded-full flex items-center justify-center flex-shrink-0">
-                      <span className="text-sm font-medium text-primary">
-                        {review.employee
-                          .split(" ")
-                          .map((n) => n[0])
-                          .join("")}
-                      </span>
-                    </div>
-                    <div>
-                      <p className="text-sm font-medium text-foreground">{review.employee}</p>
-                      <p className="text-xs text-muted-foreground">
-                        {review.department} • Reviewed by {review.manager}
-                      </p>
-                    </div>
-                  </div>
-                  <div className="flex flex-wrap items-center sm:justify-end gap-3 sm:gap-6 w-full sm:w-auto">
-                    <div className="text-center min-w-[70px]">
-                      <p className="text-xs text-muted-foreground">Score</p>
-                      <div className="flex items-center justify-center space-x-1 mt-1">
-                        <Star className="h-4 w-4 text-yellow-500" />
-                        <span className="text-sm font-medium text-foreground">{review.score.toFixed(1)}/5.0</span>
-                      </div>
-                    </div>
-                    <div className="text-center min-w-[70px]">
-                      <p className="text-xs text-muted-foreground">Date</p>
-                      <p className="text-sm font-medium text-foreground mt-1">{review.reviewDate}</p>
-                    </div>
-                    <Badge
-                      className={`
-                        ${review.status === "Complete" ? "bg-green-500/20 text-green-500" : "bg-orange-500/20 text-orange-500"}
-                        w-20 justify-center
-                      `}
-                    >
+          {filteredReviews
+            .filter(review => selectedDepartment === "all" || review.department === selectedDepartment)
+            .map((review) => (
+              <div key={review.id} className="flex flex-col sm:flex-row sm:items-center sm:justify-between p-4 border border-border rounded-lg bg-muted/30 gap-4">
+                <div className="flex-1">
+                  <div className="flex items-center gap-2 mb-2">
+                    <h4 className="font-medium text-foreground">{review.employee}</h4>
+                    {(user?.role === "manager" || user?.role === "hr") && (
+                      <span className="text-xs text-muted-foreground">({review.employeeId})</span>
+                    )}
+                    <Badge variant={review.status === "Completed" ? "default" : review.status === "In Progress" ? "secondary" : "outline"}>
                       {review.status}
                     </Badge>
-                    <Button size="icon" variant="outline" className="border-border hover:bg-muted/50 bg-transparent flex-shrink-0" onClick={() => alert(`Viewing full review for ${review.employee}`)}>
-                      <Eye className="h-4 w-4" />
-                    </Button>
                   </div>
+                  <p className="text-sm text-muted-foreground">
+                    {review.manager} • {review.period}
+                    {(user?.role === "manager" || user?.role === "hr") && ` • ${review.department}`}
+                  </p>
+                  <p className="text-sm text-muted-foreground mt-1">{review.feedback}</p>
                 </div>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-3 pt-3 border-t border-border">
-                  <div>
-                    <p className="text-xs font-medium text-muted-foreground mb-1">Strengths</p>
-                    <p className="text-sm text-foreground">{review.strengths}</p>
+                <div className="flex items-center gap-4">
+                  <div className="text-right">
+                    <div className="flex items-center gap-1">
+                      <Star className="w-4 h-4 text-yellow-500" />
+                      <span className="font-medium text-foreground">{review.rating}</span>
+                    </div>
+                    <p className="text-xs text-muted-foreground">Rating</p>
                   </div>
-                  <div>
-                    <p className="text-xs font-medium text-muted-foreground mb-1">Areas for Improvement</p>
-                    <p className="text-sm text-foreground">{review.improvements}</p>
-                  </div>
+                  <Button variant="outline" size="sm" className="border-border hover:bg-muted/50 bg-transparent">
+                    <Eye className="w-4 h-4 mr-2" />
+                    View Details
+                  </Button>
                 </div>
               </div>
-            ))
-          ) : (
-            <div className="text-center text-muted-foreground p-8">No performance reviews match your criteria.</div>
+            ))}
+          {filteredReviews.length === 0 && (
+            <p className="text-center text-muted-foreground py-8">No performance reviews found.</p>
           )}
         </div>
       </div>
-
-      {/* Performance Trend Chart (Placeholder) */}
-      
     </div>
   )
 }
+
+export default Performance
