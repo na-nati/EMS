@@ -20,32 +20,49 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '
 import { useAuth } from '../contexts/AuthContext';
 import { useToast } from '../components/ui/use-toast';
 
+// Mock Users Map (id -> user info)
+const mockUsers: { [id: string]: { id: string; name: string } } = {
+    'emp123': { id: 'emp123', name: 'Alice Johnson' },
+    'emp456': { id: 'emp456', name: 'Bob Smith' },
+    'hr001': { id: 'hr001', name: 'HR Admin' },
+};
+
+// Fixed document types
+const documentTypes = [
+    'Experience Letter',
+    'Contract',
+    'Termination Letter',
+    'Offer Letter',
+    'Payslip',
+    'Other',
+];
+
 // Mock Data
 const mockDocuments = [
     {
         id: 1,
-        name: 'Resume - Alice Johnson.pdf',
-        type: 'Resume',
-        applicant: 'Alice Johnson',
-        position: 'Senior Software Engineer',
+        name: 'Experience Letter - Alice Johnson.pdf',
+        type: 'Experience Letter',
+        employee_id: 'emp123',
+        uploaded_by: 'hr001',
         uploadDate: '2024-12-15',
         status: 'Approved',
         size: '2.4 MB'
     },
     {
         id: 2,
-        name: 'Cover Letter - Bob Smith.pdf',
-        type: 'Cover Letter',
-        applicant: 'Bob Smith',
-        position: 'Marketing Manager',
+        name: 'Contract - Bob Smith.pdf',
+        type: 'Contract',
+        employee_id: 'emp456',
+        uploaded_by: 'hr001',
         uploadDate: '2024-12-14',
         status: 'Pending',
         size: '1.1 MB'
     }
 ];
 
-function DocumentForm({ doc, onCancel, onSave }: { doc?: typeof mockDocuments[0], onCancel: () => void, onSave: (doc: any) => void }) {
-    const [form, setForm] = useState(doc ? { ...doc } : { name: '', type: '', applicant: '', position: '', size: '', status: 'Pending' });
+function DocumentForm({ doc, onCancel, onSave, employees, uploaderId }: { doc?: typeof mockDocuments[0], onCancel: () => void, onSave: (doc: any) => void, employees: { id: string, name: string }[], uploaderId: string }) {
+    const [form, setForm] = useState(doc ? { ...doc } : { name: '', type: documentTypes[0], employee_id: employees[0]?.id || '', size: '', status: 'Pending', uploaded_by: uploaderId });
     const [file, setFile] = useState<File | null>(null);
 
     const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -68,13 +85,29 @@ function DocumentForm({ doc, onCancel, onSave }: { doc?: typeof mockDocuments[0]
                 <div className="text-sm text-muted-foreground">Selected: {file.name} ({(file.size / (1024 * 1024)).toFixed(2)} MB)</div>
             )}
             <Label htmlFor="name">Document Name</Label>
-            <Input id="name" value={form.name} onChange={e => setForm({ ...form, name: e.target.value })} placeholder="e.g., Resume - John Doe.pdf" />
+            <Input id="name" value={form.name} onChange={e => setForm({ ...form, name: e.target.value })} placeholder="e.g., Experience Letter - John Doe.pdf" />
             <Label htmlFor="type">Type</Label>
-            <Input id="type" value={form.type} onChange={e => setForm({ ...form, type: e.target.value })} placeholder="e.g., Resume, Cover Letter" />
-            <Label htmlFor="applicant">Applicant</Label>
-            <Input id="applicant" value={form.applicant} onChange={e => setForm({ ...form, applicant: e.target.value })} placeholder="e.g., John Doe" />
-            <Label htmlFor="position">Position</Label>
-            <Input id="position" value={form.position} onChange={e => setForm({ ...form, position: e.target.value })} placeholder="e.g., Software Engineer" />
+            <Select value={form.type} onValueChange={value => setForm({ ...form, type: value })}>
+                <SelectTrigger className="bg-background border-border text-foreground">
+                    <SelectValue placeholder="Select type" />
+                </SelectTrigger>
+                <SelectContent className="bg-card border-border">
+                    {documentTypes.map(type => (
+                        <SelectItem key={type} value={type}>{type}</SelectItem>
+                    ))}
+                </SelectContent>
+            </Select>
+            <Label htmlFor="employee">Employee</Label>
+            <Select value={form.employee_id} onValueChange={value => setForm({ ...form, employee_id: value })}>
+                <SelectTrigger className="bg-background border-border text-foreground">
+                    <SelectValue placeholder="Select employee" />
+                </SelectTrigger>
+                <SelectContent className="bg-card border-border">
+                    {employees.map(emp => (
+                        <SelectItem key={emp.id} value={emp.id}>{emp.name}</SelectItem>
+                    ))}
+                </SelectContent>
+            </Select>
             <Label htmlFor="size">File Size</Label>
             <Input id="size" value={form.size} onChange={e => setForm({ ...form, size: e.target.value })} placeholder="e.g., 2.4 MB" disabled />
             <div className="flex flex-col sm:flex-row gap-2 pt-2">
@@ -106,21 +139,20 @@ const Documents = () => {
         );
     }
 
-    // Get full name for employee document ownership
-    const fullName = `${user.firstName} ${user.lastName}`;
-    const isEmployee = user.role === 'employee';
+    // Only HR can upload
     const isHR = user.role === 'hr';
+
+    // Employees list for HR to select
+    const employees = Object.values(mockUsers).filter(u => u.id.startsWith('emp'));
 
     // Filtered documents
     const filteredDocuments = documents.filter(doc => {
         const matchesSearch =
-            doc.name.toLowerCase().includes(documentSearch.toLowerCase()) ||
-            doc.applicant.toLowerCase().includes(documentSearch.toLowerCase()) ||
-            doc.position.toLowerCase().includes(documentSearch.toLowerCase());
+            doc.name.toLowerCase().includes(documentSearch.toLowerCase());
         const matchesStatus = documentStatus === 'All' || doc.status === documentStatus;
         // Employees only see their own documents
-        if (isEmployee) {
-            return matchesSearch && matchesStatus && doc.applicant === fullName;
+        if (user.role === 'employee') {
+            return matchesSearch && matchesStatus && doc.employee_id === user.id;
         }
         // HR and super_admin see all
         return matchesSearch && matchesStatus;
@@ -131,15 +163,11 @@ const Documents = () => {
         toast({ title: 'Download', description: `Pretend downloading: ${doc.name}` });
     };
 
-    // Only allow delete for own documents (employee) or any (hr)
-    const canDelete = (doc: typeof mockDocuments[0]) => isHR || (isEmployee && doc.applicant === fullName);
+    // Only allow delete for HR
+    const canDelete = isHR;
     // Only allow edit/approve/reject for HR
     const canEdit = isHR;
     const canApproveReject = isHR;
-
-    // For employees, never show edit/approve/reject
-    // For HR, show all actions
-    // For super_admin, only view
 
     // Approve/Reject handlers (HR only)
     const handleStatusChange = (docId: number, status: 'Approved' | 'Rejected') => {
@@ -183,18 +211,20 @@ const Documents = () => {
         .bg-muted { background-color: hsl(var(--muted)); }
         .text-muted-foreground { color: hsl(var(--muted-foreground)); }
         .border-border { border-color: hsl(var(--border)); }
-        .hover\\:bg-primary\\/80:hover { background-color: hsl(142 76% 36% / 0.8); }
-        .hover\\:bg-muted\\/50:hover { background-color: hsl(0 0% 14.9% / 0.5); }
+        .hover\\:bg-primary\/80:hover { background-color: hsl(142 76% 36% / 0.8); }
+        .hover\\:bg-muted\/50:hover { background-color: hsl(0 0% 14.9% / 0.5); }
         .font-inter { font-family: 'Inter', sans-serif; }
       `}</style>
             <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
                 <div>
                     <h1 className="text-2xl sm:text-3xl font-bold text-foreground">Application Documents</h1>
-                    <p className="text-muted-foreground mt-2 text-sm sm:text-base">{isEmployee ? 'Track the status of your uploaded application documents.' : 'Manage, review, and organize all recruitment-related documents.'}</p>
+                    <p className="text-muted-foreground mt-2 text-sm sm:text-base">{isHR ? 'Manage, review, and organize all recruitment-related documents.' : 'Track the status of your uploaded application documents.'}</p>
                 </div>
-                <Button className="bg-primary hover:bg-primary/80" onClick={() => setAddingDocument(true)}>
-                    <Plus className="h-4 w-4 mr-2" /> Add Document
-                </Button>
+                {isHR && (
+                    <Button className="bg-primary hover:bg-primary/80" onClick={() => setAddingDocument(true)}>
+                        <Plus className="h-4 w-4 mr-2" /> Add Document
+                    </Button>
+                )}
             </div>
             <Card className="bg-card border-border">
                 <CardHeader>
@@ -235,8 +265,8 @@ const Documents = () => {
                                     <div className="min-w-0 flex-1">
                                         <h3 className="font-medium text-foreground truncate">{doc.name}</h3>
                                         <div className="text-sm text-muted-foreground space-y-1">
-                                            <p>Applicant: {doc.applicant}</p>
-                                            <p>Position: {doc.position}</p>
+                                            <p>Employee: {mockUsers[doc.employee_id]?.name || doc.employee_id}</p>
+                                            <p>Uploaded By: {mockUsers[doc.uploaded_by]?.name || doc.uploaded_by}</p>
                                             <p>Type: {doc.type} • Size: {doc.size}</p>
                                             <p>Uploaded: {doc.uploadDate}</p>
                                         </div>
@@ -261,7 +291,7 @@ const Documents = () => {
                                         <Button size="sm" variant="outline" className="border-border hover:bg-muted/50" onClick={() => handleDownload(doc)}>
                                             <Download className="h-4 w-4" />
                                         </Button>
-                                        {canDelete(doc) && (
+                                        {canDelete && (
                                             <Button size="sm" variant="outline" className="border-border hover:bg-muted/50 text-red-500 hover:text-red-400" onClick={() => setDocuments(prev => prev.filter(d => d.id !== doc.id))}>
                                                 <Trash2 className="h-4 w-4" />
                                             </Button>
@@ -297,8 +327,8 @@ const Documents = () => {
                         </DialogHeader>
                         <div>
                             <p><strong>Name:</strong> {showDocumentModal.name}</p>
-                            <p><strong>Applicant:</strong> {showDocumentModal.applicant}</p>
-                            <p><strong>Position:</strong> {showDocumentModal.position}</p>
+                            <p><strong>Employee:</strong> {mockUsers[showDocumentModal.employee_id]?.name || showDocumentModal.employee_id}</p>
+                            <p><strong>Uploaded By:</strong> {mockUsers[showDocumentModal.uploaded_by]?.name || showDocumentModal.uploaded_by}</p>
                             <p><strong>Type:</strong> {showDocumentModal.type}</p>
                             <p><strong>Status:</strong> {showDocumentModal.status}</p>
                             <p><strong>Size:</strong> {showDocumentModal.size}</p>
@@ -310,16 +340,18 @@ const Documents = () => {
                     </DialogContent>
                 </Dialog>
             )}
-            {addingDocument && (
+            {isHR && addingDocument && (
                 <Dialog open={addingDocument} onOpenChange={setAddingDocument}>
                     <DialogContent>
                         <DialogHeader>
                             <DialogTitle>Add Document</DialogTitle>
                         </DialogHeader>
                         <DocumentForm
+                            employees={employees}
+                            uploaderId={user.id}
                             onCancel={() => setAddingDocument(false)}
                             onSave={doc => {
-                                setDocuments(prev => [...prev, { ...doc, id: Date.now(), status: 'Pending', uploadDate: new Date().toISOString().slice(0, 10), applicant: fullName }]);
+                                setDocuments(prev => [...prev, { ...doc, id: Date.now(), status: 'Pending', uploadDate: new Date().toISOString().slice(0, 10), uploaded_by: user.id }]);
                                 setAddingDocument(false);
                                 toast({ title: 'Document Added', description: 'Document has been added and is pending review.' });
                             }}
@@ -327,7 +359,7 @@ const Documents = () => {
                     </DialogContent>
                 </Dialog>
             )}
-            {canEdit && editingDocument && (
+            {isHR && editingDocument && (
                 <Dialog open={!!editingDocument} onOpenChange={() => setEditingDocument(null)}>
                     <DialogContent>
                         <DialogHeader>
@@ -335,6 +367,8 @@ const Documents = () => {
                         </DialogHeader>
                         <DocumentForm
                             doc={editingDocument}
+                            employees={employees}
+                            uploaderId={user.id}
                             onCancel={() => setEditingDocument(null)}
                             onSave={doc => {
                                 setDocuments(prev => prev.map(d => d.id === editingDocument.id ? { ...d, ...doc } : d));

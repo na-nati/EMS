@@ -6,6 +6,7 @@ import React, {
 } from 'react';
 import type { ReactNode } from 'react';
 
+
 // ✅ Exported so it can be used in other files
 export type UserRole = 'super_admin' | 'hr' | 'manager' | 'employee';
 
@@ -111,7 +112,8 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     }
 
     try {
-      const res = await fetch('http://localhost:5001/api/users/login', {
+      const apiUrl = import.meta.env.VITE_API_URL;
+      const res = await fetch(`${apiUrl}/users/login`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ email, password }),
