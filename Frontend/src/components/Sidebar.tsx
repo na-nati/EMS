@@ -29,6 +29,7 @@ const navigation = [
   { name: 'Assets', href: '/assets', icon: Monitor, roles: ['super_admin', 'hr', 'employee'] },
   { name: 'Recruitment', href: '/recruitment', icon: Building, roles: ['super_admin', 'hr', 'manager'] },
   { name: 'Documents', href: '/documents', icon: FileText, roles: ['super_admin', 'hr','employee'] },
+  { name: 'Separation Request', href: '/separation-request', icon: FileText, roles: ['employee', 'manager', 'hr'] },
   { name: 'Reports', href: '/reports', icon: BarChart3, roles: ['super_admin', 'hr', 'manager'] },
   
 ];
