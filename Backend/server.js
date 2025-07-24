@@ -16,7 +16,8 @@ const swaggerOptions = {
             description: 'API documentation for Employee MS',
         },
         servers: [
-            { url: 'http://localhost:5001' }
+            { url: 'http://localhost:5001' },
+            { url:'https://ems-backend-qwcv.onrender.com'}
         ],
     },
     apis: ['./routes/*.js', './models/*.js'], // Path to your route/model files for annotation scanning
