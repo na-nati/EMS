@@ -31,9 +31,9 @@ exports.registeruser = async (req, res) => {
 
         res.status(201).json({ message: 'User registered successfully.' });
     } catch (err) {
-    console.error('Registration error:', err);
-    res.status(500).json({ message: 'Server error.' });
-}
+        console.error('Registration error:', err);
+        res.status(500).json({ message: 'Server error.' });
+    }
 
 };
 
@@ -58,7 +58,7 @@ exports.loginuser = async (req, res) => {
 
         const token = jwt.sign(
             { userId: user._id, role: user.role },
-            'your_jwt_secret',
+            process.env.JWT_SECRET,
             { expiresIn: '1d' }
         );
 
@@ -72,11 +72,20 @@ exports.loginuser = async (req, res) => {
                 role: user.role,
                 department: user.department,
                 position: user.position,
-            
+
             },
         });
     } catch (err) {
         console.error('Login error:', err);
+        res.status(500).json({ message: 'Server error.' });
+    }
+};
+// Get all users
+exports.getAllUsers = async (req, res) => {
+    try {
+        const users = await User.find().select('-password'); // Exclude password
+        res.json(users);
+    } catch (err) {
         res.status(500).json({ message: 'Server error.' });
     }
 };
