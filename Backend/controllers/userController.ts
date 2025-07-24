@@ -1,9 +1,10 @@
-const User = require('../models/User');
-const bcrypt = require('bcryptjs');
-const jwt = require('jsonwebtoken');
+import { Request, Response } from 'express';
+import { User } from '../models/User';
+import bcrypt from 'bcryptjs';
+import jwt from 'jsonwebtoken';
 
 // Register
-exports.registeruser = async (req, res) => {
+export const registeruser = async (req: Request, res: Response) => {
     try {
         const { firstName, lastName, email, password, role, department, position } = req.body;
 
@@ -34,12 +35,10 @@ exports.registeruser = async (req, res) => {
         console.error('Registration error:', err);
         res.status(500).json({ message: 'Server error.' });
     }
-
 };
 
-
 // Login
-exports.loginuser = async (req, res) => {
+export const loginuser = async (req: Request, res: Response) => {
     try {
         const { email, password } = req.body;
         console.log('Login attempt with:', email);
@@ -58,7 +57,7 @@ exports.loginuser = async (req, res) => {
 
         const token = jwt.sign(
             { userId: user._id, role: user.role },
-            process.env.JWT_SECRET,
+            process.env.JWT_SECRET as string,
             { expiresIn: '1d' }
         );
 
@@ -72,7 +71,6 @@ exports.loginuser = async (req, res) => {
                 role: user.role,
                 department: user.department,
                 position: user.position,
-
             },
         });
     } catch (err) {
@@ -80,8 +78,9 @@ exports.loginuser = async (req, res) => {
         res.status(500).json({ message: 'Server error.' });
     }
 };
+
 // Get all users
-exports.getAllUsers = async (req, res) => {
+export const getAllUsers = async (req: Request, res: Response) => {
     try {
         const users = await User.find().select('-password'); // Exclude password
         res.json(users);

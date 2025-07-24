@@ -1,8 +1,14 @@
-const jwt = require('jsonwebtoken');
+import { Request, Response, NextFunction } from 'express';
+import jwt from 'jsonwebtoken';
 
 const JWT_SECRET = process.env.JWT_SECRET;
 
-const authMiddleware = (req, res, next) => {
+// Extend Express Request to include user
+export interface AuthenticatedRequest extends Request {
+    user?: any;
+}
+
+export const authMiddleware = (req: AuthenticatedRequest, res: Response, next: NextFunction) => {
     if (!JWT_SECRET) {
         return res.status(500).json({ message: 'JWT secret not configured.' });
     }
@@ -20,6 +26,4 @@ const authMiddleware = (req, res, next) => {
     } catch (err) {
         return res.status(401).json({ message: 'Token is not valid.' });
     }
-};
-
-module.exports = authMiddleware; 
+}; 
