@@ -1,11 +1,14 @@
-const express = require("express");
-const app = express();
-const dotenv = require("dotenv").config(); // Loads environment variables
-const connectdb = require("./config/dbconnection");
-const userRoutes = require('./routes/userRoutes');
-const cors = require('cors');
-const swaggerUi = require('swagger-ui-express');
-const swaggerJsdoc = require('swagger-jsdoc');
+import express, { Application } from "express";
+import dotenv from "dotenv";
+import cors from "cors";
+import swaggerUi from "swagger-ui-express";
+import swaggerJsdoc from "swagger-jsdoc";
+import connectdb from "./config/dbconnection";
+import userRoutes from "./routes/userRoutes";
+
+dotenv.config(); // Loads environment variables
+
+const app: Application = express();
 
 const swaggerOptions = {
     definition: {
@@ -17,10 +20,10 @@ const swaggerOptions = {
         },
         servers: [
             { url: 'http://localhost:5001' },
-            { url:'https://ems-backend-qwcv.onrender.com'}
+            { url: 'https://ems-backend-qwcv.onrender.com' }
         ],
     },
-    apis: ['./routes/*.js', './models/*.js'], // Path to your route/model files for annotation scanning
+    apis: ['./routes/*.ts', './models/*.ts'], // Path to your route/model files for annotation scanning
 };
 
 const swaggerSpec = swaggerJsdoc(swaggerOptions);
@@ -39,7 +42,7 @@ app.use('/api/users', userRoutes);
 app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerSpec));
 
 // Start the server
-const port = process.env.PORT || 5000;
+const port = process.env.PORT ? Number(process.env.PORT) : 5000;
 app.listen(port, () => {
     console.log(`Server is running on port ${port}`);
 });
