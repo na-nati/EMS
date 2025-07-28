@@ -67,16 +67,16 @@ router.post("/register", registeruser);
  */
 router.post("/login", loginuser);
 
-/**
- * @swagger
- * /api/users:
- *   get:
- *     summary: Get all users
- *     tags: [Users]
- *     responses:
- *       200:
- *         description: List of users
- */
-router.get("/", getAllUsers);
+// /**
+//  * @swagger
+//  * /api/users:
+//  *   get:
+//  *     summary: Get all users
+//  *     tags: [Users]
+//  *     responses:
+//  *       200:
+//  *         description: List of users
+//  */
+// router.get("/", getAllUsers);
 
 export default router;
