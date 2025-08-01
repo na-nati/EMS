@@ -1,0 +1,817 @@
+openapi: 3.0.0
+info:
+  title: Employee Management System API
+  version: 1.0.0
+  description: API documentation for Employee MS
+servers:
+  - url: http://localhost:5001
+  - url: https://ems-backend-qwcv.onrender.com
+
+paths:
+  /api/users/register:
+    post:
+      summary: Register a new user
+      tags: [Users]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - firstName
+                - lastName
+                - email
+                - password
+                - role
+              properties:
+                firstName: { type: string, description: "User's first name" }
+                lastName: { type: string, description: "User's last name" }
+                email: { type: string, description: "User's email address" }
+                password: { type: string, description: "User's password" }
+                role: { type: string, enum: [employee, manager, hr, super_admin], description: "User's role" }
+                department: { type: string, description: "Department ID (optional - can be set later in employee record)" }
+                position: { type: string, description: "Position/title (optional - can be set later in employee record)" }
+      responses:
+        '201':
+          description: User registered successfully
+        '400':
+          description: Bad request
+
+  /api/users/login:
+    post:
+      summary: Login a user
+      tags: [Users]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                email: { type: string }
+                password: { type: string }
+      responses:
+        '200':
+          description: Successful login
+        '400':
+          description: Invalid email or password
+
+  /api/departments:
+    post:
+      summary: Create a new department
+      tags: [Departments]
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                name:
+                  type: string
+                  description: The name of the department
+      responses:
+        '201':
+          description: Department created successfully
+        '400':
+          description: Bad request
+
+    get:
+      summary: Get all departments
+      tags: [Departments]
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: List of departments
+        '401':
+          description: Unauthorized
+
+  /api/departments/{id}:
+    get:
+      summary: Get a department by ID
+      tags: [Departments]
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          description: The ID of the department
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Department details
+        '401':
+          description: Unauthorized
+        '404':
+          description: Department not found
+
+    put:
+      summary: Update a department
+      tags: [Departments]
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          description: The ID of the department
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                name:
+                  type: string
+                  description: The name of the department
+      responses:
+        '200':
+          description: Department updated successfully
+        '400':
+          description: Bad request
+        '401':
+          description: Unauthorized
+        '403':
+          description: Forbidden
+        '404':
+          description: Department not found
+
+    delete:
+      summary: Delete a department
+      tags: [Departments]
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          description: The ID of the department
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Department deleted successfully
+        '401':
+          description: Unauthorized
+        '403':
+          description: Forbidden
+        '404':
+          description: Department not found
+
+  /api/documents/documents:
+    get:
+      summary: Get all documents
+      tags: [Documents]
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: query
+          name: search
+          schema:
+            type: string
+          description: Search term for document name or type
+        - in: query
+          name: status
+          schema:
+            type: string
+            enum: [Approved, Pending, Rejected, All]
+          description: Filter by document status
+        - in: query
+          name: employee_id
+          schema:
+            type: string
+          description: Filter by employee ID
+      responses:
+        '200':
+          description: List of documents
+        '401':
+          description: Unauthorized
+
+    post:
+      summary: Create a new document
+      tags: [Documents]
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                name: { type: string }
+                doc_type: { type: string }
+                employee_id: { type: string }
+                file_url: { type: string }
+      responses:
+        '201':
+          description: Document created successfully
+        '400':
+          description: Bad request
+        '401':
+          description: Unauthorized
+
+  /api/documents/documents/{id}:
+    get:
+      summary: Get a document by ID
+      tags: [Documents]
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Document details
+        '401':
+          description: Unauthorized
+        '404':
+          description: Document not found
+    put:
+      summary: Update a document
+      tags: [Documents]
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                name: { type: string }
+                doc_type: { type: string }
+                employee_id: { type: string }
+                file_url: { type: string }
+                status: { type: string, enum: [Approved, Pending, Rejected] }
+      responses:
+        '200':
+          description: Document updated successfully
+        '400':
+          description: Bad request
+        '401':
+          description: Unauthorized
+        '404':
+          description: Document not found
+    delete:
+      summary: Delete a document
+      tags: [Documents]
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Document deleted successfully
+        '401':
+          description: Unauthorized
+        '404':
+          description: Document not found
+
+  /api/documents/requests:
+    get:
+      summary: Get all document requests
+      tags: [DocumentRequests]
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: query
+          name: search
+          schema:
+            type: string
+          description: Search term for document type or request details
+        - in: query
+          name: status
+          schema:
+            type: string
+            enum: [Pending, Fulfilled, Rejected, All]
+          description: Filter by request status
+      responses:
+        '200':
+          description: List of document requests
+        '401':
+          description: Unauthorized
+    post:
+      summary: Create a new document request
+      tags: [DocumentRequests]
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                requested_doc_type: { type: string }
+                request_details: { type: string }
+      responses:
+        '201':
+          description: Document request created successfully
+        '400':
+          description: Bad request
+        '401':
+          description: Unauthorized
+
+  /api/documents/requests/{id}:
+    get:
+      summary: Get a document request by ID
+      tags: [DocumentRequests]
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Document request details
+        '401':
+          description: Unauthorized
+        '404':
+          description: Document request not found
+    put:
+      summary: Update a document request
+      tags: [DocumentRequests]
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                status: { type: string, enum: [Pending, Fulfilled, Rejected] }
+                hr_notes: { type: string }
+                fulfilled_document_id: { type: string }
+      responses:
+        '200':
+          description: Document request updated successfully
+        '400':
+          description: Bad request
+        '401':
+          description: Unauthorized
+        '404':
+          description: Document request not found
+
+  /api/salaries:
+    get:
+      summary: Get all salary records
+      tags: [Salaries]
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: query
+          name: page
+          schema:
+            type: integer
+            default: 1
+        - in: query
+          name: limit
+          schema:
+            type: integer
+            default: 10
+        - in: query
+          name: user_id
+          schema:
+            type: string
+        - in: query
+          name: status
+          schema:
+            type: string
+            enum: [paid, pending, processing]
+      responses:
+        '200':
+          description: List of salary records
+        '401':
+          description: Unauthorized
+
+    post:
+      summary: Create a new salary record
+      tags: [Salaries]
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - user
+                - basicSalary
+                - month
+                - year
+                - department
+              properties:
+                user: { type: string }
+                basicSalary: { type: number }
+                bonus: { type: number, default: 0 }
+                deductions: { type: number, default: 0 }
+                month: { type: string }
+                year: { type: integer }
+                status: { type: string, enum: [paid, pending, processing], default: pending }
+                department: { type: string }
+      responses:
+        '201':
+          description: Salary created successfully
+        '400':
+          description: Bad request
+        '401':
+          description: Unauthorized
+
+  /api/salaries/{id}:
+    get:
+      summary: Get salary by ID
+      tags: [Salaries]
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Salary details
+        '401':
+          description: Unauthorized
+        '404':
+          description: Salary not found
+
+    put:
+      summary: Update salary
+      tags: [Salaries]
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                user: { type: string }
+                basicSalary: { type: number }
+                bonus: { type: number }
+                deductions: { type: number }
+                month: { type: string }
+                year: { type: integer }
+                status: { type: string, enum: [paid, pending, processing] }
+                department: { type: string }
+      responses:
+        '200':
+          description: Salary updated successfully
+        '400':
+          description: Bad request
+        '401':
+          description: Unauthorized
+        '404':
+          description: Salary not found
+
+    delete:
+      summary: Delete salary
+      tags: [Salaries]
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Salary deleted successfully
+        '401':
+          description: Unauthorized
+        '404':
+          description: Salary not found
+
+  /api/employees:
+    get:
+      summary: Get all employees
+      tags: [Employees]
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: query
+          name: page
+          schema:
+            type: integer
+            default: 1
+        - in: query
+          name: limit
+          schema:
+            type: integer
+            default: 10
+        - in: query
+          name: employment_status
+          schema:
+            type: string
+            enum: [Active, Resigned, Terminated]
+        - in: query
+          name: search
+          schema:
+            type: string
+      responses:
+        '200':
+          description: List of employees
+        '401':
+          description: Unauthorized
+
+    post:
+      summary: Create a new employee
+      tags: [Employees]
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - user_id
+                - employee_code
+                - job_profile
+                - joining_date
+              properties:
+                user_id: { type: string, description: "User ID from users collection" }
+                employee_code: { type: string, description: "Unique employee code" }
+                job_profile: { type: string, description: "Job title/role" }
+                salary_id: { type: string, description: "Reference to existing salary record (use this OR salary field)" }
+                manager_id: { type: string, description: "Manager's user ID" }
+                joining_date: { type: string, format: date, description: "Date of joining" }
+                employment_status: { type: string, enum: [Active, Resigned, Terminated], default: Active }
+      responses:
+        '201':
+          description: Employee created successfully
+        '400':
+          description: Bad request
+        '401':
+          description: Unauthorized
+
+  /api/employees/{id}:
+    get:
+      summary: Get employee by ID
+      tags: [Employees]
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Employee details
+        '401':
+          description: Unauthorized
+        '404':
+          description: Employee not found
+
+    put:
+      summary: Update employee
+      tags: [Employees]
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                user_id: { type: string, description: "User ID from users collection" }
+                employee_code: { type: string, description: "Unique employee code" }
+                job_profile: { type: string, description: "Job title/role" }
+                salary_id: { type: string, description: "Reference to existing salary record (use this OR salary field)" }
+                manager_id: { type: string, description: "Manager's user ID" }
+                joining_date: { type: string, format: date, description: "Date of joining" }
+                employment_status: { type: string, enum: [Active, Resigned, Terminated] }
+      responses:
+        '200':
+          description: Employee updated successfully
+        '400':
+          description: Bad request
+        '401':
+          description: Unauthorized
+        '404':
+          description: Employee not found
+
+    delete:
+      summary: Delete employee
+      tags: [Employees]
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Employee deleted successfully
+        '401':
+          description: Unauthorized
+        '404':
+          description: Employee not found
+
+  /api/employees/department/{departmentId}:
+    get:
+      summary: Get employees by department
+      tags: [Employees]
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: departmentId
+          in: path
+          required: true
+          schema:
+            type: string
+        - in: query
+          name: page
+          schema:
+            type: integer
+            default: 1
+        - in: query
+          name: limit
+          schema:
+            type: integer
+            default: 10
+      responses:
+        '200':
+          description: List of employees in department
+        '401':
+          description: Unauthorized
+
+  /api/employees/stats/all:
+    get:
+      summary: Get employee statistics
+      tags: [Employees]
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: Employee statistics
+        '401':
+          description: Unauthorized
+
+  /api/managers:
+    get:
+      summary: Get all managers
+      tags: [Managers]
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: query
+          name: page
+          schema:
+            type: integer
+            default: 1
+        - in: query
+          name: limit
+          schema:
+            type: integer
+            default: 10
+        - in: query
+          name: department_id
+          schema:
+            type: string
+      responses:
+        '200':
+          description: List of managers
+        '401':
+          description: Unauthorized
+
+    post:
+      summary: Create a new manager
+      tags: [Managers]
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - user_id
+                - department_id
+              properties:
+                user_id:
+                  type: string
+                  description: User ID (must be an existing user with role 'manager')
+                department_id:
+                  type: string
+                  description: Department ID where the user will be a manager
+      responses:
+        '201':
+          description: Manager created successfully
+        '400':
+          description: Bad request
+        '401':
+          description: Unauthorized
+        '409':
+          description: User is already a manager
+
+  /api/managers/{id}:
+    get:
+      summary: Get manager by ID
+      tags: [Managers]
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Manager details
+        '401':
+          description: Unauthorized
+        '404':
+          description: Manager not found
+
+    put:
+      summary: Update manager
+      tags: [Managers]
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                user_id:
+                  type: string
+                  description: Updated user ID
+
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+
+security:
+  - bearerAuth: []
+      
+

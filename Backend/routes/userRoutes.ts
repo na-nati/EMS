@@ -3,80 +3,31 @@ import {
   registeruser,
   loginuser,
   getAllUsers,
+  updateProfilePicture,
+  getProfile,
 } from "../controllers/userController";
+import { validateBody } from "../middleware/validateBody";
+import { registerUserSchema, loginUserSchema } from "../validation/userValidation";
+import { authMiddleware } from "../middleware/authMiddleware";
+import { upload, handleMulterError } from "../middleware/uploadMiddleware";
 
 const router = Router();
 
-/**
- * @swagger
- * /api/users/register:
- *   post:
- *     summary: Register a new user
- *     tags: [Users]
- *     requestBody:
- *       required: true
- *       content:
- *         application/json:
- *           schema:
- *             type: object
- *             properties:
- *               firstName:
- *                 type: string
- *               lastName:
- *                 type: string
- *               email:
- *                 type: string
- *               password:
- *                 type: string
- *               role:
- *                 type: string
- *               department:
- *                 type: string
- *               position:
- *                 type: string
- *     responses:
- *       201:
- *         description: User registered successfully
- *       400:
- *         description: Bad request
- */
-router.post("/register", registeruser);
+router.post("/register", validateBody(registerUserSchema), registeruser);
 
-/**
- * @swagger
- * /api/users/login:
- *   post:
- *     summary: Login a user
- *     tags: [Users]
- *     requestBody:
- *       required: true
- *       content:
- *         application/json:
- *           schema:
- *             type: object
- *             properties:
- *               email:
- *                 type: string
- *               password:
- *                 type: string
- *     responses:
- *       200:
- *         description: Successful login
- *       400:
- *         description: Invalid email or password
- */
-router.post("/login", loginuser);
+router.post("/login", validateBody(loginUserSchema), loginuser);
 
-// /**
-//  * @swagger
-//  * /api/users:
-//  *   get:
-//  *     summary: Get all users
-//  *     tags: [Users]
-//  *     responses:
-//  *       200:
-//  *         description: List of users
-//  */
-// router.get("/", getAllUsers);
+router.get("/", getAllUsers);
+
+// Get user profile (requires authentication)
+router.get("/profile", authMiddleware, getProfile);
+
+// Update profile picture (requires authentication and file upload)
+router.patch("/:userId/profile-picture",
+  authMiddleware,
+  upload.single('profilePicture'),
+  handleMulterError,
+  updateProfilePicture
+);
 
 export default router;

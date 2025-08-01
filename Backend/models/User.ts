@@ -6,8 +6,9 @@ export interface IUser extends Document {
     email: string;
     password: string;
     role: 'employee' | 'manager' | 'hr' | 'super_admin';
-    department?: string;
+    department?: mongoose.Schema.Types.ObjectId; // Reference by ObjectId
     position?: string;
+    profilePicture?: string; // URL to profile picture
     isActive?: boolean;
 }
 
@@ -39,12 +40,18 @@ const UserSchema = new Schema<IUser>({
         default: 'employee',
     },
     department: {
-        type: String,
-        trim: true,
+        type: mongoose.Schema.Types.ObjectId,
+        ref: 'Department',
+        required: false,
     },
     position: {
         type: String,
         trim: true,
+    },
+    profilePicture: {
+        type: String,
+        trim: true,
+        default: null,
     },
     isActive: {
         type: Boolean,
