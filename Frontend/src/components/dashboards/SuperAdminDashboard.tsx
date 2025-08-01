@@ -19,6 +19,29 @@ import type { LucideIcon } from 'lucide-react';
 import { Button } from '../ui/button';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '../ui/dialog';
 
+
+// Utility function for authenticated API requests
+const apiRequest = async (url: string, options: RequestInit = {}) => {
+  const token = localStorage.getItem('ems_token');
+  const headers = {
+    'Content-Type': 'application/json',
+    ...(token && { 'Authorization': `Bearer ${token}` }),
+    ...options.headers,
+  };
+
+  const response = await fetch(url, {
+    ...options,
+    headers,
+  });
+
+  if (!response.ok) {
+    const errorData = await response.json();
+    throw new Error(errorData.message || `HTTP error! status: ${response.status}`);
+  }
+
+  return response.json();
+};
+
 // Type definitions
 interface StatItem {
   name: string;
@@ -54,6 +77,7 @@ interface HealthMetric {
 interface ModalProps {
   isOpen: boolean;
   onClose: () => void;
+  onSuccess?: () => void;
 }
 
 // Stats data
@@ -75,15 +99,6 @@ const auditLogs: AuditLog[] = [
   { id: 6, action: 'Security settings updated', user: 'Super Admin', target: 'Password Policy', time: '6 hours ago', ip: '192.168.1.5' },
   { id: 7, action: 'Bulk import completed', user: 'HR Manager', target: '25 employees', time: '8 hours ago', ip: '192.168.1.8' },
   { id: 8, action: 'Audit log exported', user: 'Super Admin', target: 'audit_log_2023-10-15.csv', time: '10 hours ago', ip: '192.168.1.5' },
-];
-
-// Departments data
-const departments: Department[] = [
-  { id: 1, name: 'Engineering', employees: 42, manager: 'Alex Johnson' },
-  { id: 2, name: 'Marketing', employees: 18, manager: 'Sarah Williams' },
-  { id: 3, name: 'Human Resources', employees: 12, manager: 'Michael Chen' },
-  { id: 4, name: 'Finance', employees: 9, manager: 'Robert Davis' },
-  { id: 5, name: 'Operations', employees: 27, manager: 'Emily Thompson' },
 ];
 
 // Import HRDashboard as a named export
@@ -173,7 +188,49 @@ const CreateHRAccountModal: React.FC<ModalProps> = ({ isOpen, onClose }) => {
 };
 
 // Create New Department Modal Component
-const CreateNewDepartmentModal: React.FC<ModalProps> = ({ isOpen, onClose }) => {
+const CreateNewDepartmentModal: React.FC<ModalProps & { onSuccess: () => void }> = ({ isOpen, onClose, onSuccess }) => {
+  const [departmentName, setDepartmentName] = useState('');
+  const [selectedManager, setSelectedManager] = useState('');
+  const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState('');
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+
+    if (!departmentName.trim()) {
+      setError('Department name is required');
+      return;
+    }
+
+    setIsLoading(true);
+    setError('');
+
+    try {
+      const data = await apiRequest('http://localhost:5001/api/departments', {
+        method: 'POST',
+        body: JSON.stringify({
+          name: departmentName,
+          description: `Department for ${departmentName}`,
+        }),
+      });
+
+      console.log('Department created successfully:', data);
+
+      // Reset form
+      setDepartmentName('');
+      setSelectedManager('');
+
+      // Close modal
+      onClose();
+      onSuccess(); // Call the success handler
+
+    } catch (err: any) {
+      setError(err.message || 'Failed to create department');
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
   if (!isOpen) return null;
 
   return (
@@ -186,38 +243,60 @@ const CreateNewDepartmentModal: React.FC<ModalProps> = ({ isOpen, onClose }) => 
           </button>
         </div>
 
-        <div className="space-y-4">
+        <form onSubmit={handleSubmit} className="space-y-4">
           <div>
-            <label className="block text-sm font-medium mb-1">Department Name</label>
+            <label className="block text-sm font-medium mb-1">Department Name *</label>
             <input
               type="text"
+              value={departmentName}
+              onChange={(e) => setDepartmentName(e.target.value)}
               className="w-full bg-[hsl(0,0%,6%)] border border-[hsl(0,0%,15%)] rounded-md px-3 py-2 text-sm text-[hsl(0,0%,98%)] placeholder:text-[hsl(0,0%,40%)] focus:outline-none focus:ring-1 focus:ring-[hsl(142,76%,36%)]"
               placeholder="Enter department name"
+              disabled={isLoading}
             />
           </div>
+
           <div>
-            <label className="block text-sm font-medium mb-1">Manager</label>
-            <select className="w-full bg-[hsl(0,0%,6%)] border border-[hsl(0,0%,15%)] rounded-md px-3 py-2 text-sm text-[hsl(0,0%,98%)] focus:outline-none focus:ring-1 focus:ring-[hsl(142,76%,36%)]">
-              <option className="bg-[hsl(0,0%,10%)]">Select manager</option>
-              <option className="bg-[hsl(0,0%,10%)]">Alex Johnson</option>
-              <option className="bg-[hsl(0,0%,10%)]">Sarah Williams</option>
-              <option className="bg-[hsl(0,0%,10%)]">Michael Chen</option>
-              <option className="bg-[hsl(0,0%,10%)]">Robert Davis</option>
-              <option className="bg-[hsl(0,0%,10%)]">Emily Thompson</option>
+            <label className="block text-sm font-medium mb-1">Manager (Optional)</label>
+            <select
+              value={selectedManager}
+              onChange={(e) => setSelectedManager(e.target.value)}
+              className="w-full bg-[hsl(0,0%,6%)] border border-[hsl(0,0%,15%)] rounded-md px-3 py-2 text-sm text-[hsl(0,0%,98%)] focus:outline-none focus:ring-1 focus:ring-[hsl(142,76%,36%)]"
+              disabled={isLoading}
+            >
+              <option value="" className="bg-[hsl(0,0%,10%)]">Select manager (optional)</option>
+              <option value="alex" className="bg-[hsl(0,0%,10%)]">Alex Johnson</option>
+              <option value="sarah" className="bg-[hsl(0,0%,10%)]">Sarah Williams</option>
+              <option value="michael" className="bg-[hsl(0,0%,10%)]">Michael Chen</option>
+              <option value="robert" className="bg-[hsl(0,0%,10%)]">Robert Davis</option>
+              <option value="emily" className="bg-[hsl(0,0%,10%)]">Emily Thompson</option>
             </select>
           </div>
+
+          {error && (
+            <div className="text-red-500 text-sm bg-red-500/10 p-2 rounded-md">
+              {error}
+            </div>
+          )}
+
           <div className="flex justify-end space-x-2 pt-4">
             <button
+              type="button"
               onClick={onClose}
               className="px-4 py-2 text-sm border border-[hsl(0,0%,15%)] rounded-md hover:bg-[hsl(0,0%,10%)] text-[hsl(0,0%,98%)] transition-colors"
+              disabled={isLoading}
             >
               Cancel
             </button>
-            <button className="px-4 py-2 text-sm bg-[hsl(142,76%,36%)] text-[hsl(0,0%,98%)] rounded-md hover:bg-[hsl(142,76%,40%)] transition-colors">
-              Create Department
+            <button
+              type="submit"
+              className="px-4 py-2 text-sm bg-[hsl(142,76%,36%)] text-[hsl(0,0%,98%)] rounded-md hover:bg-[hsl(142,76%,40%)] transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+              disabled={isLoading}
+            >
+              {isLoading ? 'Creating...' : 'Create Department'}
             </button>
           </div>
-        </div>
+        </form>
       </div>
     </div>
   );
@@ -381,6 +460,51 @@ const AuditLogsSection = () => {
 // Employee Management Section Component
 const EmployeeManagementSection = () => {
   const [showCreateDeptModal, setShowCreateDeptModal] = useState<boolean>(false);
+  const [departments, setDepartments] = useState<Department[]>([]);
+  const [isLoading, setIsLoading] = useState(false);
+  const [showSuccess, setShowSuccess] = useState(false);
+
+  // Fetch departments from backend
+  const fetchDepartments = async () => {
+    setIsLoading(true);
+    try {
+      const data = await apiRequest('http://localhost:5001/api/departments');
+
+      // The API returns departments directly as an array, not wrapped in a data property
+      const departmentsArray = Array.isArray(data) ? data : (data.data || []);
+
+      // Transform the data to match our Department interface
+      const transformedDepartments = departmentsArray.map((dept: any) => ({
+        id: dept._id,
+        name: dept.name,
+        employees: dept.employeeCount || 0, // Use the employeeCount from API
+        manager: 'TBD' // You might want to fetch this separately
+      }));
+
+      setDepartments(transformedDepartments);
+    } catch (error) {
+      console.error('Failed to fetch departments:', error);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  // Show success notification
+  const showSuccessNotification = () => {
+    setShowSuccess(true);
+    setTimeout(() => setShowSuccess(false), 3000);
+  };
+
+  // Fetch departments on component mount
+  React.useEffect(() => {
+    fetchDepartments();
+  }, []);
+
+  // Handle department creation success
+  const handleDepartmentCreated = () => {
+    fetchDepartments(); // Refresh the list
+    showSuccessNotification();
+  };
 
   return (
     <div className="bg-card p-4 sm:p-6 rounded-xl shadow-sm hover:shadow-md transition-shadow">
@@ -399,40 +523,60 @@ const EmployeeManagementSection = () => {
         </div>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-        {departments.map(dept => (
-          <div key={dept.id} className="bg-muted/30 p-4 sm:p-6 rounded-lg border border-border">
-            <div className="flex justify-between items-start">
-              <div>
-                <h4 className="font-semibold text-[hsl(0,0%,98%)]">{dept.name}</h4>
-                <p className="text-sm text-[hsl(0,0%,65%)] mt-1">{dept.employees} employees</p>
+      {isLoading ? (
+        <div className="text-center py-8">
+          <div className="text-[hsl(0,0%,65%)]">Loading departments...</div>
+        </div>
+      ) : (
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+          {departments.length > 0 ? (
+            departments.map(dept => (
+              <div key={dept.id} className="bg-muted/30 p-4 sm:p-6 rounded-lg border border-border">
+                <div className="flex justify-between items-start">
+                  <div>
+                    <h4 className="font-semibold text-[hsl(0,0%,98%)]">{dept.name}</h4>
+                    <p className="text-sm text-[hsl(0,0%,65%)] mt-1">{dept.employees} employees</p>
+                  </div>
+                  <button className="text-[hsl(0,0%,65%)] hover:text-[hsl(0,0%,98%)] transition-colors">
+                    <ChevronDown className="h-5 w-5" />
+                  </button>
+                </div>
+                <div className="mt-3">
+                  <p className="text-sm flex items-center text-[hsl(0,0%,98%)]">
+                    <span className="text-[hsl(0,0%,65%)] mr-2">Manager:</span>
+                    {dept.manager}
+                  </p>
+                </div>
+                <div className="mt-4 flex space-x-2">
+                  <button className="text-xs bg-[hsl(0,0%,10%)] hover:bg-[hsl(0,0%,20%)] rounded px-2 py-1 text-[hsl(0,0%,98%)] transition-colors">
+                    View Employees
+                  </button>
+                  <button className="text-xs bg-[hsl(0,0%,10%)] hover:bg-[hsl(0,0%,20%)] rounded px-2 py-1 text-[hsl(0,0%,98%)] transition-colors">
+                    Edit
+                  </button>
+                </div>
               </div>
-              <button className="text-[hsl(0,0%,65%)] hover:text-[hsl(0,0%,98%)] transition-colors">
-                <ChevronDown className="h-5 w-5" />
-              </button>
+            ))
+          ) : (
+            <div className="col-span-full text-center py-8 text-[hsl(0,0%,65%)]">
+              No departments found. Create your first department!
             </div>
-            <div className="mt-3">
-              <p className="text-sm flex items-center text-[hsl(0,0%,98%)]">
-                <span className="text-[hsl(0,0%,65%)] mr-2">Manager:</span>
-                {dept.manager}
-              </p>
-            </div>
-            <div className="mt-4 flex space-x-2">
-              <button className="text-xs bg-[hsl(0,0%,10%)] hover:bg-[hsl(0,0%,20%)] rounded px-2 py-1 text-[hsl(0,0%,98%)] transition-colors">
-                View Employees
-              </button>
-              <button className="text-xs bg-[hsl(0,0%,10%)] hover:bg-[hsl(0,0%,20%)] rounded px-2 py-1 text-[hsl(0,0%,98%)] transition-colors">
-                Edit
-              </button>
-            </div>
-          </div>
-        ))}
-      </div>
+          )}
+        </div>
+      )}
 
       <CreateNewDepartmentModal
         isOpen={showCreateDeptModal}
         onClose={() => setShowCreateDeptModal(false)}
+        onSuccess={handleDepartmentCreated}
       />
+
+      {/* Success Notification */}
+      {showSuccess && (
+        <div className="fixed top-4 right-4 bg-green-600 text-white px-6 py-3 rounded-lg shadow-lg z-50">
+          Department created successfully!
+        </div>
+      )}
     </div>
   );
 };
