@@ -206,7 +206,8 @@ const CreateNewDepartmentModal: React.FC<ModalProps & { onSuccess: () => void }>
     setError('');
 
     try {
-      const data = await apiRequest('http://localhost:5001/api/departments', {
+      const apiBaseUrl = import.meta.env.VITE_API_URL;
+      const data = await apiRequest(`${apiBaseUrl}/departments`, {
         method: 'POST',
         body: JSON.stringify({
           name: departmentName,
@@ -468,7 +469,8 @@ const EmployeeManagementSection = () => {
   const fetchDepartments = async () => {
     setIsLoading(true);
     try {
-      const data = await apiRequest('http://localhost:5001/api/departments');
+      const apiBaseUrl = import.meta.env.VITE_API_URL;
+      const data = await apiRequest(`${apiBaseUrl}/departments`);
 
       // The API returns departments directly as an array, not wrapped in a data property
       const departmentsArray = Array.isArray(data) ? data : (data.data || []);

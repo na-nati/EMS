@@ -36,7 +36,9 @@ export const TopNav = () => {
       formData.append('profilePicture', file);
 
       const token = localStorage.getItem('ems_token');
-      const response = await fetch(`http://localhost:5001/api/users/${user?.id}/profile-picture`, {
+
+      const apiBaseUrl = import.meta.env.VITE_API_URL;
+      const response = await fetch(`${apiBaseUrl}/users/${user?.id}/profile-picture`, {
         method: 'PATCH',
         headers: {
           'Authorization': `Bearer ${token}`
