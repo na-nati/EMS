@@ -7,7 +7,7 @@ export function validateBody(schema: Joi.ObjectSchema) {
         if (error) {
             return res.status(400).json({
                 message: 'Validation error',
-                details: error.details.map(d => d.message),
+                details: error.details.map((d: Joi.ValidationErrorItem) => d.message),
             });
         }
         next();
