@@ -72,6 +72,10 @@ const EmployeeSchema = new mongoose_1.Schema({
         enum: ['Active', 'Resigned', 'Terminated'],
         default: 'Active',
     },
+    phone_number: {
+        type: String,
+        required: false,
+    },
 }, {
     timestamps: true,
 });

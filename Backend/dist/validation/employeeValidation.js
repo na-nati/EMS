@@ -1,70 +1,100 @@
 "use strict";
-var __importDefault = (this && this.__importDefault) || function (mod) {
-    return (mod && mod.__esModule) ? mod : { "default": mod };
-};
+var __createBinding = (this && this.__createBinding) || (Object.create ? (function(o, m, k, k2) {
+    if (k2 === undefined) k2 = k;
+    var desc = Object.getOwnPropertyDescriptor(m, k);
+    if (!desc || ("get" in desc ? !m.__esModule : desc.writable || desc.configurable)) {
+      desc = { enumerable: true, get: function() { return m[k]; } };
+    }
+    Object.defineProperty(o, k2, desc);
+}) : (function(o, m, k, k2) {
+    if (k2 === undefined) k2 = k;
+    o[k2] = m[k];
+}));
+var __setModuleDefault = (this && this.__setModuleDefault) || (Object.create ? (function(o, v) {
+    Object.defineProperty(o, "default", { enumerable: true, value: v });
+}) : function(o, v) {
+    o["default"] = v;
+});
+var __importStar = (this && this.__importStar) || (function () {
+    var ownKeys = function(o) {
+        ownKeys = Object.getOwnPropertyNames || function (o) {
+            var ar = [];
+            for (var k in o) if (Object.prototype.hasOwnProperty.call(o, k)) ar[ar.length] = k;
+            return ar;
+        };
+        return ownKeys(o);
+    };
+    return function (mod) {
+        if (mod && mod.__esModule) return mod;
+        var result = {};
+        if (mod != null) for (var k = ownKeys(mod), i = 0; i < k.length; i++) if (k[i] !== "default") __createBinding(result, mod, k[i]);
+        __setModuleDefault(result, mod);
+        return result;
+    };
+})();
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.departmentIdSchema = exports.employeeIdSchema = exports.employeeFiltersSchema = exports.updateEmployeeSchema = exports.createEmployeeSchema = void 0;
-const joi_1 = __importDefault(require("joi"));
+const Joi = __importStar(require("joi"));
 // Emergency contact schema
-const emergencyContactSchema = joi_1.default.object({
-    name: joi_1.default.string().required().max(100),
-    relationship: joi_1.default.string().required().max(50),
-    phone: joi_1.default.string().required().pattern(/^\+?[\d\s\-\(\)]+$/).max(20)
+const emergencyContactSchema = Joi.object({
+    name: Joi.string().required().max(100),
+    relationship: Joi.string().required().max(50),
+    phone: Joi.string().required().pattern(/^\+?[\d\s\-\(\)]+$/).max(20)
 });
 // Address schema
-const addressSchema = joi_1.default.object({
-    street: joi_1.default.string().required().max(200),
-    city: joi_1.default.string().required().max(100),
-    state: joi_1.default.string().required().max(100),
-    zip_code: joi_1.default.string().required().max(20),
-    country: joi_1.default.string().required().max(100)
+const addressSchema = Joi.object({
+    street: Joi.string().required().max(200),
+    city: Joi.string().required().max(100),
+    state: Joi.string().required().max(100),
+    zip_code: Joi.string().required().max(20),
+    country: Joi.string().required().max(100)
 });
 // Create employee schema
-exports.createEmployeeSchema = joi_1.default.object({
-    user_id: joi_1.default.string().required().hex().length(24),
-    employee_code: joi_1.default.string().required().max(20).pattern(/^[A-Z0-9]+$/),
-    job_profile: joi_1.default.string().required().max(200),
-    salary_id: joi_1.default.string().optional().hex().length(24),
-    manager_id: joi_1.default.string().optional().hex().length(24),
-    joining_date: joi_1.default.date().required().max('now'),
-    employment_status: joi_1.default.string().valid('active', 'inactive', 'terminated', 'on_leave').default('active'),
-    department_id: joi_1.default.string().optional().hex().length(24),
-    position: joi_1.default.string().optional().max(100),
-    salary: joi_1.default.number().optional().positive(),
-    contact_number: joi_1.default.string().optional().pattern(/^\+?[\d\s\-\(\)]+$/).max(20),
+exports.createEmployeeSchema = Joi.object({
+    user_id: Joi.string().required().hex().length(24),
+    employee_code: Joi.string().required().max(20).pattern(/^[A-Z0-9]+$/),
+    job_profile: Joi.string().required().max(200),
+    salary_id: Joi.string().optional().hex().length(24),
+    manager_id: Joi.string().optional().hex().length(24),
+    joining_date: Joi.date().required().max('now'),
+    employment_status: Joi.string().valid('active', 'inactive', 'terminated', 'on_leave').default('active'),
+    department_id: Joi.string().optional().hex().length(24),
+    position: Joi.string().optional().max(100),
+    salary: Joi.number().optional().positive(),
+    contact_number: Joi.string().optional().pattern(/^\+?[\d\s\-\(\)]+$/).max(20),
     emergency_contact: emergencyContactSchema.optional(),
     address: addressSchema.optional()
 });
 // Update employee schema
-exports.updateEmployeeSchema = joi_1.default.object({
-    user_id: joi_1.default.string().optional().hex().length(24),
-    employee_code: joi_1.default.string().optional().max(20).pattern(/^[A-Z0-9]+$/),
-    job_profile: joi_1.default.string().optional().max(200),
-    salary_id: joi_1.default.string().optional().hex().length(24),
-    manager_id: joi_1.default.string().optional().hex().length(24),
-    joining_date: joi_1.default.date().optional().max('now'),
-    employment_status: joi_1.default.string().valid('active', 'inactive', 'terminated', 'on_leave'),
-    department_id: joi_1.default.string().optional().hex().length(24),
-    position: joi_1.default.string().optional().max(100),
-    salary: joi_1.default.number().optional().positive(),
-    contact_number: joi_1.default.string().optional().pattern(/^\+?[\d\s\-\(\)]+$/).max(20),
+exports.updateEmployeeSchema = Joi.object({
+    user_id: Joi.string().optional().hex().length(24),
+    employee_code: Joi.string().optional().max(20).pattern(/^[A-Z0-9]+$/),
+    job_profile: Joi.string().optional().max(200),
+    salary_id: Joi.string().optional().hex().length(24),
+    manager_id: Joi.string().optional().hex().length(24),
+    joining_date: Joi.date().optional().max('now'),
+    employment_status: Joi.string().valid('active', 'inactive', 'terminated', 'on_leave'),
+    department_id: Joi.string().optional().hex().length(24),
+    position: Joi.string().optional().max(100),
+    salary: Joi.number().optional().positive(),
+    contact_number: Joi.string().optional().pattern(/^\+?[\d\s\-\(\)]+$/).max(20),
     emergency_contact: emergencyContactSchema.optional(),
     address: addressSchema.optional()
 });
 // Employee filters schema
-exports.employeeFiltersSchema = joi_1.default.object({
-    department_id: joi_1.default.string().optional().hex().length(24),
-    employment_status: joi_1.default.string().valid('active', 'inactive', 'terminated', 'on_leave'),
-    position: joi_1.default.string().optional().max(100),
-    search: joi_1.default.string().optional().max(100),
-    page: joi_1.default.number().optional().integer().min(1),
-    limit: joi_1.default.number().optional().integer().min(1).max(100)
+exports.employeeFiltersSchema = Joi.object({
+    department_id: Joi.string().optional().hex().length(24),
+    employment_status: Joi.string().valid('active', 'inactive', 'terminated', 'on_leave'),
+    position: Joi.string().optional().max(100),
+    search: Joi.string().optional().max(100),
+    page: Joi.number().optional().integer().min(1),
+    limit: Joi.number().optional().integer().min(1).max(100)
 });
 // Employee ID parameter schema
-exports.employeeIdSchema = joi_1.default.object({
-    id: joi_1.default.string().required().hex().length(24)
+exports.employeeIdSchema = Joi.object({
+    id: Joi.string().required().hex().length(24)
 });
 // Department ID parameter schema
-exports.departmentIdSchema = joi_1.default.object({
-    departmentId: joi_1.default.string().required().hex().length(24)
+exports.departmentIdSchema = Joi.object({
+    departmentId: Joi.string().required().hex().length(24)
 });

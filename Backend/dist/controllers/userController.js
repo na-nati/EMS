@@ -7,53 +7,29 @@ exports.updateProfile = exports.getProfile = exports.updateProfilePicture = expo
 const User_1 = require("../models/User");
 const bcryptjs_1 = __importDefault(require("bcryptjs"));
 const jsonwebtoken_1 = __importDefault(require("jsonwebtoken"));
-const Department_1 = require("../models/Department"); // Import Department model
-const mongoose_1 = __importDefault(require("mongoose")); // Import mongoose for ObjectId validation
 const cloudinary_1 = __importDefault(require("../config/cloudinary"));
 // Register
 const registeruser = async (req, res) => {
     try {
-        const { firstName, lastName, email, password, role, department, position } = req.body;
-        if (!firstName || !lastName || !email || !password) {
-            return res.status(400).json({ message: 'All fields are required.' });
-        }
-        // Allow department by name or ObjectId
-        let departmentId = undefined;
-        if (department) {
-            // Try to find by ObjectId first
-            if (mongoose_1.default.Types.ObjectId.isValid(department)) {
-                const departmentExists = await Department_1.Department.findById(department);
-                if (departmentExists) {
-                    departmentId = departmentExists._id;
-                }
-            }
-            // If not found by ID, try by name
-            if (!departmentId) {
-                const departmentByName = await Department_1.Department.findOne({ name: department });
-                if (departmentByName) {
-                    departmentId = departmentByName._id;
-                }
-                else {
-                    return res.status(400).json({ message: 'Invalid department.' });
-                }
-            }
+        const { firstName, lastName, role, email } = req.body;
+        if (!firstName || !lastName || !role || !email) {
+            return res.status(400).json({ message: 'First name, last name, email and role are required.' });
         }
         const existingUser = await User_1.User.findOne({ email });
         if (existingUser) {
             return res.status(400).json({ message: 'Email already in use.' });
         }
-        const hashedPassword = await bcryptjs_1.default.hash(password, 10);
+        const generatedPassword = `${firstName}${lastName}`.toLowerCase();
+        const hashedPassword = await bcryptjs_1.default.hash(generatedPassword, 10);
         const user = new User_1.User({
             firstName,
             lastName,
             email,
             password: hashedPassword,
             role,
-            department: departmentId, // Use the resolved ObjectId
-            position,
         });
         await user.save();
-        res.status(201).json({ message: 'User registered successfully.' });
+        res.status(201).json({ message: 'User registered successfully.', generatedPassword });
     }
     catch (err) {
         console.error('Registration error:', err);

@@ -3,10 +3,11 @@ Object.defineProperty(exports, "__esModule", { value: true });
 exports.getEmployeeStats = exports.getEmployeesByDepartment = exports.deleteEmployee = exports.updateEmployee = exports.getEmployeeById = exports.getAllEmployees = exports.createEmployee = void 0;
 const Employee_1 = require("../models/Employee");
 const User_1 = require("../models/User");
+const Department_1 = require("../models/Department");
 // Create a new employee
 const createEmployee = async (req, res) => {
     try {
-        const { user_id, employee_code, job_profile, salary_id, manager_id, department_id, joining_date, employment_status } = req.body;
+        const { user_id, employee_code, job_profile, salary_id, manager_id, department_id, joining_date, employment_status, phone_number } = req.body;
         // Check if user exists
         const user = await User_1.User.findById(user_id);
         if (!user) {
@@ -31,7 +32,8 @@ const createEmployee = async (req, res) => {
             manager_id,
             department_id,
             joining_date,
-            employment_status
+            employment_status,
+            phone_number
         });
         const savedEmployee = await employee.save();
         const populatedEmployee = await Employee_1.Employee.findById(savedEmployee._id)
@@ -207,7 +209,7 @@ const getEmployeesByDepartment = async (req, res) => {
             filter.employment_status = employment_status;
         const skip = (page - 1) * limit;
         const employees = await Employee_1.Employee.find(filter)
-            .populate('user_id', 'username email first_name last_name')
+            .populate('user_id', 'username email firstName lastName ')
             .populate('manager_id', 'username email first_name last_name')
             .populate('department_id', 'name description')
             .skip(skip)
@@ -241,36 +243,26 @@ const getEmployeeStats = async (req, res) => {
         const filter = {};
         if (department_id)
             filter.department_id = department_id;
-        const statusStats = await Employee_1.Employee.aggregate([
-            { $match: filter },
-            {
-                $group: {
-                    _id: '$employment_status',
-                    count: { $sum: 1 }
-                }
-            }
+        // Fetch all stats concurrently for better performance
+        const [statusStats, positionStats, departmentStats, totalEmployees, totalDepartments // <<<-- New variable to hold the department count
+        ] = await Promise.all([
+            Employee_1.Employee.aggregate([
+                { $match: filter },
+                { $group: { _id: '$employment_status', count: { $sum: 1 } } }
+            ]),
+            Employee_1.Employee.aggregate([
+                { $match: filter },
+                { $group: { _id: '$position', count: { $sum: 1 } } },
+                { $sort: { count: -1 } },
+                { $limit: 10 }
+            ]),
+            Employee_1.Employee.aggregate([
+                { $match: filter },
+                { $group: { _id: '$department_id', count: { $sum: 1 } } }
+            ]),
+            Employee_1.Employee.countDocuments(filter),
+            Department_1.Department.countDocuments() // <<<-- New promise to resolve, gets total departments
         ]);
-        const positionStats = await Employee_1.Employee.aggregate([
-            { $match: filter },
-            {
-                $group: {
-                    _id: '$position',
-                    count: { $sum: 1 }
-                }
-            },
-            { $sort: { count: -1 } },
-            { $limit: 10 }
-        ]);
-        const departmentStats = await Employee_1.Employee.aggregate([
-            { $match: filter },
-            {
-                $group: {
-                    _id: '$department_id',
-                    count: { $sum: 1 }
-                }
-            }
-        ]);
-        const totalEmployees = await Employee_1.Employee.countDocuments(filter);
         const statsMap = {
             active: 0,
             inactive: 0,
@@ -278,12 +270,16 @@ const getEmployeeStats = async (req, res) => {
             on_leave: 0
         };
         statusStats.forEach(stat => {
-            statsMap[stat._id] = stat.count;
+            const statusKey = stat._id.toLowerCase();
+            if (statsMap.hasOwnProperty(statusKey)) {
+                statsMap[statusKey] = stat.count;
+            }
         });
         res.status(200).json({
             success: true,
             data: {
                 totalEmployees,
+                totalDepartments, // <<<-- Include totalDepartments in the response
                 statusBreakdown: statsMap,
                 positionBreakdown: positionStats,
                 departmentBreakdown: departmentStats

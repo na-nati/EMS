@@ -8,6 +8,7 @@ const salaryController_1 = require("../controllers/salaryController");
 const router = express_1.default.Router();
 router.post('/', salaryController_1.createSalary);
 router.get('/', salaryController_1.getAllSalaries);
+router.get('/user/:userId', salaryController_1.getSalariesByUser);
 router.get('/:id', salaryController_1.getSalaryById);
 router.put('/:id', salaryController_1.updateSalary);
 router.delete('/:id', salaryController_1.deleteSalary);

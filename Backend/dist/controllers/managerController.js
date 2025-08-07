@@ -1,12 +1,17 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.checkIfUserIsManager = exports.getManagersByDepartment = exports.deleteManager = exports.updateManager = exports.getManagerById = exports.getAllManagers = exports.createManager = void 0;
+exports.getManagers = exports.checkIfUserIsManager = exports.getManagersByDepartment = exports.deleteManager = exports.updateManager = exports.getManagerById = exports.getAllManagers = exports.createManager = void 0;
 const Manager_1 = require("../models/Manager");
+const User_1 = require("../models/User");
 // Create manager
 const createManager = async (req, res) => {
     try {
         const managerData = req.body;
-        const manager = new Manager_1.Manager(managerData);
+        const manager = new Manager_1.Manager({
+            ...managerData,
+            email: req.body.email,
+            phone_number: req.body.phone_number
+        });
         const savedManager = await manager.save();
         const populatedManager = await Manager_1.Manager.findById(savedManager._id)
             .populate('user_id')
@@ -207,3 +212,25 @@ const checkIfUserIsManager = async (req, res) => {
     }
 };
 exports.checkIfUserIsManager = checkIfUserIsManager;
+// Get all managers
+const getManagers = async (req, res) => {
+    try {
+        const managers = await User_1.User.find({ role: 'manager' })
+            .select('_id firstName lastName email position department')
+            .populate('department', 'name');
+        console.log('Raw manager data:', managers); // ✅ Debug log here
+        res.status(200).json({
+            success: true,
+            data: managers,
+            message: 'Managers fetched successfully'
+        });
+    }
+    catch (error) {
+        res.status(500).json({
+            success: false,
+            message: 'Error fetching managers',
+            error: error.message
+        });
+    }
+};
+exports.getManagers = getManagers;

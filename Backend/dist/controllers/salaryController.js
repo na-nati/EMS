@@ -1,11 +1,11 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.deleteSalary = exports.updateSalary = exports.getSalaryById = exports.getAllSalaries = exports.createSalary = void 0;
+exports.getSalariesByUser = exports.deleteSalary = exports.updateSalary = exports.getSalaryById = exports.getAllSalaries = exports.createSalary = void 0;
 const Salary_1 = require("../models/Salary");
 // Create Salary
 const createSalary = async (req, res) => {
     try {
-        const { user, basicSalary, bonus, deductions, month, year, status, department } = req.body;
+        const { user, basicSalary, bonus, deductions, month, year, status, } = req.body;
         const salary = new Salary_1.Salary({
             user,
             basicSalary,
@@ -14,8 +14,6 @@ const createSalary = async (req, res) => {
             month,
             year,
             status,
-            department
-            // netSalary will be auto-calculated by pre('save') middleware
         });
         await salary.save();
         res.status(201).json({
@@ -121,3 +119,22 @@ const deleteSalary = async (req, res) => {
     }
 };
 exports.deleteSalary = deleteSalary;
+// Get Salaries by User ID
+const getSalariesByUser = async (req, res) => {
+    try {
+        const { userId } = req.params;
+        const salaries = await Salary_1.Salary.find({ user: userId });
+        res.status(200).json({
+            success: true,
+            data: salaries
+        });
+    }
+    catch (error) {
+        res.status(500).json({
+            success: false,
+            message: 'Error fetching salary records for user',
+            error: error.message
+        });
+    }
+};
+exports.getSalariesByUser = getSalariesByUser;
