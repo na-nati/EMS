@@ -20,7 +20,6 @@ import type { LucideIcon } from 'lucide-react';
 import { Button } from '../ui/button';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '../ui/dialog';
 import { HRDashboard } from './HRDashboard';
-import { data } from 'react-router-dom';
 
 // Utility function for authenticated API requests
 const apiRequest = async (url: string, options: RequestInit = {}) => {
@@ -727,9 +726,9 @@ const EmployeeManagementSection = () => {
   const [departments, setDepartments] = useState<Department[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [showSuccess, setShowSuccess] = useState(false);
-  const [showViewEmployeesModal, setShowViewEmployeesModal] = useState(false);
+  const [, setShowViewEmployeesModal] = useState(false);
   const [selectedDepartment, setSelectedDepartment] = useState<Department | null>(null);
-  const [showEditModal, setShowEditModal] = useState(false);
+  const [, setShowEditModal] = useState(false);
   const [departmentToEdit, setDepartmentToEdit] = useState<Department | null>(null);
 
   // Fetch departments from backend
@@ -921,8 +920,8 @@ export const SuperAdminDashboard = () => {
   const [viewingDept, setViewingDept] = useState<null | Department>(null);
   const [activeDashboard, setActiveDashboard] = useState('super-admin');
   const [stats, setStats] = useState<StatItem[]>([]);
-  const [loadingStats, setLoadingStats] = useState<boolean>(true);
-  const [error, setError] = useState<string | null>(null);
+  const [, setLoadingStats] = useState<boolean>(true);
+  const [, setError] = useState<string | null>(null);
 
   // Fetch dashboard stats from the backend
   React.useEffect(() => {
