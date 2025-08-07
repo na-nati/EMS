@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import {
   Users,
   Building,
@@ -13,12 +13,14 @@ import {
   Search,
   Filter,
   ChevronDown,
-  Gauge
+  Gauge,
+  X,
 } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
 import { Button } from '../ui/button';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '../ui/dialog';
-
+import { HRDashboard } from './HRDashboard';
+import { data } from 'react-router-dom';
 
 // Utility function for authenticated API requests
 const apiRequest = async (url: string, options: RequestInit = {}) => {
@@ -49,7 +51,7 @@ interface StatItem {
   icon: LucideIcon;
   change: string;
   changeType: 'positive' | 'negative';
-  color: string; // Add this line
+  color: string;
 }
 
 interface AuditLog {
@@ -80,14 +82,12 @@ interface ModalProps {
   onSuccess?: () => void;
 }
 
-// Stats data
-const stats: StatItem[] = [
-  { name: 'Total Employees', value: '1,234', icon: Users, change: '+12%', changeType: 'positive', color: 'text-green-500' },
-  { name: 'Departments', value: '8', icon: Building, change: '+1', changeType: 'positive', color: 'text-blue-500' },
-  { name: 'Active Sessions', value: '456', icon: Activity, change: '+5%', changeType: 'positive', color: 'text-purple-500' },
-  { name: 'Pending Approvals', value: '23', icon: FileText, change: '-3', changeType: 'negative', color: 'text-red-500' },
-  { name: 'System Health', value: 'Good', icon: Gauge, change: 'Stable', changeType: 'positive', color: 'text-green-500' } // Added System Health stat
-];
+interface Employee {
+  id: number | string;
+  name: string;
+  position: string;
+  email: string;
+}
 
 // Audit logs data
 const auditLogs: AuditLog[] = [
@@ -101,9 +101,7 @@ const auditLogs: AuditLog[] = [
   { id: 8, action: 'Audit log exported', user: 'Super Admin', target: 'audit_log_2023-10-15.csv', time: '10 hours ago', ip: '192.168.1.5' },
 ];
 
-// Import HRDashboard as a named export
-import { HRDashboard } from './HRDashboard';
-// Refactor DashboardSwitcher to accept props
+// DashboardSwitcher component
 const DashboardSwitcher = ({ activeDashboard, setActiveDashboard }: { activeDashboard: string, setActiveDashboard: (role: string) => void }) => (
   <div className="flex items-center space-x-2 mb-6">
     <span className="text-sm text-[hsl(0,0%,20%)]">View as:</span>
@@ -111,7 +109,7 @@ const DashboardSwitcher = ({ activeDashboard, setActiveDashboard }: { activeDash
       {['super-admin', 'hr', 'manager', 'employee'].map((role) => (
         <button
           key={role}
-          className={`px-3 py-1 rounded-md text-sm font-medium transition-colors e  ${activeDashboard === role
+          className={`px-3 py-1 rounded-md text-sm font-medium transition-colors ${activeDashboard === role
             ? 'bg-[hsl(142,76%,36%)] text-[hsl(0,0%,98%)] shadow'
             : 'hover:bg-[hsl(0,0%,20%)] text-foreground'
             }`}
@@ -187,12 +185,47 @@ const CreateHRAccountModal: React.FC<ModalProps> = ({ isOpen, onClose }) => {
   );
 };
 
-// Create New Department Modal Component
-const CreateNewDepartmentModal: React.FC<ModalProps & { onSuccess: () => void }> = ({ isOpen, onClose, onSuccess }) => {
+
+const CreateNewDepartmentModal: React.FC<ModalProps & { onSuccess: () => void }> = ({ 
+  isOpen, 
+  onClose, 
+  onSuccess 
+}) => {
   const [departmentName, setDepartmentName] = useState('');
-  const [selectedManager, setSelectedManager] = useState('');
+  const [selectedManagerId, setSelectedManagerId] = useState('');
+  const [managers, setManagers] = useState<any[]>([]);
   const [isLoading, setIsLoading] = useState(false);
+  const [isLoadingManagers, setIsLoadingManagers] = useState(false);
   const [error, setError] = useState('');
+
+  // Fetch managers when modal opens
+  useEffect(() => {
+    const fetchManagers = async () => {
+      if (!isOpen) return;
+
+      setIsLoadingManagers(true);
+      setError('');
+      try {
+        const response = await apiRequest('/api/managers/managers');
+        console.log('Managers API response:', response);
+        
+        // Handle the specific response format
+        if (response.success && Array.isArray(response.data)) {
+          setManagers(response.data);
+        } else {
+          console.error('Unexpected API response format');
+          setError('Unexpected data format from server');
+        }
+      } catch (err: any) {
+        console.error('Failed to fetch managers:', err);
+        setError('Failed to load managers. Please try again.');
+      } finally {
+        setIsLoadingManagers(false);
+      }
+    };
+
+    fetchManagers();
+  }, [isOpen]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -206,26 +239,44 @@ const CreateNewDepartmentModal: React.FC<ModalProps & { onSuccess: () => void }>
     setError('');
 
     try {
-      const apiBaseUrl = import.meta.env.VITE_API_URL;
-      const data = await apiRequest(`${apiBaseUrl}/departments`, {
+      const departmentData = {
+        name: departmentName,
+        description: `Department for ${departmentName}`,
+        ...(selectedManagerId && { manager: selectedManagerId })
+      };
+
+      const response = await apiRequest('/api/departments', {
         method: 'POST',
-        body: JSON.stringify({
-          name: departmentName,
-          description: `Department for ${departmentName}`,
-        }),
+        body: JSON.stringify(departmentData),
       });
 
-      console.log('Department created successfully:', data);
+      console.log('Department created:', response);
+
+      // If a manager was selected, update their department assignment
+      if (selectedManagerId && response._id) {
+        try {
+          await apiRequest(`/api/users/${selectedManagerId}/assign-department`, {
+            method: 'PATCH',
+            body: JSON.stringify({
+              departmentId: response._id
+            }),
+          });
+        } catch (updateError) {
+          console.error('Failed to update manager department:', updateError);
+          // Continue even if this fails
+        }
+      }
 
       // Reset form
       setDepartmentName('');
-      setSelectedManager('');
+      setSelectedManagerId('');
 
-      // Close modal
+      // Close modal and refresh data
       onClose();
-      onSuccess(); // Call the success handler
+      onSuccess();
 
     } catch (err: any) {
+      console.error('Error creating department:', err);
       setError(err.message || 'Failed to create department');
     } finally {
       setIsLoading(false);
@@ -239,7 +290,11 @@ const CreateNewDepartmentModal: React.FC<ModalProps & { onSuccess: () => void }>
       <div className="bg-card rounded-xl p-6 w-full max-w-md">
         <div className="flex justify-between items-center mb-4">
           <h3 className="text-lg font-semibold">Create New Department</h3>
-          <button onClick={onClose} className="text-[hsl(0,0%,65%)] hover:text-[hsl(0,0%,98%)]">
+          <button 
+            onClick={onClose} 
+            className="text-[hsl(0,0%,65%)] hover:text-[hsl(0,0%,98%)]"
+            disabled={isLoading}
+          >
             &times;
           </button>
         </div>
@@ -254,24 +309,40 @@ const CreateNewDepartmentModal: React.FC<ModalProps & { onSuccess: () => void }>
               className="w-full bg-[hsl(0,0%,6%)] border border-[hsl(0,0%,15%)] rounded-md px-3 py-2 text-sm text-[hsl(0,0%,98%)] placeholder:text-[hsl(0,0%,40%)] focus:outline-none focus:ring-1 focus:ring-[hsl(142,76%,36%)]"
               placeholder="Enter department name"
               disabled={isLoading}
+              required
             />
           </div>
 
           <div>
             <label className="block text-sm font-medium mb-1">Manager (Optional)</label>
-            <select
-              value={selectedManager}
-              onChange={(e) => setSelectedManager(e.target.value)}
-              className="w-full bg-[hsl(0,0%,6%)] border border-[hsl(0,0%,15%)] rounded-md px-3 py-2 text-sm text-[hsl(0,0%,98%)] focus:outline-none focus:ring-1 focus:ring-[hsl(142,76%,36%)]"
-              disabled={isLoading}
-            >
-              <option value="" className="bg-[hsl(0,0%,10%)]">Select manager (optional)</option>
-              <option value="alex" className="bg-[hsl(0,0%,10%)]">Alex Johnson</option>
-              <option value="sarah" className="bg-[hsl(0,0%,10%)]">Sarah Williams</option>
-              <option value="michael" className="bg-[hsl(0,0%,10%)]">Michael Chen</option>
-              <option value="robert" className="bg-[hsl(0,0%,10%)]">Robert Davis</option>
-              <option value="emily" className="bg-[hsl(0,0%,10%)]">Emily Thompson</option>
-            </select>
+            {isLoadingManagers ? (
+              <div className="w-full bg-[hsl(0,0%,6%)] border border-[hsl(0,0%,15%)] rounded-md px-3 py-2 text-sm text-[hsl(0,0%,65%)]">
+                Loading managers...
+              </div>
+            ) : managers.length === 0 ? (
+              <div className="w-full bg-[hsl(0,0%,6%)] border border-[hsl(0,0%,15%)] rounded-md px-3 py-2 text-sm text-[hsl(0,0%,65%)]">
+                {error || 'No managers available'}
+              </div>
+            ) : (
+              <select
+                value={selectedManagerId}
+                onChange={(e) => setSelectedManagerId(e.target.value)}
+                className="w-full bg-[hsl(0,0%,6%)] border border-[hsl(0,0%,15%)] rounded-md px-3 py-2 text-sm text-[hsl(0,0%,98%)] focus:outline-none focus:ring-1 focus:ring-[hsl(142,76%,36%)]"
+                disabled={isLoading}
+              >
+                <option value="">Select manager (optional)</option>
+                {managers.map(manager => (
+                  <option 
+                    key={manager._id} 
+                    value={manager._id}
+                    className="bg-[hsl(0,0%,10%)]"
+                  >
+                    {manager.firstName} {manager.lastName} 
+                    {manager.department ? ` (Current: ${manager.department.name})` : ''}
+                  </option>
+                ))}
+              </select>
+            )}
           </div>
 
           {error && (
@@ -292,7 +363,7 @@ const CreateNewDepartmentModal: React.FC<ModalProps & { onSuccess: () => void }>
             <button
               type="submit"
               className="px-4 py-2 text-sm bg-[hsl(142,76%,36%)] text-[hsl(0,0%,98%)] rounded-md hover:bg-[hsl(142,76%,40%)] transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-              disabled={isLoading}
+              disabled={isLoading || isLoadingManagers}
             >
               {isLoading ? 'Creating...' : 'Create Department'}
             </button>
@@ -302,7 +373,85 @@ const CreateNewDepartmentModal: React.FC<ModalProps & { onSuccess: () => void }>
     </div>
   );
 };
+// Edit Department Modal Component
+const EditDepartmentModal: React.FC<{ 
+  department: Department | null; 
+  onClose: () => void; 
+  onSave: (id: number, name: string, manager: string) => void 
+}> = ({ department, onClose, onSave }) => {
+  const [name, setName] = useState(department?.name || '');
+  const [manager, setManager] = useState(department?.manager || '');
+  const [isLoading, setIsLoading] = useState(false);
 
+  if (!department) return null;
+
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    setIsLoading(true);
+    onSave(department.id, name, manager);
+    setIsLoading(false);
+    onClose();
+  };
+
+  return (
+    <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-50">
+      <div className="bg-card rounded-xl p-6 w-full max-w-md">
+        <div className="flex justify-between items-center mb-4">
+          <h3 className="text-lg font-semibold">Edit Department</h3>
+          <button onClick={onClose} className="text-[hsl(0,0%,65%)] hover:text-[hsl(0,0%,98%)]">
+            <X className="h-5 w-5" />
+          </button>
+        </div>
+
+        <form onSubmit={handleSubmit} className="space-y-4">
+          <div>
+            <label className="block text-sm font-medium mb-1">Department Name</label>
+            <input
+              type="text"
+              value={name}
+              onChange={(e) => setName(e.target.value)}
+              className="w-full bg-[hsl(0,0%,6%)] border border-[hsl(0,0%,15%)] rounded-md px-3 py-2 text-sm text-[hsl(0,0%,98%)] placeholder:text-[hsl(0,0%,40%)] focus:outline-none focus:ring-1 focus:ring-[hsl(142,76%,36%)]"
+              required
+            />
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium mb-1">Manager</label>
+            <select
+              value={manager}
+              onChange={(e) => setManager(e.target.value)}
+              className="w-full bg-[hsl(0,0%,6%)] border border-[hsl(0,0%,15%)] rounded-md px-3 py-2 text-sm text-[hsl(0,0%,98%)] focus:outline-none focus:ring-1 focus:ring-[hsl(142,76%,36%)]"
+            >
+              <option value="">Select manager</option>
+              <option value="Alex Johnson">Alex Johnson</option>
+              <option value="Sarah Williams">Sarah Williams</option>
+              <option value="Michael Chen">Michael Chen</option>
+              <option value="Robert Davis">Robert Davis</option>
+              <option value="Emily Thompson">Emily Thompson</option>
+            </select>
+          </div>
+
+          <div className="flex justify-end space-x-2 pt-4">
+            <button
+              type="button"
+              onClick={onClose}
+              className="px-4 py-2 text-sm border border-[hsl(0,0%,15%)] rounded-md hover:bg-[hsl(0,0%,10%)] text-[hsl(0,0%,98%)] transition-colors"
+            >
+              Cancel
+            </button>
+            <button
+              type="submit"
+              className="px-4 py-2 text-sm bg-[hsl(142,76%,36%)] text-[hsl(0,0%,98%)] rounded-md hover:bg-[hsl(142,76%,40%)] transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+              disabled={isLoading}
+            >
+              {isLoading ? 'Saving...' : 'Save Changes'}
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+  );
+};
 
 // System Health Details Component
 const SystemHealthDetails: React.FC<ModalProps> = ({ isOpen, onClose }) => {
@@ -458,12 +607,130 @@ const AuditLogsSection = () => {
   );
 };
 
+// View Employees Modal Component
+const ViewEmployeesModal = ({ 
+  department, 
+  onClose 
+}: { 
+  department: Department; 
+  onClose: () => void 
+}) => {
+  const [employees, setEmployees] = useState<Employee[]>([]);
+  const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState('');
+
+  // Fetch employees when modal opens
+  useEffect(() => {
+    const fetchEmployees = async () => {
+  setIsLoading(true);
+  setError('');
+  try {
+    const apiBaseUrl = import.meta.env.VITE_API_URL;
+    const data = await apiRequest(`${apiBaseUrl}/employees/department/${department.id}`);
+
+    // Defensive check to ensure we always get an array
+    const employeeArray = Array.isArray(data?.data) ? data.data : [];
+
+    // Log raw employee data here
+    console.log('Raw employee data:', employeeArray);
+
+    setEmployees(employeeArray.map((emp: any) => {
+  const user = emp.user_id || {};
+  const fullName =
+    (user.firstName || '') + (user.lastName ? ` ${user.lastName}` : '');
+
+  return {
+    id: emp._id || emp.id,
+    name: fullName.trim() || user.username || user.email || 'N/A',
+    position: emp.job_profile || 'N/A',
+    email: user.email || 'N/A'
+  };
+}));
+
+
+
+  } catch (err: any) {
+    console.error('Error fetching employees:', err);
+    setError(err.message || 'Failed to fetch employees. Please try again later.');
+  } finally {
+    setIsLoading(false);
+  }
+};
+
+
+    fetchEmployees();
+  }, [department.id]);
+
+  return (
+    <div className="fixed inset-0 bg-black bg-opacity-75 flex items-center justify-center z-50 p-4">
+      <div className="bg-[hsl(0,0%,10%)] rounded-lg shadow-2xl w-full max-w-md p-6 border border-border relative">
+        <button
+          onClick={onClose}
+          className="absolute top-3 right-3 text-[hsl(0,0%,65%)] hover:text-[hsl(0,0%,98%)] transition-colors rounded-full p-1 hover:bg-[hsl(0,0%,15%)]"
+        >
+          <X className="h-5 w-5" />
+        </button>
+        <h3 className="text-xl font-bold text-[hsl(0,0%,98%)] mb-4">Employees in {department.name}</h3>
+        <p className="text-sm text-[hsl(0,0%,65%)] mb-4">Manager: {department.manager}</p>
+
+        {isLoading ? (
+          <div className="text-center py-8">
+            <div className="text-[hsl(0,0%,65%)]">Loading employees...</div>
+          </div>
+        ) : error ? (
+          <div className="text-red-500 text-center py-8">
+            {error}
+          </div>
+        ) : (
+          <>
+            <div className="max-h-60 overflow-y-auto pr-2">
+              {employees.length > 0 ? (
+                employees.map(employee => (
+                  <div key={employee.id} className="bg-[hsl(0,0%,12%)] p-3 rounded-md mb-2 flex justify-between items-center border border-border/50">
+                    <div>
+                      <p className="font-medium text-[hsl(0,0%,98%)]">{employee.name}</p>
+                      <p className="text-xs text-[hsl(0,0%,65%)]">{employee.position}</p>
+                      <p className="text-xs text-[hsl(0,0%,65%)]">{employee.email}</p>
+                    </div>
+                  </div>
+                ))
+              ) : (
+                <div className="text-center py-8 text-[hsl(0,0%,65%)]">
+                  No employees found in this department.
+                </div>
+              )}
+            </div>
+
+            <div className="mt-6 flex justify-end space-x-2">
+              <button
+                onClick={onClose}
+                className="px-4 py-2 text-sm bg-[hsl(0,0%,20%)] hover:bg-[hsl(0,0%,30%)] text-[hsl(0,0%,98%)] rounded-md transition-colors font-medium shadow-sm"
+              >
+                Close
+              </button>
+              <button
+                className="px-4 py-2 text-sm bg-[hsl(142,76%,36%)] hover:bg-[hsl(142,76%,40%)] text-[hsl(0,0%,98%)] rounded-md transition-colors font-medium shadow-sm"
+              >
+                Export List
+              </button>
+            </div>
+          </>
+        )}
+      </div>
+    </div>
+  );
+};
+
 // Employee Management Section Component
 const EmployeeManagementSection = () => {
   const [showCreateDeptModal, setShowCreateDeptModal] = useState<boolean>(false);
   const [departments, setDepartments] = useState<Department[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [showSuccess, setShowSuccess] = useState(false);
+  const [showViewEmployeesModal, setShowViewEmployeesModal] = useState(false);
+  const [selectedDepartment, setSelectedDepartment] = useState<Department | null>(null);
+  const [showEditModal, setShowEditModal] = useState(false);
+  const [departmentToEdit, setDepartmentToEdit] = useState<Department | null>(null);
 
   // Fetch departments from backend
   const fetchDepartments = async () => {
@@ -480,7 +747,7 @@ const EmployeeManagementSection = () => {
         id: dept._id,
         name: dept.name,
         employees: dept.employeeCount || 0, // Use the employeeCount from API
-        manager: 'TBD' // You might want to fetch this separately
+        manager: dept.manager || 'N/A'      // Use the manager from API
       }));
 
       setDepartments(transformedDepartments);
@@ -506,6 +773,49 @@ const EmployeeManagementSection = () => {
   const handleDepartmentCreated = () => {
     fetchDepartments(); // Refresh the list
     showSuccessNotification();
+  };
+
+  const openViewEmployeesModal = (department: Department) => {
+    console.log('Opening modal for:', department);
+    setSelectedDepartment(department);
+    setShowViewEmployeesModal(true);
+  };
+
+  const closeViewEmployeesModal = () => {
+    setShowViewEmployeesModal(false);
+    setSelectedDepartment(null);
+  };
+
+  // Function to open the Edit modal
+  const openEditModal = (department: Department) => {
+    setDepartmentToEdit(department);
+    setShowEditModal(true);
+  };
+
+  // Function to close the Edit modal
+  const closeEditModal = () => {
+    setShowEditModal(false);
+    setDepartmentToEdit(null);
+  };
+
+  // Function to handle saving department changes
+  const handleSaveDepartment = async (id: number, name: string, manager: string) => {
+    try {
+      const apiBaseUrl = import.meta.env.VITE_API_URL;
+      await apiRequest(`${apiBaseUrl}/departments/${id}`, {
+        method: 'PUT',
+        body: JSON.stringify({ name, manager }),
+      });
+      
+      // Update the local state
+      setDepartments(departments.map(dept => 
+        dept.id === id ? { ...dept, name, manager } : dept
+      ));
+      
+      showSuccessNotification();
+    } catch (error) {
+      console.error('Failed to update department:', error);
+    }
   };
 
   return (
@@ -550,10 +860,16 @@ const EmployeeManagementSection = () => {
                   </p>
                 </div>
                 <div className="mt-4 flex space-x-2">
-                  <button className="text-xs bg-[hsl(0,0%,10%)] hover:bg-[hsl(0,0%,20%)] rounded px-2 py-1 text-[hsl(0,0%,98%)] transition-colors">
+                  <button
+                    onClick={() => openViewEmployeesModal(dept)}
+                    className="text-xs bg-[hsl(0,0%,10%)] hover:bg-[hsl(0,0%,20%)] rounded px-2 py-1 text-[hsl(0,0%,98%)] transition-colors"
+                  >
                     View Employees
                   </button>
-                  <button className="text-xs bg-[hsl(0,0%,10%)] hover:bg-[hsl(0,0%,20%)] rounded px-2 py-1 text-[hsl(0,0%,98%)] transition-colors">
+                  <button 
+                    onClick={() => openEditModal(dept)}
+                    className="text-xs bg-[hsl(0,0%,10%)] hover:bg-[hsl(0,0%,20%)] rounded px-2 py-1 text-[hsl(0,0%,98%)] transition-colors"
+                  >
                     Edit
                   </button>
                 </div>
@@ -573,10 +889,25 @@ const EmployeeManagementSection = () => {
         onSuccess={handleDepartmentCreated}
       />
 
+      {selectedDepartment && (
+        <ViewEmployeesModal 
+          department={selectedDepartment} 
+          onClose={closeViewEmployeesModal} 
+        />
+      )}
+
+      {departmentToEdit && (
+        <EditDepartmentModal
+          department={departmentToEdit}
+          onClose={closeEditModal}
+          onSave={handleSaveDepartment}
+        />
+      )}
+
       {/* Success Notification */}
       {showSuccess && (
         <div className="fixed top-4 right-4 bg-green-600 text-white px-6 py-3 rounded-lg shadow-lg z-50">
-          Department created successfully!
+          Operation completed successfully!
         </div>
       )}
     </div>
@@ -587,10 +918,87 @@ const EmployeeManagementSection = () => {
 export const SuperAdminDashboard = () => {
   const [showHRAccountModal, setShowHRAccountModal] = useState<boolean>(false);
   const [showSystemHealth, setShowSystemHealth] = useState<boolean>(false);
-  // Add state for viewing department details
   const [viewingDept, setViewingDept] = useState<null | Department>(null);
-  // Add activeDashboard state if not present
   const [activeDashboard, setActiveDashboard] = useState('super-admin');
+  const [stats, setStats] = useState<StatItem[]>([]);
+  const [loadingStats, setLoadingStats] = useState<boolean>(true);
+  const [error, setError] = useState<string | null>(null);
+
+  // Fetch dashboard stats from the backend
+  React.useEffect(() => {
+    const fetchDashboardStats = async () => {
+      setLoadingStats(true);
+      const apiBaseUrl = import.meta.env.VITE_API_URL;
+      try {
+        // Use your existing apiRequest function to fetch the stats
+        const response = await apiRequest(`${apiBaseUrl}/employees/stats/all`);
+
+        // Assuming your backend returns data like: { data: { totalEmployees: 100, activeEmployees: 85, ... } }
+        const { totalEmployees, totalDepartments, statusBreakdown } = response.data;
+
+        // Build a dynamic stats array to replace the hard-coded one
+        const dynamicStats: StatItem[] = [
+          {
+            name: 'Total Employees',
+            value: totalEmployees.toLocaleString(),
+            icon: Users,
+            change: '+12%',
+            changeType: 'positive',
+            color: 'text-green-500'
+          },
+          {
+            name: 'Active Employees',
+            value: statusBreakdown.active.toLocaleString(),
+            icon: Activity,
+            change: '+5%',
+            changeType: 'positive',
+            color: 'text-purple-500'
+          },
+          {
+            name: 'Departments',
+            value: totalDepartments.toLocaleString(),
+            icon: Building,
+            change: '+1',
+            changeType: 'positive',
+            color: 'text-blue-500'
+          },
+          { 
+            name: 'Active Sessions', 
+            value: '456', 
+            icon: Activity, 
+            change: '+5%', 
+            changeType: 'positive', 
+            color: 'text-purple-500' 
+          },
+          { 
+            name: 'Pending Approvals', 
+            value: '23', 
+            icon: FileText, 
+            change: '-3', 
+            changeType: 'negative', 
+            color: 'text-red-500' 
+          },
+          {
+            name: 'System Health',
+            value: 'Good',
+            icon: Gauge,
+            change: 'Stable',
+            changeType: 'positive',
+            color: 'text-green-500'
+          }
+        ];
+
+        setStats(dynamicStats);
+        setLoadingStats(false);
+      } catch (err: any) {
+        console.error('Failed to fetch dashboard stats:', err);
+        setError(err.message || 'Failed to fetch dashboard stats.');
+        setLoadingStats(false);
+      }
+    };
+
+    fetchDashboardStats();
+  }, []);
 
   return (
     <div className="space-y-8 p-6 bg-background min-h-screen text-foreground font-inter">
@@ -642,7 +1050,6 @@ export const SuperAdminDashboard = () => {
         `}
       </style>
 
-
       <div>
         <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center">
           <div>
@@ -679,8 +1086,6 @@ export const SuperAdminDashboard = () => {
               );
             })}
           </div>
-
-
 
           {/* Employee Management */}
           <EmployeeManagementSection />
@@ -724,8 +1129,6 @@ export const SuperAdminDashboard = () => {
       {activeDashboard === 'hr' && <HRDashboard />}
 
       {/* Modals */}
-
-
       <CreateHRAccountModal
         isOpen={showHRAccountModal}
         onClose={() => setShowHRAccountModal(false)}

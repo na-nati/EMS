@@ -1,11 +1,16 @@
 import { Request, Response } from 'express';
 import { Manager, IManager } from '../models/Manager';
+import { User } from '../models/User';
 
 // Create manager
 export const createManager = async (req: Request, res: Response) => {
     try {
         const managerData = req.body;
-        const manager = new Manager(managerData);
+        const manager = new Manager({
+            ...managerData,
+            email: req.body.email,
+            phone_number: req.body.phone_number
+        });
         const savedManager = await manager.save();
 
         const populatedManager = await Manager.findById(savedManager._id)
@@ -220,3 +225,26 @@ export const checkIfUserIsManager = async (req: Request, res: Response) => {
         });
     }
 }; 
+
+// Get all managers
+export const getManagers = async (req: Request, res: Response) => {
+  try {
+    const managers = await User.find({ role: 'manager' })
+      .select('_id firstName lastName email position department')
+      .populate('department', 'name');
+
+    console.log('Raw manager data:', managers); // ✅ Debug log here
+
+    res.status(200).json({
+      success: true,
+      data: managers,
+      message: 'Managers fetched successfully'
+    });
+  } catch (error: any) {
+    res.status(500).json({
+      success: false,
+      message: 'Error fetching managers',
+      error: error.message
+    });
+  }
+};

@@ -1,6 +1,7 @@
 import { Request, Response } from 'express';
 import { Employee } from '../models/Employee';
 import { User } from '../models/User';
+import { Department } from '../models/Department';
 
 // Create a new employee
 export const createEmployee = async (req: Request, res: Response) => {
@@ -13,7 +14,8 @@ export const createEmployee = async (req: Request, res: Response) => {
             manager_id,
             department_id,
             joining_date,
-            employment_status
+            employment_status,
+            phone_number
         } = req.body;
 
         // Check if user exists
@@ -42,9 +44,9 @@ export const createEmployee = async (req: Request, res: Response) => {
             manager_id,
             department_id,
             joining_date,
-            employment_status
+            employment_status,
+            phone_number
         });
-
         const savedEmployee = await employee.save();
 
         const populatedEmployee = await Employee.findById(savedEmployee._id)
@@ -234,7 +236,7 @@ export const getEmployeesByDepartment = async (req: Request, res: Response) => {
         const skip = (page - 1) * limit;
 
         const employees = await Employee.find(filter)
-            .populate('user_id', 'username email first_name last_name')
+            .populate('user_id', 'username email firstName lastName ')
             .populate('manager_id', 'username email first_name last_name')
             .populate('department_id', 'name description')
             .skip(skip)
@@ -269,39 +271,31 @@ export const getEmployeeStats = async (req: Request, res: Response) => {
         const filter: any = {};
         if (department_id) filter.department_id = department_id;
 
-        const statusStats = await Employee.aggregate([
-            { $match: filter },
-            {
-                $group: {
-                    _id: '$employment_status',
-                    count: { $sum: 1 }
-                }
-            }
+        // Fetch all stats concurrently for better performance
+        const [
+            statusStats,
+            positionStats,
+            departmentStats,
+            totalEmployees,
+            totalDepartments // <<<-- New variable to hold the department count
+        ] = await Promise.all([
+            Employee.aggregate([
+                { $match: filter },
+                { $group: { _id: '$employment_status', count: { $sum: 1 } } }
+            ]),
+            Employee.aggregate([
+                { $match: filter },
+                { $group: { _id: '$position', count: { $sum: 1 } } },
+                { $sort: { count: -1 } },
+                { $limit: 10 }
+            ]),
+            Employee.aggregate([
+                { $match: filter },
+                { $group: { _id: '$department_id', count: { $sum: 1 } } }
+            ]),
+            Employee.countDocuments(filter),
+            Department.countDocuments() // <<<-- New promise to resolve, gets total departments
         ]);
-
-        const positionStats = await Employee.aggregate([
-            { $match: filter },
-            {
-                $group: {
-                    _id: '$position',
-                    count: { $sum: 1 }
-                }
-            },
-            { $sort: { count: -1 } },
-            { $limit: 10 }
-        ]);
-
-        const departmentStats = await Employee.aggregate([
-            { $match: filter },
-            {
-                $group: {
-                    _id: '$department_id',
-                    count: { $sum: 1 }
-                }
-            }
-        ]);
-
-        const totalEmployees = await Employee.countDocuments(filter);
 
         const statsMap = {
             active: 0,
@@ -311,13 +305,17 @@ export const getEmployeeStats = async (req: Request, res: Response) => {
         };
 
         statusStats.forEach(stat => {
-            statsMap[stat._id as keyof typeof statsMap] = stat.count;
+            const statusKey = stat._id.toLowerCase();
+            if (statsMap.hasOwnProperty(statusKey)) {
+                statsMap[statusKey as keyof typeof statsMap] = stat.count;
+            }
         });
 
         res.status(200).json({
             success: true,
             data: {
                 totalEmployees,
+                totalDepartments, // <<<-- Include totalDepartments in the response
                 statusBreakdown: statsMap,
                 positionBreakdown: positionStats,
                 departmentBreakdown: departmentStats
@@ -330,4 +328,4 @@ export const getEmployeeStats = async (req: Request, res: Response) => {
             error: error.message
         });
     }
-}; 
+};

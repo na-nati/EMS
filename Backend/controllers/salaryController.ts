@@ -12,7 +12,6 @@ export const createSalary = async (req: Request, res: Response) => {
             month,
             year,
             status,
-            department
         } = req.body;
 
         const salary = new Salary({
@@ -23,8 +22,6 @@ export const createSalary = async (req: Request, res: Response) => {
             month,
             year,
             status,
-            department
-            // netSalary will be auto-calculated by pre('save') middleware
         });
 
         await salary.save();
@@ -130,6 +127,24 @@ export const deleteSalary = async (req: Request, res: Response) => {
         res.status(500).json({
             success: false,
             message: 'Error deleting salary',
+            error: error.message
+        });
+    }
+};
+
+// Get Salaries by User ID
+export const getSalariesByUser = async (req: Request, res: Response) => {
+    try {
+        const { userId } = req.params;
+        const salaries = await Salary.find({ user: userId });
+        res.status(200).json({
+            success: true,
+            data: salaries
+        });
+    } catch (error: any) {
+        res.status(500).json({
+            success: false,
+            message: 'Error fetching salary records for user',
             error: error.message
         });
     }

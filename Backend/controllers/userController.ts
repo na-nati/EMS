@@ -14,58 +14,37 @@ interface MulterRequest extends Request {
 // Register
 export const registeruser = async (req: Request, res: Response) => {
     try {
-        const { firstName, lastName, email, password, role, department, position } = req.body;
+        const { firstName, lastName, role, email } = req.body;
 
-        if (!firstName || !lastName || !email || !password) {
-            return res.status(400).json({ message: 'All fields are required.' });
+        if (!firstName || !lastName || !role || !email) {
+            return res.status(400).json({ message: 'First name, last name, email and role are required.' });
         }
 
-        // Allow department by name or ObjectId
-        let departmentId = undefined;
-        if (department) {
-            // Try to find by ObjectId first
-            if (mongoose.Types.ObjectId.isValid(department)) {
-                const departmentExists = await Department.findById(department);
-                if (departmentExists) {
-                    departmentId = departmentExists._id;
-                }
-            }
-            // If not found by ID, try by name
-            if (!departmentId) {
-                const departmentByName = await Department.findOne({ name: department });
-                if (departmentByName) {
-                    departmentId = departmentByName._id;
-                } else {
-                    return res.status(400).json({ message: 'Invalid department.' });
-                }
-            }
-        }
 
         const existingUser = await User.findOne({ email });
         if (existingUser) {
             return res.status(400).json({ message: 'Email already in use.' });
         }
 
-        const hashedPassword = await bcrypt.hash(password, 10);
+        const generatedPassword = `${firstName}${lastName}`.toLowerCase();
+
+        const hashedPassword = await bcrypt.hash(generatedPassword, 10);
         const user = new User({
             firstName,
             lastName,
             email,
             password: hashedPassword,
             role,
-            department: departmentId, // Use the resolved ObjectId
-            position,
         });
 
         await user.save();
 
-        res.status(201).json({ message: 'User registered successfully.' });
+        res.status(201).json({ message: 'User registered successfully.', generatedPassword });
     } catch (err) {
         console.error('Registration error:', err);
         res.status(500).json({ message: 'Server error.' });
     }
 };
-
 // Login
 export const loginuser = async (req: Request, res: Response) => {
     try {

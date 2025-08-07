@@ -22,20 +22,21 @@ paths:
                 - firstName
                 - lastName
                 - email
-                - password
                 - role
               properties:
                 firstName: { type: string, description: "User's first name" }
                 lastName: { type: string, description: "User's last name" }
-                email: { type: string, description: "User's email address" }
-                password: { type: string, description: "User's password" }
-                role: { type: string, enum: [employee, manager, hr, super_admin], description: "User's role" }
-                department: { type: string, description: "Department ID (optional - can be set later in employee record)" }
-                position: { type: string, description: "Position/title (optional - can be set later in employee record)" }
+                email: { type: string, description: "User's email" }
+                role:
+                  {
+                    type: string,
+                    enum: [employee, manager, hr, super_admin],
+                    description: "User's role",
+                  }
       responses:
-        '201':
+        "201":
           description: User registered successfully
-        '400':
+        "400":
           description: Bad request
 
   /api/users/login:
@@ -52,9 +53,9 @@ paths:
                 email: { type: string }
                 password: { type: string }
       responses:
-        '200':
+        "200":
           description: Successful login
-        '400':
+        "400":
           description: Invalid email or password
 
   /api/departments:
@@ -74,9 +75,9 @@ paths:
                   type: string
                   description: The name of the department
       responses:
-        '201':
+        "201":
           description: Department created successfully
-        '400':
+        "400":
           description: Bad request
 
     get:
@@ -85,9 +86,9 @@ paths:
       security:
         - bearerAuth: []
       responses:
-        '200':
+        "200":
           description: List of departments
-        '401':
+        "401":
           description: Unauthorized
 
   /api/departments/{id}:
@@ -104,11 +105,11 @@ paths:
           schema:
             type: string
       responses:
-        '200':
+        "200":
           description: Department details
-        '401':
+        "401":
           description: Unauthorized
-        '404':
+        "404":
           description: Department not found
 
     put:
@@ -134,15 +135,15 @@ paths:
                   type: string
                   description: The name of the department
       responses:
-        '200':
+        "200":
           description: Department updated successfully
-        '400':
+        "400":
           description: Bad request
-        '401':
+        "401":
           description: Unauthorized
-        '403':
+        "403":
           description: Forbidden
-        '404':
+        "404":
           description: Department not found
 
     delete:
@@ -158,13 +159,13 @@ paths:
           schema:
             type: string
       responses:
-        '200':
+        "200":
           description: Department deleted successfully
-        '401':
+        "401":
           description: Unauthorized
-        '403':
+        "403":
           description: Forbidden
-        '404':
+        "404":
           description: Department not found
 
   /api/documents/documents:
@@ -191,9 +192,9 @@ paths:
             type: string
           description: Filter by employee ID
       responses:
-        '200':
+        "200":
           description: List of documents
-        '401':
+        "401":
           description: Unauthorized
 
     post:
@@ -213,11 +214,11 @@ paths:
                 employee_id: { type: string }
                 file_url: { type: string }
       responses:
-        '201':
+        "201":
           description: Document created successfully
-        '400':
+        "400":
           description: Bad request
-        '401':
+        "401":
           description: Unauthorized
 
   /api/documents/documents/{id}:
@@ -233,11 +234,11 @@ paths:
           schema:
             type: string
       responses:
-        '200':
+        "200":
           description: Document details
-        '401':
+        "401":
           description: Unauthorized
-        '404':
+        "404":
           description: Document not found
     put:
       summary: Update a document
@@ -263,13 +264,13 @@ paths:
                 file_url: { type: string }
                 status: { type: string, enum: [Approved, Pending, Rejected] }
       responses:
-        '200':
+        "200":
           description: Document updated successfully
-        '400':
+        "400":
           description: Bad request
-        '401':
+        "401":
           description: Unauthorized
-        '404':
+        "404":
           description: Document not found
     delete:
       summary: Delete a document
@@ -283,11 +284,11 @@ paths:
           schema:
             type: string
       responses:
-        '200':
+        "200":
           description: Document deleted successfully
-        '401':
+        "401":
           description: Unauthorized
-        '404':
+        "404":
           description: Document not found
 
   /api/documents/requests:
@@ -309,9 +310,9 @@ paths:
             enum: [Pending, Fulfilled, Rejected, All]
           description: Filter by request status
       responses:
-        '200':
+        "200":
           description: List of document requests
-        '401':
+        "401":
           description: Unauthorized
     post:
       summary: Create a new document request
@@ -328,11 +329,11 @@ paths:
                 requested_doc_type: { type: string }
                 request_details: { type: string }
       responses:
-        '201':
+        "201":
           description: Document request created successfully
-        '400':
+        "400":
           description: Bad request
-        '401':
+        "401":
           description: Unauthorized
 
   /api/documents/requests/{id}:
@@ -348,11 +349,11 @@ paths:
           schema:
             type: string
       responses:
-        '200':
+        "200":
           description: Document request details
-        '401':
+        "401":
           description: Unauthorized
-        '404':
+        "404":
           description: Document request not found
     put:
       summary: Update a document request
@@ -376,13 +377,13 @@ paths:
                 hr_notes: { type: string }
                 fulfilled_document_id: { type: string }
       responses:
-        '200':
+        "200":
           description: Document request updated successfully
-        '400':
+        "400":
           description: Bad request
-        '401':
+        "401":
           description: Unauthorized
-        '404':
+        "404":
           description: Document request not found
 
   /api/salaries:
@@ -412,9 +413,9 @@ paths:
             type: string
             enum: [paid, pending, processing]
       responses:
-        '200':
+        "200":
           description: List of salary records
-        '401':
+        "401":
           description: Unauthorized
 
     post:
@@ -433,7 +434,6 @@ paths:
                 - basicSalary
                 - month
                 - year
-                - department
               properties:
                 user: { type: string }
                 basicSalary: { type: number }
@@ -441,14 +441,19 @@ paths:
                 deductions: { type: number, default: 0 }
                 month: { type: string }
                 year: { type: integer }
-                status: { type: string, enum: [paid, pending, processing], default: pending }
-                department: { type: string }
+                status:
+                  {
+                    type: string,
+                    enum: [paid, pending, processing],
+                    default: pending,
+                  }
+
       responses:
-        '201':
+        "201":
           description: Salary created successfully
-        '400':
+        "400":
           description: Bad request
-        '401':
+        "401":
           description: Unauthorized
 
   /api/salaries/{id}:
@@ -464,11 +469,11 @@ paths:
           schema:
             type: string
       responses:
-        '200':
+        "200":
           description: Salary details
-        '401':
+        "401":
           description: Unauthorized
-        '404':
+        "404":
           description: Salary not found
 
     put:
@@ -498,13 +503,13 @@ paths:
                 status: { type: string, enum: [paid, pending, processing] }
                 department: { type: string }
       responses:
-        '200':
+        "200":
           description: Salary updated successfully
-        '400':
+        "400":
           description: Bad request
-        '401':
+        "401":
           description: Unauthorized
-        '404':
+        "404":
           description: Salary not found
 
     delete:
@@ -519,12 +524,26 @@ paths:
           schema:
             type: string
       responses:
-        '200':
+        "200":
           description: Salary deleted successfully
-        '401':
+        "401":
           description: Unauthorized
-        '404':
+        "404":
           description: Salary not found
+
+  /api/salaries/user/{userId}:
+    get:
+      summary: Get salary records by user ID
+      tags: [Salaries]
+      parameters:
+        - in: path
+          name: userId
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: List of salary records for user
 
   /api/employees:
     get:
@@ -553,9 +572,9 @@ paths:
           schema:
             type: string
       responses:
-        '200':
+        "200":
           description: List of employees
-        '401':
+        "401":
           description: Unauthorized
 
     post:
@@ -575,19 +594,32 @@ paths:
                 - job_profile
                 - joining_date
               properties:
-                user_id: { type: string, description: "User ID from users collection" }
-                employee_code: { type: string, description: "Unique employee code" }
+                user_id:
+                  { type: string, description: "User ID from users collection" }
+                employee_code:
+                  { type: string, description: "Unique employee code" }
                 job_profile: { type: string, description: "Job title/role" }
-                salary_id: { type: string, description: "Reference to existing salary record (use this OR salary field)" }
+                salary_id:
+                  {
+                    type: string,
+                    description: "Reference to existing salary record (use this OR salary field)",
+                  }
                 manager_id: { type: string, description: "Manager's user ID" }
-                joining_date: { type: string, format: date, description: "Date of joining" }
-                employment_status: { type: string, enum: [Active, Resigned, Terminated], default: Active }
+                department_id: { type: string, description: "Department ID" }
+                joining_date:
+                  { type: string, format: date, description: "Date of joining" }
+                employment_status:
+                  {
+                    type: string,
+                    enum: [Active, Resigned, Terminated],
+                    default: Active,
+                  }
       responses:
-        '201':
+        "201":
           description: Employee created successfully
-        '400':
+        "400":
           description: Bad request
-        '401':
+        "401":
           description: Unauthorized
 
   /api/employees/{id}:
@@ -603,11 +635,11 @@ paths:
           schema:
             type: string
       responses:
-        '200':
+        "200":
           description: Employee details
-        '401':
+        "401":
           description: Unauthorized
-        '404':
+        "404":
           description: Employee not found
 
     put:
@@ -628,21 +660,29 @@ paths:
             schema:
               type: object
               properties:
-                user_id: { type: string, description: "User ID from users collection" }
-                employee_code: { type: string, description: "Unique employee code" }
+                user_id:
+                  { type: string, description: "User ID from users collection" }
+                employee_code:
+                  { type: string, description: "Unique employee code" }
                 job_profile: { type: string, description: "Job title/role" }
-                salary_id: { type: string, description: "Reference to existing salary record (use this OR salary field)" }
+                salary_id:
+                  {
+                    type: string,
+                    description: "Reference to existing salary record (use this OR salary field)",
+                  }
                 manager_id: { type: string, description: "Manager's user ID" }
-                joining_date: { type: string, format: date, description: "Date of joining" }
-                employment_status: { type: string, enum: [Active, Resigned, Terminated] }
+                joining_date:
+                  { type: string, format: date, description: "Date of joining" }
+                employment_status:
+                  { type: string, enum: [Active, Resigned, Terminated] }
       responses:
-        '200':
+        "200":
           description: Employee updated successfully
-        '400':
+        "400":
           description: Bad request
-        '401':
+        "401":
           description: Unauthorized
-        '404':
+        "404":
           description: Employee not found
 
     delete:
@@ -657,11 +697,11 @@ paths:
           schema:
             type: string
       responses:
-        '200':
+        "200":
           description: Employee deleted successfully
-        '401':
+        "401":
           description: Unauthorized
-        '404':
+        "404":
           description: Employee not found
 
   /api/employees/department/{departmentId}:
@@ -687,9 +727,9 @@ paths:
             type: integer
             default: 10
       responses:
-        '200':
+        "200":
           description: List of employees in department
-        '401':
+        "401":
           description: Unauthorized
 
   /api/employees/stats/all:
@@ -699,9 +739,9 @@ paths:
       security:
         - bearerAuth: []
       responses:
-        '200':
+        "200":
           description: Employee statistics
-        '401':
+        "401":
           description: Unauthorized
 
   /api/managers:
@@ -726,9 +766,9 @@ paths:
           schema:
             type: string
       responses:
-        '200':
+        "200":
           description: List of managers
-        '401':
+        "401":
           description: Unauthorized
 
     post:
@@ -753,14 +793,40 @@ paths:
                   type: string
                   description: Department ID where the user will be a manager
       responses:
-        '201':
+        "201":
           description: Manager created successfully
-        '400':
+        "400":
           description: Bad request
-        '401':
+        "401":
           description: Unauthorized
-        '409':
+        "409":
           description: User is already a manager
+
+  /api/managers/managers:
+  get:
+    summary: Get list of managers
+    tags:
+      - Managers
+    security:
+      - bearerAuth: []
+    responses:
+      "200":
+        description: A list of managers
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                success:
+                  type: boolean
+                data:
+                  type: array
+                  items:
+                    $ref: "#/components/schemas/Manager"
+                message:
+                  type: string
+      "401":
+        description: Unauthorized
 
   /api/managers/{id}:
     get:
@@ -775,11 +841,11 @@ paths:
           schema:
             type: string
       responses:
-        '200':
+        "200":
           description: Manager details
-        '401':
+        "401":
           description: Unauthorized
-        '404':
+        "404":
           description: Manager not found
 
     put:
@@ -804,6 +870,1052 @@ paths:
                   type: string
                   description: Updated user ID
 
+  /api/assets:
+    post:
+      summary: Create a new asset
+      tags: [Assets]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/Asset"
+      responses:
+        "201":
+          description: Asset created
+    get:
+      summary: Get all assets (with pagination & filtering)
+      tags: [Assets]
+      parameters:
+        - in: query
+          name: page
+          schema:
+            type: integer
+        - in: query
+          name: limit
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: List of assets
+
+  /api/assets/{id}:
+    get:
+      summary: Get asset by ID
+      tags: [Assets]
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Asset details
+    put:
+      summary: Update asset
+      tags: [Assets]
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/Asset"
+      responses:
+        "200":
+          description: Asset updated
+    delete:
+      summary: Delete asset
+      tags: [Assets]
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: string
+      responses:
+        "204":
+          description: Asset deleted
+
+  /api/assets/{id}/assign:
+    patch:
+      summary: Assign asset to employee
+      tags: [Assets]
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                employeeId:
+                  type: string
+      responses:
+        "200":
+          description: Asset assigned
+
+  /api/assets/{id}/unassign:
+    patch:
+      summary: Unassign asset from employee
+      tags: [Assets]
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Asset unassigned
+
+  /api/assets/employee/{employeeId}:
+    get:
+      summary: Get assets by employee
+      tags: [Assets]
+      parameters:
+        - in: path
+          name: employeeId
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: List of assets for employee
+
+  /api/attendance:
+    post:
+      summary: Create attendance record
+      tags: [Attendance]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/Attendance"
+      responses:
+        "201":
+          description: Attendance record created
+    get:
+      summary: Get all attendance records (with pagination & filtering)
+      tags: [Attendance]
+      parameters:
+        - in: query
+          name: page
+          schema:
+            type: integer
+        - in: query
+          name: limit
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: List of attendance records
+
+  /api/attendance/{id}:
+    get:
+      summary: Get attendance by ID
+      tags: [Attendance]
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Attendance record details
+    put:
+      summary: Update attendance record
+      tags: [Attendance]
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/Attendance"
+      responses:
+        "200":
+          description: Attendance record updated
+    delete:
+      summary: Delete attendance record
+      tags: [Attendance]
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: string
+      responses:
+        "204":
+          description: Attendance record deleted
+
+  /api/attendance/bulk:
+    post:
+      summary: Bulk create attendance records
+      tags: [Attendance]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: array
+              items:
+                $ref: "#/components/schemas/Attendance"
+      responses:
+        "201":
+          description: Bulk attendance records created
+
+  /api/attendance/employee/{employeeId}:
+    get:
+      summary: Get attendance by employee
+      tags: [Attendance]
+      parameters:
+        - in: path
+          name: employeeId
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: List of attendance records for employee
+
+  /api/attendance/employee/{employeeId}/stats:
+    get:
+      summary: Get attendance statistics for employee
+      tags: [Attendance]
+      parameters:
+        - in: path
+          name: employeeId
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Attendance statistics for employee
+
+  /api/leave-requests:
+    post:
+      summary: Create leave request
+      tags: [LeaveRequests]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/LeaveRequest"
+      responses:
+        "201":
+          description: Leave request created
+    get:
+      summary: Get all leave requests (with pagination & filtering)
+      tags: [LeaveRequests]
+      parameters:
+        - in: query
+          name: page
+          schema:
+            type: integer
+        - in: query
+          name: limit
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: List of leave requests
+
+  /api/leave-requests/{id}:
+    get:
+      summary: Get leave request by ID
+      tags: [LeaveRequests]
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Leave request details
+    put:
+      summary: Update leave request
+      tags: [LeaveRequests]
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/LeaveRequest"
+      responses:
+        "200":
+          description: Leave request updated
+    delete:
+      summary: Delete leave request
+      tags: [LeaveRequests]
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: string
+      responses:
+        "204":
+          description: Leave request deleted
+
+  /api/leave-requests/{id}/approve:
+    patch:
+      summary: Approve leave request
+      tags: [LeaveRequests]
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Leave request approved
+
+  /api/leave-requests/{id}/reject:
+    patch:
+      summary: Reject leave request
+      tags: [LeaveRequests]
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Leave request rejected
+
+  /api/leave-requests/employee/{employeeId}:
+    get:
+      summary: Get leave requests by employee
+      tags: [LeaveRequests]
+      parameters:
+        - in: path
+          name: employeeId
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: List of leave requests for employee
+
+  /api/leave-requests/pending/all:
+    get:
+      summary: Get pending leave requests
+      tags: [LeaveRequests]
+      responses:
+        "200":
+          description: List of pending leave requests
+
+  /api/payrolls:
+    post:
+      summary: Create payroll record
+      tags: [Payrolls]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/Payroll"
+      responses:
+        "201":
+          description: Payroll record created
+    get:
+      summary: Get all payroll records (with pagination & filtering)
+      tags: [Payrolls]
+      parameters:
+        - in: query
+          name: page
+          schema:
+            type: integer
+        - in: query
+          name: limit
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: List of payroll records
+
+  /api/payrolls/{id}:
+    get:
+      summary: Get payroll by ID
+      tags: [Payrolls]
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Payroll record details
+    put:
+      summary: Update payroll record
+      tags: [Payrolls]
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/Payroll"
+      responses:
+        "200":
+          description: Payroll record updated
+    delete:
+      summary: Delete payroll record
+      tags: [Payrolls]
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: string
+      responses:
+        "204":
+          description: Payroll record deleted
+
+  /api/payrolls/bulk:
+    post:
+      summary: Bulk create payroll records
+      tags: [Payrolls]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: array
+              items:
+                $ref: "#/components/schemas/Payroll"
+      responses:
+        "201":
+          description: Bulk payroll records created
+
+  /api/payrolls/employee/{employeeId}:
+    get:
+      summary: Get payroll by employee
+      tags: [Payrolls]
+      parameters:
+        - in: path
+          name: employeeId
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: List of payroll records for employee
+
+  /api/payrolls/month/{month}/year/{year}:
+    get:
+      summary: Get payroll by month/year
+      tags: [Payrolls]
+      parameters:
+        - in: path
+          name: month
+          required: true
+          schema:
+            type: string
+        - in: path
+          name: year
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Payroll records for month/year
+
+  /api/payrolls/{id}/status:
+    patch:
+      summary: Update payroll status
+      tags: [Payrolls]
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                status:
+                  type: string
+      responses:
+        "200":
+          description: Payroll status updated
+
+  /api/payrolls/stats/{year}:
+    get:
+      summary: Get payroll statistics
+      tags: [Payrolls]
+      parameters:
+        - in: path
+          name: year
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Payroll statistics
+
+  /api/trainings:
+    post:
+      summary: Create training course
+      tags: [Trainings]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/Training"
+      responses:
+        "201":
+          description: Training course created
+    get:
+      summary: Get all training courses (with pagination & filtering)
+      tags: [Trainings]
+      parameters:
+        - in: query
+          name: page
+          schema:
+            type: integer
+        - in: query
+          name: limit
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: List of training courses
+
+  /api/trainings/{id}:
+    get:
+      summary: Get training by ID
+      tags: [Trainings]
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Training course details
+    put:
+      summary: Update training course
+      tags: [Trainings]
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/Training"
+      responses:
+        "200":
+          description: Training course updated
+    delete:
+      summary: Delete training course
+      tags: [Trainings]
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: string
+      responses:
+        "204":
+          description: Training course deleted
+
+  /api/trainings/{id}/status:
+    patch:
+      summary: Update training status
+      tags: [Trainings]
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                status:
+                  type: string
+      responses:
+        "200":
+          description: Training status updated
+
+  /api/trainings/upcoming/all:
+    get:
+      summary: Get upcoming trainings
+      tags: [Trainings]
+      responses:
+        "200":
+          description: List of upcoming trainings
+
+  /api/trainings/completed/all:
+    get:
+      summary: Get completed trainings
+      tags: [Trainings]
+      responses:
+        "200":
+          description: List of completed trainings
+
+  /api/trainings/stats/all:
+    get:
+      summary: Get training statistics
+      tags: [Trainings]
+      responses:
+        "200":
+          description: Training statistics
+
+  /api/performance-reviews:
+    post:
+      summary: Create performance review
+      tags: [PerformanceReviews]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/PerformanceReview"
+      responses:
+        "201":
+          description: Performance review created
+    get:
+      summary: Get all performance reviews (with pagination & filtering)
+      tags: [PerformanceReviews]
+      parameters:
+        - in: query
+          name: page
+          schema:
+            type: integer
+        - in: query
+          name: limit
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: List of performance reviews
+
+  /api/performance-reviews/{id}:
+    get:
+      summary: Get performance review by ID
+      tags: [PerformanceReviews]
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Performance review details
+    put:
+      summary: Update performance review
+      tags: [PerformanceReviews]
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/PerformanceReview"
+      responses:
+        "200":
+          description: Performance review updated
+    delete:
+      summary: Delete performance review
+      tags: [PerformanceReviews]
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: string
+      responses:
+        "204":
+          description: Performance review deleted
+
+  /api/performance-reviews/employee/{employeeId}:
+    get:
+      summary: Get performance reviews by employee
+      tags: [PerformanceReviews]
+      parameters:
+        - in: path
+          name: employeeId
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: List of performance reviews for employee
+
+  /api/performance-reviews/evaluator/{evaluatorId}:
+    get:
+      summary: Get performance reviews by evaluator
+      tags: [PerformanceReviews]
+      parameters:
+        - in: path
+          name: evaluatorId
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: List of performance reviews by evaluator
+
+  /api/performance-reviews/employee/{employeeId}/stats:
+    get:
+      summary: Get performance statistics for employee
+      tags: [PerformanceReviews]
+      parameters:
+        - in: path
+          name: employeeId
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Performance statistics for employee
+
+  /api/recruitments:
+    post:
+      summary: Create recruitment request
+      tags: [Recruitments]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/Recruitment"
+      responses:
+        "201":
+          description: Recruitment request created
+    get:
+      summary: Get all recruitment requests (with pagination & filtering)
+      tags: [Recruitments]
+      parameters:
+        - in: query
+          name: page
+          schema:
+            type: integer
+        - in: query
+          name: limit
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: List of recruitment requests
+
+  /api/recruitments/{id}:
+    get:
+      summary: Get recruitment by ID
+      tags: [Recruitments]
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Recruitment request details
+    put:
+      summary: Update recruitment request
+      tags: [Recruitments]
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/Recruitment"
+      responses:
+        "200":
+          description: Recruitment request updated
+    delete:
+      summary: Delete recruitment request
+      tags: [Recruitments]
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: string
+      responses:
+        "204":
+          description: Recruitment request deleted
+
+  /api/recruitments/{id}/status:
+    patch:
+      summary: Update recruitment status
+      tags: [Recruitments]
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                status:
+                  type: string
+      responses:
+        "200":
+          description: Recruitment status updated
+
+  /api/recruitments/requester/{requesterId}:
+    get:
+      summary: Get recruitments by requester
+      tags: [Recruitments]
+      parameters:
+        - in: path
+          name: requesterId
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: List of recruitments by requester
+
+  /api/recruitments/active/all:
+    get:
+      summary: Get active recruitment requests
+      tags: [Recruitments]
+      responses:
+        "200":
+          description: List of active recruitment requests
+
+  /api/recruitments/stats/all:
+    get:
+      summary: Get recruitment statistics
+      tags: [Recruitments]
+      responses:
+        "200":
+          description: Recruitment statistics
+
+  /api/separation-requests:
+    post:
+      summary: Create separation request
+      tags: [SeparationRequests]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/SeparationRequest"
+      responses:
+        "201":
+          description: Separation request created
+    get:
+      summary: Get all separation requests (with pagination & filtering)
+      tags: [SeparationRequests]
+      parameters:
+        - in: query
+          name: page
+          schema:
+            type: integer
+        - in: query
+          name: limit
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: List of separation requests
+
+  /api/separation-requests/{id}:
+    get:
+      summary: Get separation request by ID
+      tags: [SeparationRequests]
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Separation request details
+    put:
+      summary: Update separation request
+      tags: [SeparationRequests]
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/SeparationRequest"
+      responses:
+        "200":
+          description: Separation request updated
+    delete:
+      summary: Delete separation request
+      tags: [SeparationRequests]
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: string
+      responses:
+        "204":
+          description: Separation request deleted
+
+  /api/separation-requests/{id}/approve:
+    patch:
+      summary: Approve separation request
+      tags: [SeparationRequests]
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Separation request approved
+
+  /api/separation-requests/{id}/process:
+    patch:
+      summary: Process separation request by HR
+      tags: [SeparationRequests]
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Separation request processed
+
+  /api/separation-requests/employee/{employeeId}:
+    get:
+      summary: Get separation requests by employee
+      tags: [SeparationRequests]
+      parameters:
+        - in: path
+          name: employeeId
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: List of separation requests for employee
+
+  /api/separation-requests/pending/all:
+    get:
+      summary: Get pending separation requests
+      tags: [SeparationRequests]
+      responses:
+        "200":
+          description: List of pending separation requests
+
+  /api/audit-logs:
+    get:
+      summary: Get all audit logs (with pagination & filtering)
+      tags: [AuditLogs]
+      parameters:
+        - in: query
+          name: page
+          schema:
+            type: integer
+        - in: query
+          name: limit
+          schema:
+            type: integer
+        - in: query
+          name: userId
+          schema:
+            type: string
+        - in: query
+          name: action
+          schema:
+            type: string
+      responses:
+        "200":
+          description: List of audit logs
+
+  /api/audit-logs/{id}:
+    get:
+      summary: Get audit log by ID
+      tags: [AuditLogs]
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Audit log details
+
 components:
   securitySchemes:
     bearerAuth:
@@ -813,5 +1925,3 @@ components:
 
 security:
   - bearerAuth: []
-      
-

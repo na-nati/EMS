@@ -9,6 +9,8 @@ export interface IEmployee extends Document {
     department_id?: mongoose.Schema.Types.ObjectId;
     joining_date: Date;
     employment_status: 'Active' | 'Resigned' | 'Terminated';
+
+    phone_number?: string;
 }
 
 const EmployeeSchema = new Schema<IEmployee>({
@@ -47,6 +49,11 @@ const EmployeeSchema = new Schema<IEmployee>({
         type: String,
         enum: ['Active', 'Resigned', 'Terminated'],
         default: 'Active',
+    },
+
+    phone_number: {
+        type: String,
+        required: false,
     },
 }, {
     timestamps: true,
