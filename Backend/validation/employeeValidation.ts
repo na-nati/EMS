@@ -1,4 +1,4 @@
-import * as Joi from 'joi';
+import Joi from 'joi';
 
 // Emergency contact schema
 const emergencyContactSchema = Joi.object({
