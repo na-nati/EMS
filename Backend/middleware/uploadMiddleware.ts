@@ -4,31 +4,25 @@ import { Request, Response, NextFunction } from 'express';
 // Configure multer for memory storage
 const storage = multer.memoryStorage();
 
-// Type for file filter callback
-type FileFilterCallbackType = (
-  error: Error | null,
-  acceptFile: boolean
-) => void;
-
 // File filter to only allow images
 const fileFilter = (
   req: Request,
-  file: Express.Multer.File,
+  file: any,
   cb: FileFilterCallback
 ) => {
   console.log('Multer file filter:', {
-    originalname: file.originalname,
-    mimetype: file.mimetype
+    originalname: file?.originalname,
+    mimetype: file?.mimetype
   });
 
-  if (file.mimetype.startsWith('image/')) {
+  if (file?.mimetype?.startsWith('image/')) {
     cb(null, true);
   } else {
     cb(new Error('Only image files are allowed!'));
   }
 };
 
-// Configure multer with proper typing
+// Configure multer
 export const upload = multer({
   storage: storage,
   fileFilter: fileFilter,
@@ -51,18 +45,23 @@ export const handleMulterError = (
       message: `File upload error: ${error.message}`,
       code: error.code
     });
-  } else if (error instanceof Error) {
+  }
+
+  if (error instanceof Error) {
     console.error('File upload error:', error);
     return res.status(400).json({
       success: false,
       message: error.message
     });
-  } else if (error) {
+  }
+
+  if (error) {
     console.error('Unknown file upload error:', error);
     return res.status(500).json({
       success: false,
       message: 'An unknown file upload error occurred'
     });
   }
+
   next();
 };

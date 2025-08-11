@@ -6,11 +6,6 @@ import { Department } from '../models/Department'; // Import Department model
 import mongoose from 'mongoose'; // Import mongoose for ObjectId validation
 import cloudinary from '../config/cloudinary';
 
-// Extend Request type to include file from multer
-interface MulterRequest extends Request {
-    file?: Express.Multer.File;
-}
-
 // Register
 export const registeruser = async (req: Request, res: Response) => {
     try {
@@ -100,10 +95,10 @@ export const getAllUsers = async (req: Request, res: Response) => {
 };
 
 // Update user profile picture with Cloudinary
-export const updateProfilePicture = async (req: MulterRequest, res: Response) => {
+export const updateProfilePicture = async (req: Request, res: Response) => {
     try {
         const { userId } = req.params;
-        const file = req.file; // Multer will populate this
+        const file = (req as any).file as { originalname: string; mimetype: string; size: number; buffer: Buffer } | undefined;
 
         console.log('Profile picture upload request:', { userId, file: file ? 'File received' : 'No file' });
         console.log('Environment variables check:', {
@@ -134,23 +129,6 @@ export const updateProfilePicture = async (req: MulterRequest, res: Response) =>
             size: file.size
         });
 
-        // Test Cloudinary configuration
-        console.log('Testing Cloudinary config before upload:', {
-            cloud_name: cloudinary.config().cloud_name,
-            api_key: cloudinary.config().api_key ? 'SET' : 'NOT SET',
-            api_secret: cloudinary.config().api_secret ? 'SET' : 'NOT SET'
-        });
-
-        // Reconfigure Cloudinary if needed
-        if (!cloudinary.config().api_key) {
-            console.log('Reconfiguring Cloudinary with direct values...');
-            cloudinary.config({
-                cloud_name: 'dcy52rhvi',
-                api_key: process.env.CLOUDINARY_API_KEY!,
-                api_secret: process.env.CLOUDINARY_API_SECRET!,
-            });
-        }
-
         // Convert buffer to base64 for Cloudinary v2
         const base64String = `data:${file.mimetype};base64,${file.buffer.toString('base64')}`;
 
@@ -164,7 +142,6 @@ export const updateProfilePicture = async (req: MulterRequest, res: Response) =>
         });
 
         console.log('Cloudinary upload successful:', result.secure_url);
-
         console.log('Updating user in database...');
 
         // Update user with Cloudinary URL
@@ -188,18 +165,15 @@ export const updateProfilePicture = async (req: MulterRequest, res: Response) =>
             data: user,
             message: 'Profile picture updated successfully'
         });
-    } catch (error: any) {
-        console.error('Profile picture upload error:', error);
-        console.error('Error details:', {
-            name: error.name,
-            message: error.message,
-            http_code: error.http_code,
-            stack: error.stack
-        });
+    } catch (error: unknown) {
+        if (error && typeof error === 'object') {
+            console.error('Profile picture upload error:', error);
+        }
+        const message = (error instanceof Error) ? error.message : 'Unknown error';
         res.status(500).json({
             success: false,
             message: 'Error uploading profile picture',
-            error: error.message
+            error: message
         });
     }
 };
@@ -239,12 +213,13 @@ export const getProfile = async (req: Request, res: Response) => {
             data: userData,
             message: 'Profile retrieved successfully'
         });
-    } catch (error: any) {
+    } catch (error: unknown) {
+        const message = (error instanceof Error) ? error.message : 'Unknown error';
         console.error('Get profile error:', error);
         res.status(500).json({
             success: false,
             message: 'Error retrieving profile',
-            error: error.message
+            error: message
         });
     }
 };
@@ -273,12 +248,13 @@ export const updateProfile = async (req: Request, res: Response) => {
             data: user,
             message: 'Profile updated successfully'
         });
-    } catch (error: any) {
+    } catch (error: unknown) {
+        const message = (error instanceof Error) ? error.message : 'Unknown error';
         console.error('Update profile error:', error);
         res.status(500).json({
             success: false,
             message: 'Error updating profile',
-            error: error.message
+            error: message
         });
     }
 };
