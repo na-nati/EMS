@@ -1,10 +1,2 @@
-import { Multer } from 'multer';
-
-declare global {
-  namespace Express {
-    interface Request {
-      file?: Multer.File;
-      files?: Multer.File[] | { [fieldname: string]: Multer.File[] };
-    }
-  }
-}
+// This file is intentionally empty to avoid conflicts with @types/multer
+// The @types/multer package already provides the proper Express.Multer.File type

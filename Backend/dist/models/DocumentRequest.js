@@ -112,3 +112,4 @@ DocumentRequestSchema.pre('save', function (next) {
 DocumentRequestSchema.index({ employee_id: 1, status: 1 });
 DocumentRequestSchema.index({ status: 1, request_date: -1 });
 exports.DocumentRequest = mongoose_1.default.model('DocumentRequest', DocumentRequestSchema);
+//# sourceMappingURL=DocumentRequest.js.map

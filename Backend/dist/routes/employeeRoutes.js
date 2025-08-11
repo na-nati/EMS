@@ -16,3 +16,4 @@ router.delete('/:id', employeeController_1.deleteEmployee);
 router.get('/department/:departmentId', employeeController_1.getEmployeesByDepartment);
 router.get('/stats/all', employeeController_1.getEmployeeStats);
 exports.default = router;
+//# sourceMappingURL=employeeRoutes.js.map

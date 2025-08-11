@@ -311,3 +311,4 @@ const getTrainingStats = async (req, res) => {
     }
 };
 exports.getTrainingStats = getTrainingStats;
+//# sourceMappingURL=trainingController.js.map

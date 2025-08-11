@@ -295,3 +295,4 @@ const getEmployeeStats = async (req, res) => {
     }
 };
 exports.getEmployeeStats = getEmployeeStats;
+//# sourceMappingURL=employeeController.js.map

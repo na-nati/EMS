@@ -60,3 +60,4 @@ const AttendanceSchema = new mongoose_1.Schema({
 // Create a compound index to ensure one attendance record per employee per date
 AttendanceSchema.index({ employee_id: 1, date: 1 }, { unique: true });
 exports.Attendance = mongoose_1.default.model('Attendance', AttendanceSchema);
+//# sourceMappingURL=Attendance.js.map

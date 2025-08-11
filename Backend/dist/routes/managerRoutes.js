@@ -18,3 +18,4 @@ router.get('/managers', managerController_1.getManagers);
 router.get('/department/:departmentId', managerController_1.getManagersByDepartment);
 router.get('/check/:userId', managerController_1.checkIfUserIsManager);
 exports.default = router;
+//# sourceMappingURL=managerRoutes.js.map

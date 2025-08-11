@@ -138,3 +138,4 @@ const getSalariesByUser = async (req, res) => {
     }
 };
 exports.getSalariesByUser = getSalariesByUser;
+//# sourceMappingURL=salaryController.js.map

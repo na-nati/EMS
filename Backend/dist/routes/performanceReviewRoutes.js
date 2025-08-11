@@ -17,3 +17,4 @@ router.get('/employee/:employeeId', performanceReviewController_1.getPerformance
 router.get('/evaluator/:evaluatorId', performanceReviewController_1.getPerformanceReviewsByEvaluator);
 router.get('/employee/:employeeId/stats', performanceReviewController_1.getPerformanceStats);
 exports.default = router;
+//# sourceMappingURL=performanceReviewRoutes.js.map

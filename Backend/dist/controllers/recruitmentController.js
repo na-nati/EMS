@@ -338,3 +338,4 @@ const getRecruitmentStats = async (req, res) => {
     }
 };
 exports.getRecruitmentStats = getRecruitmentStats;
+//# sourceMappingURL=recruitmentController.js.map

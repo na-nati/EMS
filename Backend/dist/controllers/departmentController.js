@@ -160,3 +160,4 @@ const deleteDepartment = async (req, res) => {
     }
 };
 exports.deleteDepartment = deleteDepartment;
+//# sourceMappingURL=departmentController.js.map

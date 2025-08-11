@@ -80,3 +80,4 @@ const EmployeeSchema = new mongoose_1.Schema({
     timestamps: true,
 });
 exports.Employee = mongoose_1.default.model('Employee', EmployeeSchema);
+//# sourceMappingURL=Employee.js.map

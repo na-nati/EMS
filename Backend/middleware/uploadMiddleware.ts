@@ -1,14 +1,5 @@
-import multer, { Multer, FileFilterCallback, MulterError } from 'multer';
+import multer, { FileFilterCallback, MulterError } from 'multer';
 import { Request, Response, NextFunction } from 'express';
-
-// Define custom file type with Express Request extension
-declare global {
-  namespace Express {
-    interface Request {
-      file?: Express.Multer.File;
-    }
-  }
-}
 
 // Configure multer for memory storage
 const storage = multer.memoryStorage();
@@ -38,7 +29,7 @@ const fileFilter = (
 };
 
 // Configure multer with proper typing
-export const upload: Multer = multer({
+export const upload = multer({
   storage: storage,
   fileFilter: fileFilter,
   limits: {

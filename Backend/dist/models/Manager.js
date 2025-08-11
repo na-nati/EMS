@@ -52,3 +52,4 @@ const ManagerSchema = new mongoose_1.Schema({
     timestamps: true,
 });
 exports.Manager = mongoose_1.default.model('Manager', ManagerSchema);
+//# sourceMappingURL=Manager.js.map

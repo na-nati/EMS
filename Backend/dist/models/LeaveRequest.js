@@ -68,3 +68,4 @@ const LeaveRequestSchema = new mongoose_1.Schema({
     },
 });
 exports.LeaveRequest = mongoose_1.default.model('LeaveRequest', LeaveRequestSchema);
+//# sourceMappingURL=LeaveRequest.js.map

@@ -347,3 +347,4 @@ const getDocumentRequest = async (req, res) => {
     }
 };
 exports.getDocumentRequest = getDocumentRequest;
+//# sourceMappingURL=documentController.js.map

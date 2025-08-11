@@ -234,3 +234,4 @@ const getAssetsByEmployee = async (req, res) => {
     }
 };
 exports.getAssetsByEmployee = getAssetsByEmployee;
+//# sourceMappingURL=assetController.js.map

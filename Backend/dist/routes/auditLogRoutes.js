@@ -18,3 +18,4 @@ router.get('/table/:targetTable', auditLogController_1.getAuditLogsByTargetTable
 router.get('/stats/all', auditLogController_1.getAuditLogStats);
 router.delete('/clear/:days', auditLogController_1.clearOldAuditLogs);
 exports.default = router;
+//# sourceMappingURL=auditLogRoutes.js.map

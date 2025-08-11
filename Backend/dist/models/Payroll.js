@@ -83,3 +83,4 @@ const PayrollSchema = new mongoose_1.Schema({
     timestamps: true,
 });
 exports.Payroll = mongoose_1.default.model('Payroll', PayrollSchema);
+//# sourceMappingURL=Payroll.js.map

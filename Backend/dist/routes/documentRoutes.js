@@ -18,3 +18,4 @@ router.get('/requests/:id', documentController_1.getDocumentRequest);
 router.post('/requests', documentController_1.createDocumentRequest);
 router.put('/requests/:id', documentController_1.updateDocumentRequest);
 exports.default = router;
+//# sourceMappingURL=documentRoutes.js.map

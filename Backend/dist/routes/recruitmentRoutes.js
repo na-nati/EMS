@@ -18,3 +18,4 @@ router.get('/requester/:requesterId', recruitmentController_1.getRecruitmentsByR
 router.get('/active/all', recruitmentController_1.getActiveRecruitments);
 router.get('/stats/all', recruitmentController_1.getRecruitmentStats);
 exports.default = router;
+//# sourceMappingURL=recruitmentRoutes.js.map

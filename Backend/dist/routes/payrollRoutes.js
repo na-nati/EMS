@@ -19,3 +19,4 @@ router.get('/month/:month/year/:year', payrollController_1.getPayrollByMonthYear
 router.patch('/:id/status', payrollController_1.updatePayrollStatus);
 router.get('/stats/:year', payrollController_1.getPayrollStats);
 exports.default = router;
+//# sourceMappingURL=payrollRoutes.js.map

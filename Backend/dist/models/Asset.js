@@ -88,3 +88,4 @@ AssetSchema.pre('save', function (next) {
     next();
 });
 exports.Asset = mongoose_1.default.model('Asset', AssetSchema);
+//# sourceMappingURL=Asset.js.map

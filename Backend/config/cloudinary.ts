@@ -1,4 +1,4 @@
-import { v2 as cloudinary } from 'cloudinary';
+const cloudinary = require('cloudinary').v2;
 
 // Debug: Log the actual values (remove in production)
 console.log('Loading Cloudinary config with:', {

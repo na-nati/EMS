@@ -97,3 +97,4 @@ SalarySchema.index({ user: 1, month: 1, year: 1 });
 SalarySchema.index({ department: 1 });
 SalarySchema.index({ status: 1 });
 exports.Salary = mongoose_1.default.model('Salary', SalarySchema);
+//# sourceMappingURL=Salary.js.map

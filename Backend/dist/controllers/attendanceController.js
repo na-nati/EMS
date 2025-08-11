@@ -296,3 +296,4 @@ const bulkCreateAttendance = async (req, res) => {
     }
 };
 exports.bulkCreateAttendance = bulkCreateAttendance;
+//# sourceMappingURL=attendanceController.js.map

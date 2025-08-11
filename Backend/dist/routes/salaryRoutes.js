@@ -13,3 +13,4 @@ router.get('/:id', salaryController_1.getSalaryById);
 router.put('/:id', salaryController_1.updateSalary);
 router.delete('/:id', salaryController_1.deleteSalary);
 exports.default = router;
+//# sourceMappingURL=salaryRoutes.js.map

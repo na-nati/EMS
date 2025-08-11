@@ -41,3 +41,4 @@ exports.createDocumentSchema = Joi.object({
     employee_id: Joi.string().required(),
     file_url: Joi.string().uri().required(),
 });
+//# sourceMappingURL=documentValidation.js.map

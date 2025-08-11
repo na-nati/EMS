@@ -18,3 +18,4 @@ router.patch('/:id/process', separationRequestController_1.processSeparationRequ
 router.get('/employee/:employeeId', separationRequestController_1.getSeparationRequestsByEmployee);
 router.get('/pending/all', separationRequestController_1.getPendingSeparationRequests);
 exports.default = router;
+//# sourceMappingURL=separationRequestRoutes.js.map

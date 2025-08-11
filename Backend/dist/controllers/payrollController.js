@@ -339,3 +339,4 @@ const bulkCreatePayroll = async (req, res) => {
     }
 };
 exports.bulkCreatePayroll = bulkCreatePayroll;
+//# sourceMappingURL=payrollController.js.map

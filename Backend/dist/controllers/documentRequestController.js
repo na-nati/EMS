@@ -376,3 +376,4 @@ const getDocumentRequestStats = async (req, res) => {
     }
 };
 exports.getDocumentRequestStats = getDocumentRequestStats;
+//# sourceMappingURL=documentRequestController.js.map

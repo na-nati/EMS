@@ -19,3 +19,4 @@ router.patch('/:id/progress', trainingRequestController_1.updateTrainingProgress
 router.get('/employee/:employeeId', trainingRequestController_1.getTrainingRequestsByEmployee);
 router.get('/pending/all', trainingRequestController_1.getPendingTrainingRequests);
 exports.default = router;
+//# sourceMappingURL=trainingRequestRoutes.js.map

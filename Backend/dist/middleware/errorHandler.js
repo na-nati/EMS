@@ -8,3 +8,4 @@ function errorHandler(err, req, res, next) {
         details: err.details || undefined,
     });
 }
+//# sourceMappingURL=errorHandler.js.map

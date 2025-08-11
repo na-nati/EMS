@@ -234,3 +234,4 @@ const getManagers = async (req, res) => {
     }
 };
 exports.getManagers = getManagers;
+//# sourceMappingURL=managerController.js.map

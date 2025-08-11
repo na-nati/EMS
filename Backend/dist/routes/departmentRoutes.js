@@ -10,3 +10,4 @@ router.get('/:id', authMiddleware_1.authMiddleware, departmentController_1.getDe
 router.put('/:id', authMiddleware_1.authMiddleware, (0, authMiddleware_1.authorizeRoles)('hr', 'super_admin'), departmentController_1.updateDepartment);
 router.delete('/:id', authMiddleware_1.authMiddleware, (0, authMiddleware_1.authorizeRoles)('hr', 'super_admin'), departmentController_1.deleteDepartment);
 exports.default = router;
+//# sourceMappingURL=departmentRoutes.js.map

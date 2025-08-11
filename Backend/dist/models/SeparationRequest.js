@@ -64,3 +64,4 @@ const SeparationRequestSchema = new mongoose_1.Schema({
     },
 });
 exports.SeparationRequest = mongoose_1.default.model('SeparationRequest', SeparationRequestSchema);
+//# sourceMappingURL=SeparationRequest.js.map

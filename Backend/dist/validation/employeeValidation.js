@@ -98,3 +98,4 @@ exports.employeeIdSchema = Joi.object({
 exports.departmentIdSchema = Joi.object({
     departmentId: Joi.string().required().hex().length(24)
 });
+//# sourceMappingURL=employeeValidation.js.map

@@ -50,3 +50,4 @@ const DepartmentSchema = new mongoose_1.Schema({
     timestamps: true,
 });
 exports.Department = mongoose_1.default.model('Department', DepartmentSchema);
+//# sourceMappingURL=Department.js.map

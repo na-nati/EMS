@@ -84,3 +84,4 @@ RecruitmentSchema.pre('save', function (next) {
     next();
 });
 exports.Recruitment = mongoose_1.default.model('Recruitment', RecruitmentSchema);
+//# sourceMappingURL=Recruitment.js.map

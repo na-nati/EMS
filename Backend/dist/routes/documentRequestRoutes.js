@@ -19,3 +19,4 @@ router.get('/employee/:employeeId', documentRequestController_1.getDocumentReque
 router.get('/pending/all', documentRequestController_1.getPendingDocumentRequests);
 router.get('/stats/all', documentRequestController_1.getDocumentRequestStats);
 exports.default = router;
+//# sourceMappingURL=documentRequestRoutes.js.map

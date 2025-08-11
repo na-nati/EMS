@@ -81,3 +81,4 @@ TrainingRequestSchema.pre('save', function (next) {
     next();
 });
 exports.TrainingRequest = mongoose_1.default.model('TrainingRequest', TrainingRequestSchema);
+//# sourceMappingURL=TrainingRequest.js.map

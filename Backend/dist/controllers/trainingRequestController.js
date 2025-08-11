@@ -317,3 +317,4 @@ const getPendingTrainingRequests = async (req, res) => {
     }
 };
 exports.getPendingTrainingRequests = getPendingTrainingRequests;
+//# sourceMappingURL=trainingRequestController.js.map

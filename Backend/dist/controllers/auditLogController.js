@@ -338,3 +338,4 @@ const clearOldAuditLogs = async (req, res) => {
     }
 };
 exports.clearOldAuditLogs = clearOldAuditLogs;
+//# sourceMappingURL=auditLogController.js.map

@@ -243,3 +243,4 @@ const updateProfile = async (req, res) => {
     }
 };
 exports.updateProfile = updateProfile;
+//# sourceMappingURL=userController.js.map

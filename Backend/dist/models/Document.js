@@ -85,3 +85,4 @@ const DocumentSchema = new mongoose_1.Schema({
 // Create index for efficient querying by employee and document type
 DocumentSchema.index({ employee_id: 1, doc_type: 1 });
 exports.EmployeeDocument = mongoose_1.default.model('EmployeeDocument', DocumentSchema);
+//# sourceMappingURL=Document.js.map

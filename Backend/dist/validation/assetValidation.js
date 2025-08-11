@@ -3,38 +3,31 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.employeeIdForAssetSchema = exports.assetIdSchema = exports.assetAssignSchema = exports.assetFiltersSchema = exports.updateAssetSchema = exports.createAssetSchema = void 0;
+exports.assignAssetSchema = exports.updateAssetSchema = exports.createAssetSchema = void 0;
 const joi_1 = __importDefault(require("joi"));
-// Create asset schema
 exports.createAssetSchema = joi_1.default.object({
-    name: joi_1.default.string().required().max(200).trim(),
-    serial_number: joi_1.default.string().required().max(100).trim(),
-    assigned_to: joi_1.default.string().optional().hex().length(24),
-    condition: joi_1.default.string().valid('New', 'Good', 'Fair', 'Damaged', 'Lost', 'Under Maintenance').default('New')
+    name: joi_1.default.string().required().min(2).max(100),
+    serial_number: joi_1.default.string().required().min(3).max(50),
+    type: joi_1.default.string().required().valid('laptop', 'desktop', 'mobile', 'tablet', 'other'),
+    condition: joi_1.default.string().required().valid('excellent', 'good', 'fair', 'poor'),
+    purchase_date: joi_1.default.date().required(),
+    warranty_expiry: joi_1.default.date().optional(),
+    assigned_to: joi_1.default.string().optional(),
+    location: joi_1.default.string().optional(),
+    notes: joi_1.default.string().optional().max(500)
 });
-// Update asset schema
 exports.updateAssetSchema = joi_1.default.object({
-    name: joi_1.default.string().optional().max(200).trim(),
-    serial_number: joi_1.default.string().optional().max(100).trim(),
-    assigned_to: joi_1.default.string().optional().hex().length(24),
-    condition: joi_1.default.string().valid('New', 'Good', 'Fair', 'Damaged', 'Lost', 'Under Maintenance')
+    name: joi_1.default.string().min(2).max(100),
+    serial_number: joi_1.default.string().min(3).max(50),
+    type: joi_1.default.string().valid('laptop', 'desktop', 'mobile', 'tablet', 'other'),
+    condition: joi_1.default.string().valid('excellent', 'good', 'fair', 'poor'),
+    purchase_date: joi_1.default.date(),
+    warranty_expiry: joi_1.default.date(),
+    assigned_to: joi_1.default.string().optional(),
+    location: joi_1.default.string(),
+    notes: joi_1.default.string().max(500)
 });
-// Asset filters schema
-exports.assetFiltersSchema = joi_1.default.object({
-    condition: joi_1.default.string().valid('New', 'Good', 'Fair', 'Damaged', 'Lost', 'Under Maintenance'),
-    assigned: joi_1.default.string().valid('true', 'false'),
-    page: joi_1.default.number().optional().integer().min(1),
-    limit: joi_1.default.number().optional().integer().min(1).max(100)
+exports.assignAssetSchema = joi_1.default.object({
+    assigned_to: joi_1.default.string().required()
 });
-// Asset assign schema
-exports.assetAssignSchema = joi_1.default.object({
-    assigned_to: joi_1.default.string().required().hex().length(24)
-});
-// Asset ID parameter schema
-exports.assetIdSchema = joi_1.default.object({
-    id: joi_1.default.string().required().hex().length(24)
-});
-// Employee ID parameter schema for asset queries
-exports.employeeIdForAssetSchema = joi_1.default.object({
-    employeeId: joi_1.default.string().required().hex().length(24)
-});
+//# sourceMappingURL=assetValidation.js.map

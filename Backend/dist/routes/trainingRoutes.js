@@ -18,3 +18,4 @@ router.get('/upcoming/all', trainingController_1.getUpcomingTrainings);
 router.get('/completed/all', trainingController_1.getCompletedTrainings);
 router.get('/stats/all', trainingController_1.getTrainingStats);
 exports.default = router;
+//# sourceMappingURL=trainingRoutes.js.map
