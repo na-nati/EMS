@@ -9,19 +9,25 @@ import {
     unassignAsset,
     getAssetsByEmployee
 } from '../controllers/assetController';
+import { validateBody } from '../middleware/validateBody';
+import { createAssetSchema, updateAssetSchema, assignAssetSchema } from '../validation/assetValidation';
+import { authMiddleware, authorizeRoles } from '../middleware/authMiddleware';
 
 const router = express.Router();
 
+// Apply authentication to all routes
+router.use(authMiddleware);
+
 // CRUD operations
-router.post('/', createAsset);
+router.post('/', authorizeRoles('super_admin', 'hr'), validateBody(createAssetSchema), createAsset);
 router.get('/', getAllAssets);
 router.get('/:id', getAssetById);
-router.put('/:id', updateAsset);
-router.delete('/:id', deleteAsset);
+router.put('/:id', authorizeRoles('super_admin', 'hr'), validateBody(updateAssetSchema), updateAsset);
+router.delete('/:id', authorizeRoles('super_admin', 'hr'), deleteAsset);
 
 // Asset-specific operations
-router.patch('/:id/assign', assignAsset);
-router.patch('/:id/unassign', unassignAsset);
+router.patch('/:id/assign', authorizeRoles('super_admin', 'hr'), validateBody(assignAssetSchema), assignAsset);
+router.patch('/:id/unassign', authorizeRoles('super_admin', 'hr'), unassignAsset);
 router.get('/employee/:employeeId', getAssetsByEmployee);
 
 export default router; 

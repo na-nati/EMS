@@ -9,18 +9,24 @@ import {
     getAttendanceStats,
     bulkCreateAttendance
 } from '../controllers/attendanceController';
+import { validateBody } from '../middleware/validateBody';
+import { createAttendanceSchema, updateAttendanceSchema, bulkAttendanceSchema } from '../validation/attendanceValidation';
+import { authMiddleware, authorizeRoles } from '../middleware/authMiddleware';
 
 const router = express.Router();
 
+// Apply authentication to all routes
+router.use(authMiddleware);
+
 // CRUD operations
-router.post('/', createAttendance);
+router.post('/', authorizeRoles('super_admin', 'hr', 'manager'), validateBody(createAttendanceSchema), createAttendance);
 router.get('/', getAllAttendance);
 router.get('/:id', getAttendanceById);
-router.put('/:id', updateAttendance);
-router.delete('/:id', deleteAttendance);
+router.put('/:id', authorizeRoles('super_admin', 'hr', 'manager'), validateBody(updateAttendanceSchema), updateAttendance);
+router.delete('/:id', authorizeRoles('super_admin', 'hr'), deleteAttendance);
 
 // Attendance-specific operations
-router.post('/bulk', bulkCreateAttendance);
+router.post('/bulk', authorizeRoles('super_admin', 'hr'), validateBody(bulkAttendanceSchema), bulkCreateAttendance);
 router.get('/employee/:employeeId', getAttendanceByEmployee);
 router.get('/employee/:employeeId/stats', getAttendanceStats);
 

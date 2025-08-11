@@ -5,29 +5,34 @@ import {
   getAllUsers,
   updateProfilePicture,
   getProfile,
+  updateProfile
 } from "../controllers/userController";
 import { validateBody } from "../middleware/validateBody";
 import { registerUserSchema, loginUserSchema } from "../validation/userValidation";
-import { authMiddleware } from "../middleware/authMiddleware";
+import { authMiddleware, authorizeRoles } from "../middleware/authMiddleware";
 import { upload, handleMulterError } from "../middleware/uploadMiddleware";
 
 const router = Router();
 
+// Public routes
 router.post("/register", validateBody(registerUserSchema), registeruser);
-
 router.post("/login", validateBody(loginUserSchema), loginuser);
 
-router.get("/", getAllUsers);
+// Protected routes - require authentication
+router.use(authMiddleware);
 
-// Get user profile (requires authentication)
-router.get("/profile", authMiddleware, getProfile);
+// User profile management
+router.get("/profile", getProfile);
+router.put("/profile", updateProfile);
 
-// Update profile picture (requires authentication and file upload)
+// Profile picture management
 router.patch("/:userId/profile-picture",
-  authMiddleware,
   upload.single('profilePicture'),
   handleMulterError,
   updateProfilePicture
 );
+
+// Admin only routes
+router.get("/", authorizeRoles('super_admin', 'hr'), getAllUsers);
 
 export default router;
