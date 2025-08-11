@@ -40,17 +40,17 @@ const storage = multer_1.default.memoryStorage();
 // File filter to only allow images
 const fileFilter = (req, file, cb) => {
     console.log('Multer file filter:', {
-        originalname: file.originalname,
-        mimetype: file.mimetype
+        originalname: file?.originalname,
+        mimetype: file?.mimetype
     });
-    if (file.mimetype.startsWith('image/')) {
+    if (file?.mimetype?.startsWith('image/')) {
         cb(null, true);
     }
     else {
         cb(new Error('Only image files are allowed!'));
     }
 };
-// Configure multer with proper typing
+// Configure multer
 exports.upload = (0, multer_1.default)({
     storage: storage,
     fileFilter: fileFilter,
@@ -68,14 +68,14 @@ const handleMulterError = (error, req, res, next) => {
             code: error.code
         });
     }
-    else if (error instanceof Error) {
+    if (error instanceof Error) {
         console.error('File upload error:', error);
         return res.status(400).json({
             success: false,
             message: error.message
         });
     }
-    else if (error) {
+    if (error) {
         console.error('Unknown file upload error:', error);
         return res.status(500).json({
             success: false,
