@@ -10,6 +10,7 @@ export interface IUser extends Document {
     position?: string;
     profilePicture?: string; // URL to profile picture
     isActive?: boolean;
+    tokenVersion?: number;
 }
 
 const UserSchema = new Schema<IUser>({
@@ -56,6 +57,10 @@ const UserSchema = new Schema<IUser>({
     isActive: {
         type: Boolean,
         default: true,
+    },
+    tokenVersion: {
+        type: Number,
+        default: 0,
     },
 }, {
     timestamps: true,

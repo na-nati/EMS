@@ -1,9 +1,10 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.getEmployeeStats = exports.getEmployeesByDepartment = exports.deleteEmployee = exports.updateEmployee = exports.getEmployeeById = exports.getAllEmployees = exports.createEmployee = void 0;
+exports.getActiveLeaveTrends = exports.getEmployeeRegistrationTrends = exports.getEmployeeStats = exports.getEmployeesByDepartment = exports.deleteEmployee = exports.updateEmployee = exports.getEmployeeById = exports.getAllEmployees = exports.createEmployee = void 0;
 const Employee_1 = require("../models/Employee");
 const User_1 = require("../models/User");
 const Department_1 = require("../models/Department");
+const LeaveRequest_1 = require("../models/LeaveRequest");
 // Create a new employee
 const createEmployee = async (req, res) => {
     try {
@@ -252,7 +253,7 @@ const getEmployeeStats = async (req, res) => {
             ]),
             Employee_1.Employee.aggregate([
                 { $match: filter },
-                { $group: { _id: '$position', count: { $sum: 1 } } },
+                { $group: { _id: '$job_profile', count: { $sum: 1 } } },
                 { $sort: { count: -1 } },
                 { $limit: 10 }
             ]),
@@ -265,9 +266,8 @@ const getEmployeeStats = async (req, res) => {
         ]);
         const statsMap = {
             active: 0,
-            inactive: 0,
-            terminated: 0,
-            on_leave: 0
+            resigned: 0,
+            terminated: 0
         };
         statusStats.forEach(stat => {
             const statusKey = stat._id.toLowerCase();
@@ -295,4 +295,141 @@ const getEmployeeStats = async (req, res) => {
     }
 };
 exports.getEmployeeStats = getEmployeeStats;
+// Get employee registration trends for dashboard charts
+const getEmployeeRegistrationTrends = async (req, res) => {
+    try {
+        const days = parseInt(req.query.days) || 30; // Default to 30 days
+        const endDate = new Date();
+        const startDate = new Date();
+        startDate.setDate(startDate.getDate() - days);
+        // Get daily registration counts
+        const registrationTrends = await Employee_1.Employee.aggregate([
+            {
+                $match: {
+                    createdAt: { $gte: startDate, $lte: endDate }
+                }
+            },
+            {
+                $group: {
+                    _id: {
+                        $dateToString: { format: "%Y-%m-%d", date: "$createdAt" }
+                    },
+                    newRegistrations: { $sum: 1 }
+                }
+            },
+            {
+                $sort: { _id: 1 }
+            }
+        ]);
+        // Get cumulative total employees for each day
+        const cumulativeTrends = await Employee_1.Employee.aggregate([
+            {
+                $match: {
+                    createdAt: { $lte: endDate }
+                }
+            },
+            {
+                $group: {
+                    _id: {
+                        $dateToString: { format: "%Y-%m-%d", date: "$createdAt" }
+                    },
+                    count: { $sum: 1 }
+                }
+            },
+            {
+                $sort: { _id: 1 }
+            }
+        ]);
+        // Generate dates array and fill in missing dates
+        const dates = [];
+        const newRegistrations = [];
+        const totalEmployees = [];
+        let currentDate = new Date(startDate);
+        let cumulativeCount = 0;
+        while (currentDate <= endDate) {
+            const dateStr = currentDate.toISOString().split('T')[0];
+            dates.push(new Date(dateStr).toISOString());
+            // Find registration count for this date
+            const registrationData = registrationTrends.find(item => item._id === dateStr);
+            const dailyCount = registrationData ? registrationData.newRegistrations : 0;
+            newRegistrations.push(dailyCount);
+            // Calculate cumulative count
+            cumulativeCount += dailyCount;
+            totalEmployees.push(cumulativeCount);
+            currentDate.setDate(currentDate.getDate() + 1);
+        }
+        res.status(200).json({
+            success: true,
+            data: {
+                dates,
+                newRegistrations,
+                totalEmployees
+            }
+        });
+    }
+    catch (error) {
+        res.status(500).json({
+            success: false,
+            message: 'Error fetching registration trends',
+            error: error.message
+        });
+    }
+};
+exports.getEmployeeRegistrationTrends = getEmployeeRegistrationTrends;
+// Get active and leave employee trends for dashboard charts
+const getActiveLeaveTrends = async (req, res) => {
+    try {
+        const days = parseInt(req.query.days) || 30; // Default to 30 days
+        const endDate = new Date();
+        const startDate = new Date();
+        startDate.setDate(startDate.getDate() - days);
+        // Get total active employees (those with 'Active' employment status)
+        const totalActiveEmployees = await Employee_1.Employee.countDocuments({ employment_status: 'Active' });
+        // Get approved leave requests that overlap with each day
+        const leaveRequests = await LeaveRequest_1.LeaveRequest.find({
+            status: 'approved',
+            $or: [
+                { start_date: { $lte: endDate, $gte: startDate } },
+                { end_date: { $gte: startDate, $lte: endDate } },
+                { start_date: { $lte: startDate }, end_date: { $gte: endDate } }
+            ]
+        }).populate('employee_id', 'user_id');
+        // Generate dates array and calculate daily active/leave counts
+        const dates = [];
+        const activeEmployees = [];
+        const onLeave = [];
+        let currentDate = new Date(startDate);
+        while (currentDate <= endDate) {
+            const dateStr = currentDate.toISOString().split('T')[0];
+            dates.push(new Date(dateStr).toISOString());
+            // Count employees on leave for this specific date
+            const employeesOnLeave = leaveRequests.filter(leave => {
+                const leaveStart = new Date(leave.start_date);
+                const leaveEnd = new Date(leave.end_date);
+                return currentDate >= leaveStart && currentDate <= leaveEnd;
+            }).length;
+            // Active employees = total active - employees on leave
+            const dailyActiveCount = Math.max(0, totalActiveEmployees - employeesOnLeave);
+            activeEmployees.push(dailyActiveCount);
+            onLeave.push(employeesOnLeave);
+            currentDate.setDate(currentDate.getDate() + 1);
+        }
+        res.status(200).json({
+            success: true,
+            data: {
+                dates,
+                activeEmployees,
+                onLeave
+            }
+        });
+    }
+    catch (error) {
+        res.status(500).json({
+            success: false,
+            message: 'Error fetching active/leave trends',
+            error: error.message
+        });
+    }
+};
+exports.getActiveLeaveTrends = getActiveLeaveTrends;
 //# sourceMappingURL=employeeController.js.map

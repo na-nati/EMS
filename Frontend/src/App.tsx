@@ -20,6 +20,7 @@ import TrainingEmp from "./pages/TrainingEmp";
 import Recruitment from "./pages/Recruitment";
 import Documents from "./pages/Documents";
 import SeparationRequest from "./pages/SeparationRequest";
+import Departments from "./pages/Department";
 
 // Import UserRole type
 import type { UserRole } from "./contexts/AuthContext";
@@ -90,6 +91,14 @@ const InnerApp = () => {
             element={
               <ProtectedRoute allowedRoles={["employee"]}>
                 <Employee />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/departments"
+            element={
+              <ProtectedRoute allowedRoles={["super_admin"]}>
+                <Departments />
               </ProtectedRoute>
             }
           />

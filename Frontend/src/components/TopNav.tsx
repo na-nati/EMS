@@ -1,6 +1,7 @@
 import { Bell, Search, Camera } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 import { useState } from 'react';
+import { apiRequest } from '../lib/apiClient';
 
 export const TopNav = () => {
   const { user, refreshUser } = useAuth();
@@ -35,25 +36,13 @@ export const TopNav = () => {
       const formData = new FormData();
       formData.append('profilePicture', file);
 
-      const token = localStorage.getItem('ems_token');
-
       const apiBaseUrl = import.meta.env.VITE_API_URL;
-      const response = await fetch(`${apiBaseUrl}/users/${user?.id}/profile-picture`, {
+      await apiRequest(`${apiBaseUrl}/users/${user?.id}/profile-picture`, {
         method: 'PATCH',
-        headers: {
-          'Authorization': `Bearer ${token}`
-          // Don't set Content-Type - let browser set it with boundary for FormData
-        },
-        body: formData
+        body: formData,
       });
-
-      if (response.ok) {
-        await refreshUser();
-        console.log('Profile picture updated successfully!');
-      } else {
-        const errorData = await response.json();
-        console.error('Failed to upload profile picture:', errorData.message);
-      }
+      await refreshUser();
+      console.log('Profile picture updated successfully!');
     } catch (error) {
       console.error('Error uploading profile picture:', error);
     } finally {

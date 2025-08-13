@@ -10,7 +10,7 @@ import {
     updateDocumentRequest,
     getDocumentRequest
 } from '../controllers/documentController';
-import { authMiddleware } from '../middleware/authMiddleware';
+import { authMiddleware, authorizeRoles } from '../middleware/authMiddleware';
 
 const router = Router();
 
@@ -18,16 +18,16 @@ const router = Router();
 router.use(authMiddleware);
 
 // Document routes
-router.get('/documents', getAllDocuments);
-router.get('/documents/:id', getDocument);
-router.post('/documents', createDocument);
-router.put('/documents/:id', updateDocument);
-router.delete('/documents/:id', deleteDocument);
+router.get('/documents', authorizeRoles('super_admin', 'hr', 'employee'), getAllDocuments);
+router.get('/documents/:id', authorizeRoles('super_admin', 'hr', 'employee'), getDocument);
+router.post('/documents', authorizeRoles('super_admin', 'hr'), createDocument);
+router.put('/documents/:id', authorizeRoles('super_admin', 'hr'), updateDocument);
+router.delete('/documents/:id', authorizeRoles('super_admin', 'hr'), deleteDocument);
 
 // Document request routes
-router.get('/requests', getAllDocumentRequests);
-router.get('/requests/:id', getDocumentRequest);
-router.post('/requests', createDocumentRequest);
-router.put('/requests/:id', updateDocumentRequest);
+router.get('/requests', authorizeRoles('super_admin', 'hr', 'employee'), getAllDocumentRequests);
+router.get('/requests/:id', authorizeRoles('super_admin', 'hr', 'employee'), getDocumentRequest);
+router.post('/requests', authorizeRoles('employee'), createDocumentRequest);
+router.put('/requests/:id', authorizeRoles('super_admin', 'hr'), updateDocumentRequest);
 
 export default router; 

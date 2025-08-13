@@ -1,7 +1,7 @@
 import { Request, Response } from 'express';
 import { User } from '../models/User';
 import bcrypt from 'bcryptjs';
-import jwt from 'jsonwebtoken';
+import jwt, { type Secret, type SignOptions } from 'jsonwebtoken';
 import { Department } from '../models/Department'; // Import Department model
 import mongoose from 'mongoose'; // Import mongoose for ObjectId validation
 import cloudinary from '../config/cloudinary';
@@ -41,6 +41,16 @@ export const registeruser = async (req: Request, res: Response) => {
     }
 };
 // Login
+const createAccessToken = (payload: object, expiresIn: SignOptions['expiresIn'] = '1m') => {
+    const secret = (process.env.JWT_SECRET as Secret);
+    return jwt.sign(payload as any, secret, { expiresIn } as SignOptions);
+};
+
+const createRefreshToken = (payload: object, expiresIn: SignOptions['expiresIn'] = '7d') => {
+    const secret = ((process.env.JWT_REFRESH_SECRET || process.env.JWT_SECRET) as Secret);
+    return jwt.sign(payload as any, secret, { expiresIn } as SignOptions);
+};
+
 export const loginuser = async (req: Request, res: Response) => {
     try {
         const { email, password } = req.body;
@@ -59,14 +69,20 @@ export const loginuser = async (req: Request, res: Response) => {
             return res.status(400).json({ message: 'Invalid email or password.' });
         }
 
-        const token = jwt.sign(
-            { userId: user._id, role: user.role },
-            process.env.JWT_SECRET as string,
-            { expiresIn: '1d' }
-        );
+        const accessToken = createAccessToken({ userId: user._id, role: user.role });
+        const refreshToken = createRefreshToken({ userId: user._id, role: user.role, tokenVersion: user.tokenVersion ?? 0 });
+
+        // Set refresh token in httpOnly cookie
+        res.cookie('jid', refreshToken, {
+            httpOnly: true,
+            secure: process.env.NODE_ENV === 'production',
+            sameSite: process.env.NODE_ENV === 'production' ? 'none' : 'lax',
+            path: '/api/users/refresh-token',
+            maxAge: 7 * 24 * 60 * 60 * 1000,
+        });
 
         res.json({
-            token,
+            token: accessToken,
             user: {
                 id: user._id,
                 firstName: user.firstName,
@@ -81,6 +97,51 @@ export const loginuser = async (req: Request, res: Response) => {
     } catch (err) {
         console.error('Login error:', err);
         res.status(500).json({ message: 'Server error.' });
+    }
+};
+
+export const refreshToken = async (req: Request, res: Response) => {
+    try {
+        const token = (req as any).cookies?.jid;
+        if (!token) {
+            return res.status(401).json({ message: 'No refresh token' });
+        }
+        const secret = (process.env.JWT_REFRESH_SECRET || process.env.JWT_SECRET) as string;
+        let payload: any = null;
+        try {
+            payload = jwt.verify(token, secret) as any;
+        } catch (e) {
+            return res.status(401).json({ message: 'Invalid refresh token' });
+        }
+        const user = await User.findById(payload.userId);
+        if (!user) {
+            return res.status(401).json({ message: 'User not found' });
+        }
+        if ((user.tokenVersion ?? 0) !== (payload.tokenVersion ?? 0)) {
+            return res.status(401).json({ message: 'Refresh token revoked' });
+        }
+        const newAccessToken = createAccessToken({ userId: user._id, role: user.role });
+        const newRefreshToken = createRefreshToken({ userId: user._id, role: user.role, tokenVersion: user.tokenVersion ?? 0 });
+        res.cookie('jid', newRefreshToken, {
+            httpOnly: true,
+            secure: process.env.NODE_ENV === 'production',
+            sameSite: process.env.NODE_ENV === 'production' ? 'none' : 'lax',
+            path: '/api/users/refresh-token',
+            maxAge: 7 * 24 * 60 * 60 * 1000,
+        });
+        return res.json({ token: newAccessToken });
+    } catch (err) {
+        console.error('Refresh token error:', err);
+        return res.status(500).json({ message: 'Server error' });
+    }
+};
+
+export const logout = async (req: Request, res: Response) => {
+    try {
+        res.clearCookie('jid', { path: '/api/users/refresh-token' });
+        return res.json({ success: true });
+    } catch (err) {
+        return res.status(500).json({ message: 'Server error' });
     }
 };
 

@@ -5,17 +5,19 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
 Object.defineProperty(exports, "__esModule", { value: true });
 const express_1 = __importDefault(require("express"));
 const recruitmentController_1 = require("../controllers/recruitmentController");
+const authMiddleware_1 = require("../middleware/authMiddleware");
 const router = express_1.default.Router();
+router.use(authMiddleware_1.authMiddleware);
 // CRUD operations
-router.post('/', recruitmentController_1.createRecruitment);
-router.get('/', recruitmentController_1.getAllRecruitments);
-router.get('/:id', recruitmentController_1.getRecruitmentById);
-router.put('/:id', recruitmentController_1.updateRecruitment);
-router.delete('/:id', recruitmentController_1.deleteRecruitment);
+router.post('/', (0, authMiddleware_1.authorizeRoles)('super_admin', 'hr'), recruitmentController_1.createRecruitment);
+router.get('/', (0, authMiddleware_1.authorizeRoles)('super_admin', 'hr', 'manager'), recruitmentController_1.getAllRecruitments);
+router.get('/:id', (0, authMiddleware_1.authorizeRoles)('super_admin', 'hr', 'manager'), recruitmentController_1.getRecruitmentById);
+router.put('/:id', (0, authMiddleware_1.authorizeRoles)('super_admin', 'hr'), recruitmentController_1.updateRecruitment);
+router.delete('/:id', (0, authMiddleware_1.authorizeRoles)('super_admin', 'hr'), recruitmentController_1.deleteRecruitment);
 // Recruitment-specific operations
-router.patch('/:id/status', recruitmentController_1.updateRecruitmentStatus);
-router.get('/requester/:requesterId', recruitmentController_1.getRecruitmentsByRequester);
-router.get('/active/all', recruitmentController_1.getActiveRecruitments);
-router.get('/stats/all', recruitmentController_1.getRecruitmentStats);
+router.patch('/:id/status', (0, authMiddleware_1.authorizeRoles)('super_admin', 'hr'), recruitmentController_1.updateRecruitmentStatus);
+router.get('/requester/:requesterId', (0, authMiddleware_1.authorizeRoles)('super_admin', 'hr', 'manager'), recruitmentController_1.getRecruitmentsByRequester);
+router.get('/active/all', (0, authMiddleware_1.authorizeRoles)('super_admin', 'hr', 'manager'), recruitmentController_1.getActiveRecruitments);
+router.get('/stats/all', (0, authMiddleware_1.authorizeRoles)('super_admin', 'hr', 'manager'), recruitmentController_1.getRecruitmentStats);
 exports.default = router;
 //# sourceMappingURL=recruitmentRoutes.js.map

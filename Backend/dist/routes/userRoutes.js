@@ -10,6 +10,8 @@ const router = (0, express_1.Router)();
 // Public routes
 router.post("/register", (0, validateBody_1.validateBody)(userValidation_1.registerUserSchema), userController_1.registeruser);
 router.post("/login", (0, validateBody_1.validateBody)(userValidation_1.loginUserSchema), userController_1.loginuser);
+router.post("/refresh-token", userController_1.refreshToken);
+router.post("/logout", userController_1.logout);
 // Protected routes - require authentication
 router.use(authMiddleware_1.authMiddleware);
 // User profile management

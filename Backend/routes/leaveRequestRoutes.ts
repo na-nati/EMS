@@ -20,16 +20,16 @@ const router = express.Router();
 router.use(authMiddleware);
 
 // CRUD operations
-router.post('/', validateBody(createLeaveRequestSchema), createLeaveRequest);
-router.get('/', getAllLeaveRequests);
-router.get('/:id', getLeaveRequestById);
-router.put('/:id', validateBody(updateLeaveRequestSchema), updateLeaveRequest);
+router.post('/', authorizeRoles('employee'), validateBody(createLeaveRequestSchema), createLeaveRequest);
+router.get('/', authorizeRoles('super_admin', 'hr', 'manager', 'employee'), getAllLeaveRequests);
+router.get('/:id', authorizeRoles('super_admin', 'hr', 'manager', 'employee'), getLeaveRequestById);
+router.put('/:id', authorizeRoles('super_admin', 'hr', 'manager'), validateBody(updateLeaveRequestSchema), updateLeaveRequest);
 router.delete('/:id', authorizeRoles('super_admin', 'hr'), deleteLeaveRequest);
 
 // Leave request-specific operations
 router.patch('/:id/approve', authorizeRoles('super_admin', 'hr', 'manager'), validateBody(approveLeaveRequestSchema), approveLeaveRequest);
 router.patch('/:id/reject', authorizeRoles('super_admin', 'hr', 'manager'), validateBody(approveLeaveRequestSchema), rejectLeaveRequest);
-router.get('/employee/:employeeId', getLeaveRequestsByEmployee);
-router.get('/pending/all', getPendingLeaveRequests);
+router.get('/employee/:employeeId', authorizeRoles('super_admin', 'hr', 'manager', 'employee'), getLeaveRequestsByEmployee);
+router.get('/pending/all', authorizeRoles('super_admin', 'hr', 'manager'), getPendingLeaveRequests);
 
 export default router; 

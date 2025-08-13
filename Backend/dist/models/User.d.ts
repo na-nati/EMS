@@ -9,6 +9,7 @@ export interface IUser extends Document {
     position?: string;
     profilePicture?: string;
     isActive?: boolean;
+    tokenVersion?: number;
 }
 export declare const User: mongoose.Model<IUser, {}, {}, {}, mongoose.Document<unknown, {}, IUser, {}, {}> & IUser & Required<{
     _id: unknown;

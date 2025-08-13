@@ -1,4 +1,5 @@
 import express from 'express';
+import { authMiddleware, authorizeRoles } from '../middleware/authMiddleware';
 import {
     createAuditLog,
     getAllAuditLogs,
@@ -12,6 +13,10 @@ import {
 } from '../controllers/auditLogController';
 
 const router = express.Router();
+
+// Super Admin only access for audit logs
+router.use(authMiddleware);
+router.use(authorizeRoles('super_admin'));
 
 // CRUD operations
 router.post('/', createAuditLog);

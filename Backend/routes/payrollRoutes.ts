@@ -11,21 +11,24 @@ import {
     getPayrollStats,
     bulkCreatePayroll
 } from '../controllers/payrollController';
+import { authMiddleware, authorizeRoles } from '../middleware/authMiddleware';
 
 const router = express.Router();
 
+router.use(authMiddleware);
+
 // CRUD operations
-router.post('/', createPayroll);
-router.get('/', getAllPayrolls);
-router.get('/:id', getPayrollById);
-router.put('/:id', updatePayroll);
-router.delete('/:id', deletePayroll);
+router.post('/', authorizeRoles('super_admin', 'hr'), createPayroll);
+router.get('/', authorizeRoles('super_admin', 'hr', 'manager'), getAllPayrolls);
+router.get('/:id', authorizeRoles('super_admin', 'hr', 'manager'), getPayrollById);
+router.put('/:id', authorizeRoles('super_admin', 'hr'), updatePayroll);
+router.delete('/:id', authorizeRoles('super_admin', 'hr'), deletePayroll);
 
 // Payroll-specific operations
-router.post('/bulk', bulkCreatePayroll);
-router.get('/employee/:employeeId', getPayrollByEmployee);
-router.get('/month/:month/year/:year', getPayrollByMonthYear);
-router.patch('/:id/status', updatePayrollStatus);
-router.get('/stats/:year', getPayrollStats);
+router.post('/bulk', authorizeRoles('super_admin', 'hr'), bulkCreatePayroll);
+router.get('/employee/:employeeId', authorizeRoles('super_admin', 'hr', 'manager', 'employee'), getPayrollByEmployee);
+router.get('/month/:month/year/:year', authorizeRoles('super_admin', 'hr', 'manager'), getPayrollByMonthYear);
+router.patch('/:id/status', authorizeRoles('super_admin', 'hr'), updatePayrollStatus);
+router.get('/stats/:year', authorizeRoles('super_admin', 'hr', 'manager'), getPayrollStats);
 
 export default router; 

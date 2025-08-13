@@ -3,6 +3,7 @@ import dotenv from "dotenv";
 import cors from "cors";
 import swaggerUi from "swagger-ui-express";
 const YAML = require('yamljs');
+import cookieParser from 'cookie-parser';
 
 
 
@@ -37,7 +38,11 @@ const swaggerDocument = YAML.load('./swagger.yaml');
 connectdb();
 
 app.use(express.json());
-app.use(cors());
+app.use(cookieParser());
+app.use(cors({
+    origin: process.env.CLIENT_ORIGIN?.split(',') || true,
+    credentials: true,
+}));
 
 app.use('/api/users', userRoutes);
 app.use('/api/departments', departmentRoutes);

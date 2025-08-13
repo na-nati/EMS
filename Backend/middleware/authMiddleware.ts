@@ -1,5 +1,5 @@
 import { Request, Response, NextFunction } from 'express';
-import jwt from 'jsonwebtoken';
+import jwt, { JwtPayload } from 'jsonwebtoken';
 
 
 
@@ -21,10 +21,16 @@ export const authMiddleware = (req: AuthenticatedRequest, res: Response, next: N
     }
 
     try {
-        const decoded = jwt.verify(token, JWT_SECRET);
+        const decoded = jwt.verify(token, JWT_SECRET) as JwtPayload | string;
+        if (typeof decoded === 'string') {
+            return res.status(401).json({ message: 'Token is not valid.' });
+        }
         req.user = decoded;
         next();
     } catch (err) {
+        if (err && typeof err === 'object' && 'name' in err && (err as any).name === 'TokenExpiredError') {
+            return res.status(401).json({ message: 'Access token expired' });
+        }
         return res.status(401).json({ message: 'Token is not valid.' });
     }
 };

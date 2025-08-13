@@ -5,6 +5,7 @@ import React, {
   useEffect,
 } from 'react';
 import type { ReactNode } from 'react';
+import { apiRequest, setAccessToken, setOnUnauthorized } from '../lib/apiClient';
 
 
 // ✅ Exported so it can be used in other files
@@ -45,21 +46,36 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     if (storedUser) {
       setUser(JSON.parse(storedUser));
     }
-    setIsLoading(false);
+
+    // Ensure we logout on hard unauthorized
+    setOnUnauthorized(() => {
+      logout();
+    });
+
+    // Try to silently refresh and fetch profile on load
+    (async () => {
+      try {
+        await refreshUser();
+      } catch {
+        // ignore
+      } finally {
+        setIsLoading(false);
+      }
+    })();
   }, []);
 
   const login = async (email: string, password: string): Promise<boolean> => {
     setIsLoading(true);
     try {
-      const apiUrl = import.meta.env.VITE_API_URL;
+      const apiUrl = import.meta.env.VITE_API_URL as string;
       const res = await fetch(`${apiUrl}/users/login`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ email, password }),
+        credentials: 'include', // set httpOnly refresh cookie
       });
       const data = await res.json();
       if (res.ok && data.user && data.token) {
-        // If backend returns only name, split it
         let userObj = data.user;
         if (!userObj.firstName && userObj.name) {
           const [firstName, ...rest] = userObj.name.split(' ');
@@ -68,7 +84,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
         }
         setUser(userObj);
         localStorage.setItem('ems_user', JSON.stringify(userObj));
-        localStorage.setItem('ems_token', data.token);
+        setAccessToken(data.token);
         setIsLoading(false);
         return true;
       }
@@ -83,29 +99,22 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   const logout = () => {
     setUser(null);
     localStorage.removeItem('ems_user');
+    setAccessToken(null);
+    // Best-effort logout on server to clear refresh cookie
+    const apiUrl = import.meta.env.VITE_API_URL as string;
+    fetch(`${apiUrl}/users/logout`, { method: 'POST', credentials: 'include' }).catch(() => { });
   };
 
   const refreshUser = async () => {
     try {
-      const token = localStorage.getItem('ems_token');
-      if (!token) return;
-
-      const apiUrl = import.meta.env.VITE_API_URL;
-      const response = await fetch(`${apiUrl}/users/profile`, {
-        headers: {
-          'Authorization': `Bearer ${token}`
-        }
-      });
-
-      if (response.ok) {
-        const data = await response.json();
-        if (data.data) {
-          setUser(data.data);
-          localStorage.setItem('ems_user', JSON.stringify(data.data));
-        }
+      const apiUrl = import.meta.env.VITE_API_URL as string;
+      const data = await apiRequest(`${apiUrl}/users/profile`);
+      if (data?.data) {
+        setUser(data.data);
+        localStorage.setItem('ems_user', JSON.stringify(data.data));
       }
     } catch (error) {
-      console.error('Error refreshing user:', error);
+      // If unauthorized and refresh failed, user will be cleared by onUnauthorized
     }
   };
 

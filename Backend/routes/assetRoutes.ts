@@ -20,14 +20,14 @@ router.use(authMiddleware);
 
 // CRUD operations
 router.post('/', authorizeRoles('super_admin', 'hr'), validateBody(createAssetSchema), createAsset);
-router.get('/', getAllAssets);
-router.get('/:id', getAssetById);
+router.get('/', authorizeRoles('super_admin', 'hr'), getAllAssets);
+router.get('/:id', authorizeRoles('super_admin', 'hr'), getAssetById);
 router.put('/:id', authorizeRoles('super_admin', 'hr'), validateBody(updateAssetSchema), updateAsset);
 router.delete('/:id', authorizeRoles('super_admin', 'hr'), deleteAsset);
 
 // Asset-specific operations
 router.patch('/:id/assign', authorizeRoles('super_admin', 'hr'), validateBody(assignAssetSchema), assignAsset);
 router.patch('/:id/unassign', authorizeRoles('super_admin', 'hr'), unassignAsset);
-router.get('/employee/:employeeId', getAssetsByEmployee);
+router.get('/employee/:employeeId', authorizeRoles('super_admin', 'hr', 'employee'), getAssetsByEmployee);
 
 export default router; 

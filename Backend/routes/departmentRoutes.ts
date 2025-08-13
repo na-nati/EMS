@@ -14,10 +14,10 @@ const router = Router();
 router.post('/', authMiddleware, authorizeRoles('hr', 'super_admin'), createDepartment);
 
 
-router.get('/', authMiddleware, getDepartments);
+router.get('/', authMiddleware, authorizeRoles('super_admin', 'hr', 'manager'), getDepartments);
 
 
-router.get('/:id', authMiddleware, getDepartmentById);
+router.get('/:id', authMiddleware, authorizeRoles('super_admin', 'hr', 'manager'), getDepartmentById);
 
 
 router.put('/:id', authMiddleware, authorizeRoles('hr', 'super_admin'), updateDepartment);

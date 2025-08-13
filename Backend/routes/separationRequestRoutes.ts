@@ -10,20 +10,23 @@ import {
     getSeparationRequestsByEmployee,
     getPendingSeparationRequests
 } from '../controllers/separationRequestController';
+import { authMiddleware, authorizeRoles } from '../middleware/authMiddleware';
 
 const router = express.Router();
 
+router.use(authMiddleware);
+
 // CRUD operations
-router.post('/', createSeparationRequest);
-router.get('/', getAllSeparationRequests);
-router.get('/:id', getSeparationRequestById);
-router.put('/:id', updateSeparationRequest);
-router.delete('/:id', deleteSeparationRequest);
+router.post('/', authorizeRoles('employee'), createSeparationRequest);
+router.get('/', authorizeRoles('super_admin', 'hr', 'manager'), getAllSeparationRequests);
+router.get('/:id', authorizeRoles('super_admin', 'hr', 'manager'), getSeparationRequestById);
+router.put('/:id', authorizeRoles('super_admin', 'hr', 'manager'), updateSeparationRequest);
+router.delete('/:id', authorizeRoles('super_admin', 'hr'), deleteSeparationRequest);
 
 // Separation-specific operations
-router.patch('/:id/approve', approveSeparationRequest);
-router.patch('/:id/process', processSeparationRequest);
-router.get('/employee/:employeeId', getSeparationRequestsByEmployee);
-router.get('/pending/all', getPendingSeparationRequests);
+router.patch('/:id/approve', authorizeRoles('super_admin', 'hr', 'manager'), approveSeparationRequest);
+router.patch('/:id/process', authorizeRoles('super_admin', 'hr'), processSeparationRequest);
+router.get('/employee/:employeeId', authorizeRoles('super_admin', 'hr', 'manager', 'employee'), getSeparationRequestsByEmployee);
+router.get('/pending/all', authorizeRoles('super_admin', 'hr', 'manager'), getPendingSeparationRequests);
 
 export default router; 

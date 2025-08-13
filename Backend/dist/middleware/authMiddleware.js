@@ -17,10 +17,16 @@ const authMiddleware = (req, res, next) => {
     }
     try {
         const decoded = jsonwebtoken_1.default.verify(token, JWT_SECRET);
+        if (typeof decoded === 'string') {
+            return res.status(401).json({ message: 'Token is not valid.' });
+        }
         req.user = decoded;
         next();
     }
     catch (err) {
+        if (err && typeof err === 'object' && 'name' in err && err.name === 'TokenExpiredError') {
+            return res.status(401).json({ message: 'Access token expired' });
+        }
         return res.status(401).json({ message: 'Token is not valid.' });
     }
 };

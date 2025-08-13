@@ -55,8 +55,46 @@ paths:
       responses:
         "200":
           description: Successful login
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  token:
+                    type: string
+                    description: Access token (JWT)
+                  user:
+                    type: object
+                    description: User profile
         "400":
           description: Invalid email or password
+  
+  /api/users/refresh-token:
+    post:
+      summary: Issue a new access token using refresh token cookie
+      tags: [Users]
+      responses:
+        "200":
+          description: New access token
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  token:
+                    type: string
+        "401":
+          description: Missing or invalid refresh token
+
+  /api/users/logout:
+    post:
+      summary: Logout user and clear refresh token cookie
+      tags: [Users]
+      responses:
+        "200":
+          description: Logged out
+        "400":
+          description: Bad request
 
   /api/departments:
     post:

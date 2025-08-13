@@ -4,8 +4,12 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
 };
 Object.defineProperty(exports, "__esModule", { value: true });
 const express_1 = __importDefault(require("express"));
+const authMiddleware_1 = require("../middleware/authMiddleware");
 const auditLogController_1 = require("../controllers/auditLogController");
 const router = express_1.default.Router();
+// Super Admin only access for audit logs
+router.use(authMiddleware_1.authMiddleware);
+router.use((0, authMiddleware_1.authorizeRoles)('super_admin'));
 // CRUD operations
 router.post('/', auditLogController_1.createAuditLog);
 router.get('/', auditLogController_1.getAllAuditLogs);

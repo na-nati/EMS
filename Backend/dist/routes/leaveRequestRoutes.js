@@ -12,15 +12,15 @@ const router = express_1.default.Router();
 // Apply authentication to all routes
 router.use(authMiddleware_1.authMiddleware);
 // CRUD operations
-router.post('/', (0, validateBody_1.validateBody)(leaveRequestValidation_1.createLeaveRequestSchema), leaveRequestController_1.createLeaveRequest);
-router.get('/', leaveRequestController_1.getAllLeaveRequests);
-router.get('/:id', leaveRequestController_1.getLeaveRequestById);
-router.put('/:id', (0, validateBody_1.validateBody)(leaveRequestValidation_1.updateLeaveRequestSchema), leaveRequestController_1.updateLeaveRequest);
+router.post('/', (0, authMiddleware_1.authorizeRoles)('employee'), (0, validateBody_1.validateBody)(leaveRequestValidation_1.createLeaveRequestSchema), leaveRequestController_1.createLeaveRequest);
+router.get('/', (0, authMiddleware_1.authorizeRoles)('super_admin', 'hr', 'manager', 'employee'), leaveRequestController_1.getAllLeaveRequests);
+router.get('/:id', (0, authMiddleware_1.authorizeRoles)('super_admin', 'hr', 'manager', 'employee'), leaveRequestController_1.getLeaveRequestById);
+router.put('/:id', (0, authMiddleware_1.authorizeRoles)('super_admin', 'hr', 'manager'), (0, validateBody_1.validateBody)(leaveRequestValidation_1.updateLeaveRequestSchema), leaveRequestController_1.updateLeaveRequest);
 router.delete('/:id', (0, authMiddleware_1.authorizeRoles)('super_admin', 'hr'), leaveRequestController_1.deleteLeaveRequest);
 // Leave request-specific operations
 router.patch('/:id/approve', (0, authMiddleware_1.authorizeRoles)('super_admin', 'hr', 'manager'), (0, validateBody_1.validateBody)(leaveRequestValidation_1.approveLeaveRequestSchema), leaveRequestController_1.approveLeaveRequest);
 router.patch('/:id/reject', (0, authMiddleware_1.authorizeRoles)('super_admin', 'hr', 'manager'), (0, validateBody_1.validateBody)(leaveRequestValidation_1.approveLeaveRequestSchema), leaveRequestController_1.rejectLeaveRequest);
-router.get('/employee/:employeeId', leaveRequestController_1.getLeaveRequestsByEmployee);
-router.get('/pending/all', leaveRequestController_1.getPendingLeaveRequests);
+router.get('/employee/:employeeId', (0, authMiddleware_1.authorizeRoles)('super_admin', 'hr', 'manager', 'employee'), leaveRequestController_1.getLeaveRequestsByEmployee);
+router.get('/pending/all', (0, authMiddleware_1.authorizeRoles)('super_admin', 'hr', 'manager'), leaveRequestController_1.getPendingLeaveRequests);
 exports.default = router;
 //# sourceMappingURL=leaveRequestRoutes.js.map

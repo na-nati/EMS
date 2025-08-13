@@ -8,6 +8,7 @@ const dotenv_1 = __importDefault(require("dotenv"));
 const cors_1 = __importDefault(require("cors"));
 const swagger_ui_express_1 = __importDefault(require("swagger-ui-express"));
 const YAML = require('yamljs');
+const cookie_parser_1 = __importDefault(require("cookie-parser"));
 const dbconnection_1 = __importDefault(require("./config/dbconnection"));
 const userRoutes_1 = __importDefault(require("./routes/userRoutes"));
 const departmentRoutes_1 = __importDefault(require("./routes/departmentRoutes"));
@@ -33,7 +34,11 @@ const app = (0, express_1.default)();
 const swaggerDocument = YAML.load('./swagger.yaml');
 (0, dbconnection_1.default)();
 app.use(express_1.default.json());
-app.use((0, cors_1.default)());
+app.use((0, cookie_parser_1.default)());
+app.use((0, cors_1.default)({
+    origin: process.env.CLIENT_ORIGIN?.split(',') || true,
+    credentials: true,
+}));
 app.use('/api/users', userRoutes_1.default);
 app.use('/api/departments', departmentRoutes_1.default);
 app.use('/api/documents', documentRoutes_1.default);

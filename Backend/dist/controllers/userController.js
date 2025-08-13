@@ -3,7 +3,7 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.updateProfile = exports.getProfile = exports.updateProfilePicture = exports.getAllUsers = exports.loginuser = exports.registeruser = void 0;
+exports.updateProfile = exports.getProfile = exports.updateProfilePicture = exports.getAllUsers = exports.logout = exports.refreshToken = exports.loginuser = exports.registeruser = void 0;
 const User_1 = require("../models/User");
 const bcryptjs_1 = __importDefault(require("bcryptjs"));
 const jsonwebtoken_1 = __importDefault(require("jsonwebtoken"));
@@ -38,6 +38,14 @@ const registeruser = async (req, res) => {
 };
 exports.registeruser = registeruser;
 // Login
+const createAccessToken = (payload, expiresIn = '1m') => {
+    const secret = process.env.JWT_SECRET;
+    return jsonwebtoken_1.default.sign(payload, secret, { expiresIn });
+};
+const createRefreshToken = (payload, expiresIn = '7d') => {
+    const secret = (process.env.JWT_REFRESH_SECRET || process.env.JWT_SECRET);
+    return jsonwebtoken_1.default.sign(payload, secret, { expiresIn });
+};
 const loginuser = async (req, res) => {
     try {
         const { email, password } = req.body;
@@ -53,9 +61,18 @@ const loginuser = async (req, res) => {
         if (!isMatch) {
             return res.status(400).json({ message: 'Invalid email or password.' });
         }
-        const token = jsonwebtoken_1.default.sign({ userId: user._id, role: user.role }, process.env.JWT_SECRET, { expiresIn: '1d' });
+        const accessToken = createAccessToken({ userId: user._id, role: user.role });
+        const refreshToken = createRefreshToken({ userId: user._id, role: user.role, tokenVersion: user.tokenVersion ?? 0 });
+        // Set refresh token in httpOnly cookie
+        res.cookie('jid', refreshToken, {
+            httpOnly: true,
+            secure: process.env.NODE_ENV === 'production',
+            sameSite: process.env.NODE_ENV === 'production' ? 'none' : 'lax',
+            path: '/api/users/refresh-token',
+            maxAge: 7 * 24 * 60 * 60 * 1000,
+        });
         res.json({
-            token,
+            token: accessToken,
             user: {
                 id: user._id,
                 firstName: user.firstName,
@@ -74,6 +91,54 @@ const loginuser = async (req, res) => {
     }
 };
 exports.loginuser = loginuser;
+const refreshToken = async (req, res) => {
+    try {
+        const token = req.cookies?.jid;
+        if (!token) {
+            return res.status(401).json({ message: 'No refresh token' });
+        }
+        const secret = (process.env.JWT_REFRESH_SECRET || process.env.JWT_SECRET);
+        let payload = null;
+        try {
+            payload = jsonwebtoken_1.default.verify(token, secret);
+        }
+        catch (e) {
+            return res.status(401).json({ message: 'Invalid refresh token' });
+        }
+        const user = await User_1.User.findById(payload.userId);
+        if (!user) {
+            return res.status(401).json({ message: 'User not found' });
+        }
+        if ((user.tokenVersion ?? 0) !== (payload.tokenVersion ?? 0)) {
+            return res.status(401).json({ message: 'Refresh token revoked' });
+        }
+        const newAccessToken = createAccessToken({ userId: user._id, role: user.role });
+        const newRefreshToken = createRefreshToken({ userId: user._id, role: user.role, tokenVersion: user.tokenVersion ?? 0 });
+        res.cookie('jid', newRefreshToken, {
+            httpOnly: true,
+            secure: process.env.NODE_ENV === 'production',
+            sameSite: process.env.NODE_ENV === 'production' ? 'none' : 'lax',
+            path: '/api/users/refresh-token',
+            maxAge: 7 * 24 * 60 * 60 * 1000,
+        });
+        return res.json({ token: newAccessToken });
+    }
+    catch (err) {
+        console.error('Refresh token error:', err);
+        return res.status(500).json({ message: 'Server error' });
+    }
+};
+exports.refreshToken = refreshToken;
+const logout = async (req, res) => {
+    try {
+        res.clearCookie('jid', { path: '/api/users/refresh-token' });
+        return res.json({ success: true });
+    }
+    catch (err) {
+        return res.status(500).json({ message: 'Server error' });
+    }
+};
+exports.logout = logout;
 // Get all users
 const getAllUsers = async (req, res) => {
     try {

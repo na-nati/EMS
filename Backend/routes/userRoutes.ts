@@ -5,7 +5,9 @@ import {
   getAllUsers,
   updateProfilePicture,
   getProfile,
-  updateProfile
+  updateProfile,
+  refreshToken,
+  logout
 } from "../controllers/userController";
 import { validateBody } from "../middleware/validateBody";
 import { registerUserSchema, loginUserSchema } from "../validation/userValidation";
@@ -17,6 +19,8 @@ const router = Router();
 // Public routes
 router.post("/register", validateBody(registerUserSchema), registeruser);
 router.post("/login", validateBody(loginUserSchema), loginuser);
+router.post("/refresh-token", refreshToken);
+router.post("/logout", logout);
 
 // Protected routes - require authentication
 router.use(authMiddleware);
