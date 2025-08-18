@@ -1,4 +1,3 @@
-"use client"
 import { useState } from "react"
 import { Users, Plus, Search, Upload, Download, Edit, Trash2, Eye, Filter, Building, DollarSign } from "lucide-react"
 import { Button } from "../components/ui/button"
@@ -8,7 +7,8 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from ".
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogFooter } from "../components/ui/dialog"
 import { Label } from "../components/ui/lable" // Corrected import path for Label
 import { useAuth, type UserRole } from "../contexts/AuthContext" // Import useAuth and UserRole
-
+import { apiRequest } from '../lib/apiClient';
+import React from "react"
 interface Employee {
   id: number
   employeeId: string
@@ -23,70 +23,34 @@ interface Employee {
   experience: number
 }
 
-const initialEmployees: Employee[] = [
-  {
-    id: 1,
-    employeeId: "EMP001",
-    name: "John Smith",
-    email: "john.smith@company.com",
-    department: "Engineering",
-    position: "Senior Developer",
-    status: "Active",
-    joinDate: "2022-01-15",
-    phone: "+1-555-0123",
-    salary: 75000,
-    experience: 5,
-  },
-  {
-    id: 2,
-    employeeId: "EMP002",
-    name: "Sarah Connor",
-    email: "sarah.connor@company.com",
-    department: "Marketing",
-    position: "Marketing Manager",
-    status: "Active",
-    joinDate: "2021-03-22",
-    phone: "+1-555-0124",
-    salary: 65000,
-    experience: 7,
-  },
-  {
-    id: 3,
-    employeeId: "EMP003",
-    name: "Mike Johnson",
-    email: "mike.johnson@company.com",
-    department: "Sales",
-    position: "Sales Representative",
-    status: "Active",
-    joinDate: "2023-05-10",
-    phone: "+1-555-0125",
-    salary: 45000,
-    experience: 3,
-  },
-  {
-    id: 4,
-    employeeId: "EMP004",
-    name: "Emily Davis",
-    email: "emily.davis@company.com",
-    department: "HR",
-    position: "HR Specialist",
-    status: "Inactive",
-    joinDate: "2020-08-05",
-    phone: "+1-555-0126",
-    salary: 55000,
-    experience: 4,
-  },
-]
+interface DashboardStats {
+  totalEmployees: number
+  totalDepartments: number
+  statusBreakdown: {
+    active: number
+    inactive: number
+    onLeave: number
+  }
+  avgSalary: number
+}
+type Department = {
+  _id: string;
+  name: string;
+  description?: string;
+};
 
-const departments = ["All Departments", "Engineering", "Marketing", "Sales", "HR", "Finance"]
+
+
 const employeeStatuses = ["All Statuses", "Active", "Inactive", "On Leave"]
 
 const Employees = () => {
   const { user, isLoading } = useAuth()
   const userRole: UserRole = user?.role || "employee"
-  const [employees, setEmployees] = useState<Employee[]>(initialEmployees)
+  const [employees, setEmployees] = useState<Employee[]>([])
+  const [dashboardStats,setDashboardStats] = useState<DashboardStats | null>(null)
+  const [loadingStats, setLoadingStats] = useState(true)
   const [searchTerm, setSearchTerm] = useState("")
-  const [selectedDepartment, setSelectedDepartment] = useState("All Departments")
+  const [selectedDepartment, setSelectedDepartment] = React.useState("All Departments");
   const [selectedStatus, setSelectedStatus] = useState("All Statuses")
   const [minSalary, setMinSalary] = useState("")
   const [maxSalary, setMaxSalary] = useState("")
@@ -107,29 +71,121 @@ const Employees = () => {
     experience: "",
     joinDate: "",
   })
+  const [departments, setDepartments] = useState<Department[]>([]);
+
+
+
+React.useEffect(() => {
+  const fetchEmployees = async () => {
+    try {
+      const query = new URLSearchParams({
+        page: "1",
+        limit: "50",
+        ...(searchTerm ? { search: searchTerm } : {}),
+        ...(selectedStatus !== "All Statuses" ? { employment_status: selectedStatus } : {}),
+        ...(selectedDepartment !== "All Departments" ? { department: selectedDepartment } : {}),
+        ...(minSalary ? { minSalary } : {}),
+        ...(maxSalary ? { maxSalary } : {}),
+      });
+
+      const res = await apiRequest(`/employees?${query.toString()}`);
+      setEmployees(res.data);
+    } catch (err) {
+      console.error("Failed to fetch employees", err);
+    }
+  };
+
+  fetchEmployees();
+}, [searchTerm, selectedStatus, selectedDepartment, minSalary, maxSalary]);
+
+React.useEffect(() => {
+  const fetchDepartments = async () => {
+    try {
+      const res = await apiRequest('/departments');
+      setDepartments(res); // res should be your array of departments
+    } catch (err) {
+      console.error("Failed to fetch departments", err);
+    }
+  };
+
+  fetchDepartments();
+}, []);
+
+  React.useEffect(() => {
+  const fetchDashboardStats = async () => {
+    setLoadingStats(true);
+    const apiBaseUrl = import.meta.env.VITE_API_URL;
+    try {
+      console.log("🔍 Fetching dashboard stats from:", `${apiBaseUrl}/employees/stats/all`);
+
+      // Use your existing apiRequest function to fetch the stats
+      const response = await apiRequest(`${apiBaseUrl}/employees/stats/all`);
+      console.log("📊 Dashboard Stats API Response:", response);
+
+      // Assuming your backend returns data like: { data: { totalEmployees, totalDepartments, statusBreakdown, avgSalary } }
+      if (response?.data) {
+        setDashboardStats(response.data); // ✅ save to state
+        console.log("📈 Dashboard Stats Data:", response.data);
+      }
+    } catch (error) {
+      console.error("❌ Error fetching dashboard stats:", error);
+    } finally {
+      setLoadingStats(false);
+    }
+  };
+
+  fetchDashboardStats();
+}, []);
+
 
   // Permissions based on user role
   const isAdmin = userRole === "super_admin"
   const isHR = userRole === "hr"
   const isManager = userRole === "manager"
-  const canAdd = isHR
-  const canEdit = isHR
-  const canDelete = isHR
+  const canAdd = isHR || isAdmin // Only HR and Admin can add employees
+  const canEdit = isHR || isAdmin
+  const canDelete = isHR || isAdmin 
   const canViewDetails = isAdmin || isHR || isManager || userRole === "employee" // All roles can view details
   const canImportExport = isAdmin || isHR
   const canViewSalary = isAdmin || isHR
 
-  const filteredEmployees = employees.filter((employee) => {
-    const matchesSearch =
-      employee.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      employee.email.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      employee.employeeId.toLowerCase().includes(searchTerm.toLowerCase())
-    const matchesDepartment = selectedDepartment === "All Departments" || employee.department === selectedDepartment
-    const matchesStatus = selectedStatus === "All Statuses" || employee.status === selectedStatus
-    const matchesMinSalary = minSalary === "" || employee.salary >= Number(minSalary)
-    const matchesMaxSalary = maxSalary === "" || employee.salary <= Number(maxSalary)
-    return matchesSearch && matchesDepartment && matchesStatus && matchesMinSalary && matchesMaxSalary
-  })
+
+  // Map backend employees to your Employee type
+const mappedEmployees: Employee[] = employees.map((emp: any) => ({
+  id: emp._id,
+  employeeId: emp.employee_code,
+  name: emp.user_id ? `${emp.user_id.firstName} ${emp.user_id.lastName}` : "Unknown",
+  email: emp.user_id?.email || "",
+  department: emp.department_id?.name || "Unknown",
+  position: emp.job_profile,
+  status: emp.employment_status,
+  joinDate: emp.joining_date,
+  phone: emp.phone_number,
+  salary: emp.salary_id?.netSalary || 0,
+  experience: 0,
+}));
+
+
+// Filter employees based on search + filters
+const filteredEmployees = mappedEmployees.filter((employee) => {
+  const search = searchTerm.toLowerCase();
+  const matchesSearch =
+    employee.name.toLowerCase().includes(search) ||
+    employee.email.toLowerCase().includes(search) ||
+    employee.employeeId.toLowerCase().includes(search);
+
+  const matchesDepartment =
+    selectedDepartment === "All Departments" ||
+    employee.department === selectedDepartment;
+
+  const matchesStatus =
+    selectedStatus === "All Statuses" || employee.status === selectedStatus;
+
+  const matchesMinSalary = minSalary === "" || employee.salary >= Number(minSalary);
+  const matchesMaxSalary = maxSalary === "" || employee.salary <= Number(maxSalary);
+
+  return matchesSearch && matchesDepartment && matchesStatus && matchesMinSalary && matchesMaxSalary;
+});
 
   const resetForm = () => {
     setFormData({
@@ -221,6 +277,33 @@ const Employees = () => {
     // Filters are already applied via state changes in the input fields
     setShowMoreFiltersModal(false)
   }
+  const handleDepartmentChange = async (departmentId: string) => {
+  setSelectedDepartment(departmentId);
+
+  try {
+    const res = await apiRequest(`/employees/department/${departmentId}`);
+    // res should be { success: true, data: [...] }
+    if (res.success) {
+      const mapped = res.data.map((emp: any) => ({
+        id: emp._id,
+        employeeId: emp.employee_code,
+        name: emp.user_id ? `${emp.user_id.firstName} ${emp.user_id.lastName}` : "Unknown",
+        email: emp.user_id?.email || "",
+        department: emp.department_id?.name || "Unknown",
+        position: emp.job_profile,
+        status: emp.employment_status,
+        joinDate: emp.joining_date,
+        phone: emp.phone_number,
+        salary: emp.salary_id?.netSalary || 0,
+        experience: 0,
+      }));
+      setEmployees(mapped);
+    }
+  } catch (err) {
+    console.error("Failed to fetch employees by department:", err);
+  }
+};
+
 
   const handleClearMoreFilters = () => {
     setSelectedStatus("All Statuses")
@@ -323,23 +406,23 @@ const Employees = () => {
                   </div>
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                     <div>
-                      <Label htmlFor="department">Department</Label>
-                      <Select
-                        value={formData.department}
-                        onValueChange={(value) => setFormData({ ...formData, department: value })}
-                      >
-                        <SelectTrigger className="bg-background">
-                          <SelectValue placeholder="Select department" />
-                        </SelectTrigger>
-                        <SelectContent className="bg-card">
-                          {departments.slice(1).map((dept) => (
-                            <SelectItem key={dept} value={dept}>
-                              {dept}
-                            </SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
-                    </div>
+  <Label htmlFor="department">Department</Label>
+  <Select
+    value={formData.department}
+    onValueChange={(value) => setFormData({ ...formData, department: value })}
+  >
+    <SelectTrigger className="bg-background">
+      <SelectValue placeholder="Select department" />
+    </SelectTrigger>
+    <SelectContent className="bg-card">
+      {departments.map((dept) => (
+        <SelectItem key={dept._id} value={dept._id}>
+          {dept.name}
+        </SelectItem>
+      ))}
+    </SelectContent>
+  </Select>
+</div>
                     <div>
                       <Label htmlFor="position">Position</Label>
                       <Input
@@ -424,7 +507,9 @@ const Employees = () => {
           <div className="flex items-center justify-between">
             <div>
               <p className="text-sm font-medium text-muted-foreground">Total Employees</p>
-              <p className="text-xl sm:text-2xl font-bold text-foreground">{employees.length}</p>
+              <p className="text-xl sm:text-2xl font-bold text-foreground">
+                {loadingStats ? '...' : dashboardStats?.totalEmployees || employees.length}
+              </p>
             </div>
             <Users className="h-6 w-6 sm:h-8 sm:w-8 text-blue-500" />
           </div>
@@ -434,7 +519,7 @@ const Employees = () => {
             <div>
               <p className="text-sm font-medium text-muted-foreground">Active</p>
               <p className="text-xl sm:text-2xl font-bold text-foreground">
-                {employees.filter((e) => e.status === "Active").length}
+                {loadingStats ? '...' : dashboardStats?.statusBreakdown.active || employees.filter((e) => e.status === "Active").length}
               </p>
             </div>
             <div className="h-6 w-6 sm:h-8 sm:w-8 bg-green-500/10 rounded-lg flex items-center justify-center">
@@ -447,7 +532,7 @@ const Employees = () => {
             <div>
               <p className="text-sm font-medium text-muted-foreground">Departments</p>
               <p className="text-xl sm:text-2xl font-bold text-foreground">
-                {new Set(employees.map((e) => e.department)).size}
+                {loadingStats ? '...' : dashboardStats?.totalDepartments || new Set(employees.map((e) => e.department)).size}
               </p>
             </div>
             <Building className="h-6 w-6 sm:h-8 sm:w-8 text-purple-500" />
@@ -458,7 +543,9 @@ const Employees = () => {
             <div>
               <p className="text-sm font-medium text-muted-foreground">Avg Salary</p>
               <p className="text-xl sm:text-2xl font-bold text-foreground">
-                ${Math.round(employees.reduce((sum, e) => sum + e.salary, 0) / employees.length).toLocaleString()}
+                ${loadingStats ? '...' : 
+                  Math.round(dashboardStats?.avgSalary || 
+                  employees.reduce((sum, e) => sum + e.salary, 0) / employees.length).toLocaleString()}
               </p>
             </div>
             <DollarSign className="h-6 w-6 sm:h-8 sm:w-8 text-green-500" />
@@ -481,18 +568,26 @@ const Employees = () => {
             </div>
           </div>
           <div className="flex flex-col sm:flex-row gap-2">
-            <Select value={selectedDepartment} onValueChange={setSelectedDepartment}>
-              <SelectTrigger className="w-full sm:w-48 bg-background">
-                <SelectValue placeholder="Select department" />
-              </SelectTrigger>
-              <SelectContent className="bg-card">
-                {departments.map((dept) => (
-                  <SelectItem key={dept} value={dept}>
-                    {dept}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+<Select
+  value={selectedDepartment}
+  onValueChange={(val) => setSelectedDepartment(val)}
+>
+  <SelectTrigger className="w-full sm:w-48 bg-background">
+    <SelectValue placeholder="Select department" />
+  </SelectTrigger>
+  <SelectContent className="bg-card">
+    <SelectItem value="All Departments">All Departments</SelectItem>
+    {departments.map((dept) => (
+      <SelectItem key={dept._id} value={dept._id}>
+        {dept.name}
+      </SelectItem>
+    ))}
+  </SelectContent>
+</Select>
+
+
+
+
             <Dialog open={showMoreFiltersModal} onOpenChange={setShowMoreFiltersModal}>
               <DialogTrigger asChild>
                 <Button variant="outline" className="hover:bg-muted/50 bg-transparent shadow-sm">
@@ -771,20 +866,21 @@ const Employees = () => {
               <div>
                 <Label htmlFor="editDepartment">Department</Label>
                 <Select
-                  value={formData.department}
-                  onValueChange={(value) => setFormData({ ...formData, department: value })}
-                >
-                  <SelectTrigger className="bg-background">
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent className="bg-card">
-                    {departments.slice(1).map((dept) => (
-                      <SelectItem key={dept} value={dept}>
-                        {dept}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
+  value={selectedDepartment}
+  onValueChange={(val) => handleDepartmentChange(val)}
+>
+  <SelectTrigger className="w-full sm:w-48 bg-background">
+    <SelectValue placeholder="Select department" />
+  </SelectTrigger>
+  <SelectContent className="bg-card">
+    {departments.map((dept) => (
+      <SelectItem key={dept._id} value={dept._id}>
+        {dept.name} {/* <-- Render the department name */}
+      </SelectItem>
+    ))}
+  </SelectContent>
+</Select>
+
               </div>
               <div>
                 <Label htmlFor="editPosition">Position</Label>
@@ -858,6 +954,7 @@ const Employees = () => {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
       {/* View Employee Modal */}
       <Dialog open={showViewModal} onOpenChange={setShowViewModal}>
         <DialogContent className="max-w-2xl bg-card text-foreground shadow-lg">

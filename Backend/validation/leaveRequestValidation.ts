@@ -2,10 +2,10 @@ import Joi from 'joi';
 
 export const createLeaveRequestSchema = Joi.object({
     employee_id: Joi.string().required(),
-    leave_type: Joi.string().required().valid('annual', 'sick', 'personal', 'maternity', 'paternity', 'other'),
+    leave_type: Joi.string().optional().valid('annual', 'sick', 'personal', 'maternity', 'paternity', 'other'),
     start_date: Joi.date().required(),
     end_date: Joi.date().required(),
-    reason: Joi.string().required().min(10).max(500),
+    reason: Joi.string().required().min(4).max(500),
     status: Joi.string().default('pending').valid('pending', 'approved', 'rejected'),
     approved_by: Joi.string().optional(),
     approved_at: Joi.date().optional(),
@@ -24,6 +24,6 @@ export const updateLeaveRequestSchema = Joi.object({
 });
 
 export const approveLeaveRequestSchema = Joi.object({
-    approved_by: Joi.string().required(),
+    approved_by: Joi.string().optional(),
     notes: Joi.string().optional().max(500)
 });

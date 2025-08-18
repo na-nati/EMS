@@ -9,7 +9,6 @@ export interface ISalary extends Document {
     month: string;
     year: number;
     status: 'paid' | 'pending' | 'processing';
-    department: string;
 }
 
 const SalarySchema = new Schema<ISalary>({
@@ -55,11 +54,6 @@ const SalarySchema = new Schema<ISalary>({
         type: String,
         enum: ['paid', 'pending', 'processing'],
         default: 'pending',
-    },
-    department: {
-        type: String,
-        required: true,
-        maxlength: 100,
     },
 }, {
     timestamps: true,

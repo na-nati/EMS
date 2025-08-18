@@ -9,7 +9,8 @@ import {
     getEmployeesByDepartment,
     getEmployeeStats,
     getEmployeeRegistrationTrends,
-    getActiveLeaveTrends
+    getActiveLeaveTrends,
+    setEmployeeLeaveStatus
 } from '../controllers/employeeController';
 
 const router = express.Router();
@@ -33,5 +34,6 @@ router.get('/stats/all', authorizeRoles('super_admin', 'hr'), getEmployeeStats);
 router.get('/:id', authorizeRoles('super_admin', 'hr', 'manager'), getEmployeeById);
 router.put('/:id', authorizeRoles('super_admin', 'hr'), updateEmployee);
 router.delete('/:id', authorizeRoles('super_admin', 'hr'), deleteEmployee);
+router.patch('/:id/leave-status', authorizeRoles('super_admin', 'hr'), setEmployeeLeaveStatus);
 
 export default router; 

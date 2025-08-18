@@ -41,7 +41,7 @@ export const registeruser = async (req: Request, res: Response) => {
     }
 };
 // Login
-const createAccessToken = (payload: object, expiresIn: SignOptions['expiresIn'] = '1m') => {
+const createAccessToken = (payload: object, expiresIn: SignOptions['expiresIn'] = '15m') => {
     const secret = (process.env.JWT_SECRET as Secret);
     return jwt.sign(payload as any, secret, { expiresIn } as SignOptions);
 };

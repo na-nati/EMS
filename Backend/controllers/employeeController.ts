@@ -97,11 +97,17 @@ export const getAllEmployees = async (req: Request, res: Response) => {
             .limit(limit)
             .sort({ createdAt: -1 });
 
+           const employeesWithSalary = employees.map(emp => ({
+  ...emp.toObject(),
+  salary: (emp.salary_id as any)?.netSalary || 0,
+}));
+
+
         const total = await Employee.countDocuments(filter);
 
         res.status(200).json({
             success: true,
-            data: employees,
+            data: employeesWithSalary,
             pagination: {
                 page,
                 limit,
@@ -421,64 +427,92 @@ export const getEmployeeRegistrationTrends = async (req: Request, res: Response)
 
 // Get active and leave employee trends for dashboard charts
 export const getActiveLeaveTrends = async (req: Request, res: Response) => {
+  try {
+    const days = parseInt(req.query.days as string) || 30;
+    const endDate = new Date();
+    const startDate = new Date();
+    startDate.setDate(endDate.getDate() - days);
+
+    // Get all active employees
+    const totalActiveEmployees = await Employee.countDocuments({ employment_status: 'Active' });
+
+    // Get all approved leave requests overlapping the period
+    const leaveRequests = await LeaveRequest.find({
+      status: 'approved',
+      start_date: { $lte: endDate },
+      end_date: { $gte: startDate }
+    }).populate('employee_id', '_id');
+
+    const dates: string[] = [];
+    const activeEmployees: number[] = [];
+    const onLeave: number[] = [];
+
+    let currentDate = new Date(startDate);
+
+    while (currentDate <= endDate) {
+      const dateStr = currentDate.toISOString().split('T')[0];
+      dates.push(dateStr);
+
+      // Count employees on leave for this specific date
+      const employeesOnLeave = leaveRequests.filter(leave => {
+        const leaveStart = new Date(leave.start_date);
+        const leaveEnd = new Date(leave.end_date);
+        return currentDate >= leaveStart && currentDate <= leaveEnd;
+      }).length;
+
+      const dailyActiveCount = Math.max(0, totalActiveEmployees - employeesOnLeave);
+
+      activeEmployees.push(dailyActiveCount);
+      onLeave.push(employeesOnLeave);
+
+      currentDate.setDate(currentDate.getDate() + 1);
+    }
+
+    res.status(200).json({
+      success: true,
+      data: {
+        dates,
+        activeEmployees,
+        onLeave
+      }
+    });
+  } catch (error: any) {
+    res.status(500).json({
+      success: false,
+      message: 'Error fetching active/leave trends',
+      error: error.message
+    });
+  }
+};
+
+
+export const setEmployeeLeaveStatus = async (req: Request, res: Response) => {
     try {
-        const days = parseInt(req.query.days as string) || 30; // Default to 30 days
-        const endDate = new Date();
-        const startDate = new Date();
-        startDate.setDate(startDate.getDate() - days);
+        const { id } = req.params;
+        const { leaveStatus } = req.body; // true/false for on leave
 
-        // Get total active employees (those with 'Active' employment status)
-        const totalActiveEmployees = await Employee.countDocuments({ employment_status: 'Active' });
+        const employee = await Employee.findByIdAndUpdate(
+            id,
+            { employment_status: leaveStatus ? 'Leave' : 'Active' },
+            { new: true }
+        );
 
-        // Get approved leave requests that overlap with each day
-        const leaveRequests = await LeaveRequest.find({
-            status: 'approved',
-            $or: [
-                { start_date: { $lte: endDate, $gte: startDate } },
-                { end_date: { $gte: startDate, $lte: endDate } },
-                { start_date: { $lte: startDate }, end_date: { $gte: endDate } }
-            ]
-        }).populate('employee_id', 'user_id');
-
-        // Generate dates array and calculate daily active/leave counts
-        const dates: string[] = [];
-        const activeEmployees: number[] = [];
-        const onLeave: number[] = [];
-
-        let currentDate = new Date(startDate);
-
-        while (currentDate <= endDate) {
-            const dateStr = currentDate.toISOString().split('T')[0];
-            dates.push(new Date(dateStr).toISOString());
-
-            // Count employees on leave for this specific date
-            const employeesOnLeave = leaveRequests.filter(leave => {
-                const leaveStart = new Date(leave.start_date);
-                const leaveEnd = new Date(leave.end_date);
-                return currentDate >= leaveStart && currentDate <= leaveEnd;
-            }).length;
-
-            // Active employees = total active - employees on leave
-            const dailyActiveCount = Math.max(0, totalActiveEmployees - employeesOnLeave);
-
-            activeEmployees.push(dailyActiveCount);
-            onLeave.push(employeesOnLeave);
-
-            currentDate.setDate(currentDate.getDate() + 1);
+        if (!employee) {
+            return res.status(404).json({
+                success: false,
+                message: 'Employee not found'
+            });
         }
 
         res.status(200).json({
             success: true,
-            data: {
-                dates,
-                activeEmployees,
-                onLeave
-            }
+            data: employee,
+            message: 'Employee leave status updated'
         });
     } catch (error: any) {
         res.status(500).json({
             success: false,
-            message: 'Error fetching active/leave trends',
+            message: 'Error updating employee leave status',
             error: error.message
         });
     }
