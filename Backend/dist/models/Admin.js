@@ -33,63 +33,30 @@ var __importStar = (this && this.__importStar) || (function () {
     };
 })();
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.Salary = void 0;
+exports.Admin = void 0;
 const mongoose_1 = __importStar(require("mongoose"));
-const SalarySchema = new mongoose_1.Schema({
-    user: {
+const AdminSchema = new mongoose_1.Schema({
+    user_id: {
         type: mongoose_1.default.Schema.Types.ObjectId,
         ref: 'User',
         required: true,
     },
-    basicSalary: {
-        type: Number,
-        required: true,
-        min: 0,
+    company_id: {
+        type: mongoose_1.default.Schema.Types.ObjectId,
+        ref: 'Company',
     },
-    bonus: {
-        type: Number,
-        required: true,
-        default: 0,
-        min: 0,
-    },
-    deductions: {
-        type: Number,
-        required: true,
-        default: 0,
-        min: 0,
-    },
-    netSalary: {
-        type: Number,
-        required: false,
-        min: 0,
-    },
-    month: {
+    role: {
         type: String,
+        enum: ['super_admin', 'admin'],
         required: true,
-        maxlength: 20,
+        default: 'admin',
     },
-    year: {
-        type: Number,
-        required: true,
-        min: 2000,
-        max: 2100,
-    },
-    status: {
-        type: String,
-        enum: ['paid', 'pending', 'processing'],
-        default: 'pending',
-    },
+    permissions: [{
+            type: String,
+            trim: true,
+        }],
 }, {
     timestamps: true,
 });
-// Auto-calculate net salary
-SalarySchema.pre('save', function (next) {
-    this.netSalary = this.basicSalary + this.bonus - this.deductions;
-    next();
-});
-// Create indexes for efficient querying
-SalarySchema.index({ user: 1, month: 1, year: 1 });
-SalarySchema.index({ department: 1 });
-SalarySchema.index({ status: 1 });
-exports.Salary = mongoose_1.default.model('Salary', SalarySchema);
-//# sourceMappingURL=Salary.js.map
+exports.Admin = mongoose_1.default.model('Admin', AdminSchema);
+//# sourceMappingURL=Admin.js.map

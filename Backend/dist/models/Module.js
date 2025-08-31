@@ -33,63 +33,35 @@ var __importStar = (this && this.__importStar) || (function () {
     };
 })();
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.Salary = void 0;
+exports.Module = void 0;
 const mongoose_1 = __importStar(require("mongoose"));
-const SalarySchema = new mongoose_1.Schema({
-    user: {
+const ModuleSchema = new mongoose_1.Schema({
+    name: {
+        type: String,
+        required: true,
+        trim: true,
+    },
+    key: {
+        type: String,
+        required: true,
+        unique: true,
+        trim: true,
+        lowercase: true,
+    },
+    description: {
+        type: String,
+        trim: true,
+    },
+    enabled: {
+        type: Boolean,
+        default: true,
+    },
+    company_id: {
         type: mongoose_1.default.Schema.Types.ObjectId,
-        ref: 'User',
-        required: true,
-    },
-    basicSalary: {
-        type: Number,
-        required: true,
-        min: 0,
-    },
-    bonus: {
-        type: Number,
-        required: true,
-        default: 0,
-        min: 0,
-    },
-    deductions: {
-        type: Number,
-        required: true,
-        default: 0,
-        min: 0,
-    },
-    netSalary: {
-        type: Number,
-        required: false,
-        min: 0,
-    },
-    month: {
-        type: String,
-        required: true,
-        maxlength: 20,
-    },
-    year: {
-        type: Number,
-        required: true,
-        min: 2000,
-        max: 2100,
-    },
-    status: {
-        type: String,
-        enum: ['paid', 'pending', 'processing'],
-        default: 'pending',
+        ref: 'Company',
     },
 }, {
     timestamps: true,
 });
-// Auto-calculate net salary
-SalarySchema.pre('save', function (next) {
-    this.netSalary = this.basicSalary + this.bonus - this.deductions;
-    next();
-});
-// Create indexes for efficient querying
-SalarySchema.index({ user: 1, month: 1, year: 1 });
-SalarySchema.index({ department: 1 });
-SalarySchema.index({ status: 1 });
-exports.Salary = mongoose_1.default.model('Salary', SalarySchema);
-//# sourceMappingURL=Salary.js.map
+exports.Module = mongoose_1.default.model('Module', ModuleSchema);
+//# sourceMappingURL=Module.js.map

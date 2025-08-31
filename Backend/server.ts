@@ -26,6 +26,9 @@ import documentRequestRoutes from "./routes/documentRequestRoutes";
 import salaryRoutes from "./routes/salaryRoutes";
 import managerRoutes from "./routes/managerRoutes";
 import auditLogRoutes from "./routes/auditLogRoutes";
+import companyRoutes from "./routes/companyRoutes";
+import adminRoutes from "./routes/adminRoutes";
+import moduleRoutes from "./routes/moduleRoutes";
 import { errorHandler } from './middleware/errorHandler';
 
 dotenv.config(); // Loads environment variables
@@ -61,6 +64,9 @@ app.use('/api/document-requests', documentRequestRoutes);
 app.use('/api/salaries', salaryRoutes);
 app.use('/api/managers', managerRoutes);
 app.use('/api/audit-logs', auditLogRoutes);
+app.use('/api/companies', companyRoutes);
+app.use('/api/admins', adminRoutes);
+app.use('/api/modules', moduleRoutes);
 app.use(errorHandler);
 
 // Serve Swagger UI with YAML

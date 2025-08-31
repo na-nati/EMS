@@ -1,6 +1,6 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.getActiveLeaveTrends = exports.getEmployeeRegistrationTrends = exports.getEmployeeStats = exports.getEmployeesByDepartment = exports.deleteEmployee = exports.updateEmployee = exports.getEmployeeById = exports.getAllEmployees = exports.createEmployee = void 0;
+exports.setEmployeeLeaveStatus = exports.getActiveLeaveTrends = exports.getEmployeeRegistrationTrends = exports.getEmployeeStats = exports.getEmployeesByDepartment = exports.deleteEmployee = exports.updateEmployee = exports.getEmployeeById = exports.getAllEmployees = exports.createEmployee = void 0;
 const Employee_1 = require("../models/Employee");
 const User_1 = require("../models/User");
 const Department_1 = require("../models/Department");
@@ -81,10 +81,14 @@ const getAllEmployees = async (req, res) => {
             .skip(skip)
             .limit(limit)
             .sort({ createdAt: -1 });
+        const employeesWithSalary = employees.map(emp => ({
+            ...emp.toObject(),
+            salary: emp.salary_id?.netSalary || 0,
+        }));
         const total = await Employee_1.Employee.countDocuments(filter);
         res.status(200).json({
             success: true,
-            data: employees,
+            data: employeesWithSalary,
             pagination: {
                 page,
                 limit,
@@ -379,36 +383,31 @@ exports.getEmployeeRegistrationTrends = getEmployeeRegistrationTrends;
 // Get active and leave employee trends for dashboard charts
 const getActiveLeaveTrends = async (req, res) => {
     try {
-        const days = parseInt(req.query.days) || 30; // Default to 30 days
+        const days = parseInt(req.query.days) || 30;
         const endDate = new Date();
         const startDate = new Date();
-        startDate.setDate(startDate.getDate() - days);
-        // Get total active employees (those with 'Active' employment status)
+        startDate.setDate(endDate.getDate() - days);
+        // Get all active employees
         const totalActiveEmployees = await Employee_1.Employee.countDocuments({ employment_status: 'Active' });
-        // Get approved leave requests that overlap with each day
+        // Get all approved leave requests overlapping the period
         const leaveRequests = await LeaveRequest_1.LeaveRequest.find({
             status: 'approved',
-            $or: [
-                { start_date: { $lte: endDate, $gte: startDate } },
-                { end_date: { $gte: startDate, $lte: endDate } },
-                { start_date: { $lte: startDate }, end_date: { $gte: endDate } }
-            ]
-        }).populate('employee_id', 'user_id');
-        // Generate dates array and calculate daily active/leave counts
+            start_date: { $lte: endDate },
+            end_date: { $gte: startDate }
+        }).populate('employee_id', '_id');
         const dates = [];
         const activeEmployees = [];
         const onLeave = [];
         let currentDate = new Date(startDate);
         while (currentDate <= endDate) {
             const dateStr = currentDate.toISOString().split('T')[0];
-            dates.push(new Date(dateStr).toISOString());
+            dates.push(dateStr);
             // Count employees on leave for this specific date
             const employeesOnLeave = leaveRequests.filter(leave => {
                 const leaveStart = new Date(leave.start_date);
                 const leaveEnd = new Date(leave.end_date);
                 return currentDate >= leaveStart && currentDate <= leaveEnd;
             }).length;
-            // Active employees = total active - employees on leave
             const dailyActiveCount = Math.max(0, totalActiveEmployees - employeesOnLeave);
             activeEmployees.push(dailyActiveCount);
             onLeave.push(employeesOnLeave);
@@ -432,4 +431,30 @@ const getActiveLeaveTrends = async (req, res) => {
     }
 };
 exports.getActiveLeaveTrends = getActiveLeaveTrends;
+const setEmployeeLeaveStatus = async (req, res) => {
+    try {
+        const { id } = req.params;
+        const { leaveStatus } = req.body; // true/false for on leave
+        const employee = await Employee_1.Employee.findByIdAndUpdate(id, { employment_status: leaveStatus ? 'Leave' : 'Active' }, { new: true });
+        if (!employee) {
+            return res.status(404).json({
+                success: false,
+                message: 'Employee not found'
+            });
+        }
+        res.status(200).json({
+            success: true,
+            data: employee,
+            message: 'Employee leave status updated'
+        });
+    }
+    catch (error) {
+        res.status(500).json({
+            success: false,
+            message: 'Error updating employee leave status',
+            error: error.message
+        });
+    }
+};
+exports.setEmployeeLeaveStatus = setEmployeeLeaveStatus;
 //# sourceMappingURL=employeeController.js.map

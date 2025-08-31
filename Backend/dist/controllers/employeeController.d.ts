@@ -8,4 +8,5 @@ export declare const getEmployeesByDepartment: (req: Request, res: Response) => 
 export declare const getEmployeeStats: (req: Request, res: Response) => Promise<void>;
 export declare const getEmployeeRegistrationTrends: (req: Request, res: Response) => Promise<void>;
 export declare const getActiveLeaveTrends: (req: Request, res: Response) => Promise<void>;
+export declare const setEmployeeLeaveStatus: (req: Request, res: Response) => Promise<Response<any, Record<string, any>>>;
 //# sourceMappingURL=employeeController.d.ts.map

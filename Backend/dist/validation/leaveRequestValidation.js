@@ -7,10 +7,10 @@ exports.approveLeaveRequestSchema = exports.updateLeaveRequestSchema = exports.c
 const joi_1 = __importDefault(require("joi"));
 exports.createLeaveRequestSchema = joi_1.default.object({
     employee_id: joi_1.default.string().required(),
-    leave_type: joi_1.default.string().required().valid('annual', 'sick', 'personal', 'maternity', 'paternity', 'other'),
+    leave_type: joi_1.default.string().optional().valid('annual', 'sick', 'personal', 'maternity', 'paternity', 'other'),
     start_date: joi_1.default.date().required(),
     end_date: joi_1.default.date().required(),
-    reason: joi_1.default.string().required().min(10).max(500),
+    reason: joi_1.default.string().required().min(4).max(500),
     status: joi_1.default.string().default('pending').valid('pending', 'approved', 'rejected'),
     approved_by: joi_1.default.string().optional(),
     approved_at: joi_1.default.date().optional(),
@@ -27,7 +27,7 @@ exports.updateLeaveRequestSchema = joi_1.default.object({
     notes: joi_1.default.string().max(500)
 });
 exports.approveLeaveRequestSchema = joi_1.default.object({
-    approved_by: joi_1.default.string().required(),
+    approved_by: joi_1.default.string().optional(),
     notes: joi_1.default.string().optional().max(500)
 });
 //# sourceMappingURL=leaveRequestValidation.js.map
