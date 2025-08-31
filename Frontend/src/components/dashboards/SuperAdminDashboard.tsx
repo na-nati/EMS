@@ -5,7 +5,6 @@ import {
   Activity,
   FileText,
   Briefcase,
-  UserCheck,
 } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
 import { apiRequest } from '../../lib/apiClient';
@@ -510,14 +509,6 @@ export const SuperAdminDashboard = () => {
             change: '+1',
             changeType: 'positive',
             color: 'text-blue-500'
-          },
-          {
-            name: 'HR Staff',
-            value: '8', // You might want to replace this with actual HR count from your data
-            icon: UserCheck,
-            change: '+2',
-            changeType: 'positive',
-            color: 'text-yellow-500'
           },
           {
             name: 'Active Jobs',

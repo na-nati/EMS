@@ -1,5 +1,5 @@
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
+import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { AuthProvider, useAuth } from "./contexts/AuthContext";
 import ProtectedRoute from "./components/ProtectedRoute";
 import Layout from "./components/Layout";
@@ -21,30 +21,12 @@ import Recruitment from "./pages/Recruitment";
 import Documents from "./pages/Documents";
 import SeparationRequest from "./pages/SeparationRequest";
 import Departments from "./pages/Department";
+import LandingPage from "./pages/LandingPage";
+import Pricing from "./pages/Pricing";
 
 // Import UserRole type
 import type { UserRole } from "./contexts/AuthContext";
 
-// ✅ Placeholder page component
-// interface PlaceholderPageProps {
-//   title: string;
-// }
-
-// const PlaceholderPage = ({ title }: PlaceholderPageProps) => (
-//   <div className="flex items-center justify-center min-h-[calc(100vh-4rem)] bg-gray-50">
-//     <div className="text-center p-8 bg-white rounded-lg shadow-lg">
-//       <h1 className="text-3xl font-extrabold text-gray-800 mb-4">{title}</h1>
-//       <p className="text-lg text-gray-600">
-//         This page is under development. Please check back later!
-//       </p>
-//       <div className="mt-6">
-//         <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-gray-900 mx-auto"></div>
-//       </div>
-//     </div>
-//   </div>
-// );
-
-// ✅ Inner app that uses useAuth safely
 const InnerApp = () => {
   const { user } = useAuth();
 
@@ -56,38 +38,32 @@ const InnerApp = () => {
 
   return (
     <BrowserRouter>
-      <Layout>
-        <Routes>
-          <Route path="/login" element={<LoginPage />} />
-          <Route path="/" element={<Navigate to="/dashboard" replace />} />
+      <Routes>
+        {/* Public routes */}
+        <Route path="/" element={<LandingPage />} />
+        <Route path="/login" element={<LoginPage />} />
+        <Route path="/pricing" element={<Pricing />} />
 
+        {/* Protected routes wrapped in Layout */}
+        <Route
+          element={
+            <ProtectedRoute>
+              <Layout />
+            </ProtectedRoute>
+          }
+        >
+          <Route path="dashboard" element={<Dashboard />} />
+          <Route path="leave" element={<LeaveManagement />} />
           <Route
-            path="/dashboard"
-            element={
-              <ProtectedRoute>
-                <Dashboard />
-              </ProtectedRoute>
-            }
-          />
-          <Route
-            path="/leave"
-            element={
-              <ProtectedRoute>
-                <LeaveManagement />
-              </ProtectedRoute>
-            }
-          />
-          <Route
-            path="/employees"
+            path="employees"
             element={
               <ProtectedRoute allowedRoles={["super_admin", "hr", "manager"]}>
                 <Employees />
               </ProtectedRoute>
             }
           />
-
           <Route
-            path="/employee"
+            path="employee"
             element={
               <ProtectedRoute allowedRoles={["employee"]}>
                 <Employee />
@@ -95,63 +71,57 @@ const InnerApp = () => {
             }
           />
           <Route
-            path="/departments"
+            path="departments"
             element={
               <ProtectedRoute allowedRoles={["super_admin"]}>
                 <Departments />
               </ProtectedRoute>
             }
           />
-          <Route path="/payroll"
+          <Route
+            path="payroll"
             element={
-              <ProtectedRoute allowedRoles={['super_admin', 'hr', 'employee', 'manager']}>
+              <ProtectedRoute
+                allowedRoles={["super_admin", "hr", "employee", "manager"]}
+              >
                 <Payroll />
-              </ProtectedRoute>} />
-          <Route
-            path="/attendance"
-            element={
-              <ProtectedRoute>
-                <AttendanceDashboard />
               </ProtectedRoute>
             }
           />
+          <Route path="attendance" element={<AttendanceDashboard />} />
+          <Route path="performance" element={<PerformanceDashboard />} />
           <Route
-            path="/performance"
-            element={
-              <ProtectedRoute>
-                <PerformanceDashboard />
-              </ProtectedRoute>
-            }
-          />
-          <Route
-            path="/training"
+            path="training"
             element={
               <ProtectedRoute allowedRoles={["super_admin", "hr"]}>
-
                 <TrainingDashboard userRole={effectiveUserRole} />
               </ProtectedRoute>
             }
           />
           <Route
-            path="/training-emp"
+            path="training-emp"
             element={
               <ProtectedRoute allowedRoles={["employee"]}>
-                {/* Pass userRole and currentUser to TrainingEmp */}
-                <TrainingEmp userRole={effectiveUserRole} currentUser={getFullName()} />
+                <TrainingEmp
+                  userRole={effectiveUserRole}
+                  currentUser={getFullName()}
+                />
               </ProtectedRoute>
             }
           />
           <Route
-            path="/assets"
+            path="assets"
             element={
               <ProtectedRoute allowedRoles={["super_admin", "hr", "employee"]}>
-                {/* Pass userRole and currentUser to AssetsDashboard */}
-                <AssetsDashboard userRole={effectiveUserRole} currentUser={getFullName()} />
+                <AssetsDashboard
+                  userRole={effectiveUserRole}
+                  currentUser={getFullName()}
+                />
               </ProtectedRoute>
             }
           />
           <Route
-            path="/recruitment"
+            path="recruitment"
             element={
               <ProtectedRoute allowedRoles={["super_admin", "hr", "manager"]}>
                 <Recruitment />
@@ -159,7 +129,7 @@ const InnerApp = () => {
             }
           />
           <Route
-            path="/reports"
+            path="reports"
             element={
               <ProtectedRoute allowedRoles={["super_admin", "hr", "manager"]}>
                 <Report />
@@ -167,7 +137,7 @@ const InnerApp = () => {
             }
           />
           <Route
-            path="/documents"
+            path="documents"
             element={
               <ProtectedRoute allowedRoles={["super_admin", "hr", "employee"]}>
                 <Documents />
@@ -175,17 +145,18 @@ const InnerApp = () => {
             }
           />
           <Route
-            path="/separation-request"
+            path="separation-request"
             element={
               <ProtectedRoute allowedRoles={["employee", "manager", "hr"]}>
                 <SeparationRequest />
               </ProtectedRoute>
             }
           />
+        </Route>
 
-          <Route path="*" element={<NotFound />} />
-        </Routes>
-      </Layout>
+        {/* Catch-all route */}
+        <Route path="*" element={<NotFound />} />
+      </Routes>
     </BrowserRouter>
   );
 };
@@ -193,14 +164,12 @@ const InnerApp = () => {
 // ✅ Top-level App component
 const queryClient = new QueryClient();
 
-const App = () => {
-  return (
-    <QueryClientProvider client={queryClient}>
-      <AuthProvider>
-        <InnerApp /> {/* InnerApp is now correctly wrapped */}
-      </AuthProvider>
-    </QueryClientProvider>
-  );
-};
+const App = () => (
+  <QueryClientProvider client={queryClient}>
+    <AuthProvider>
+      <InnerApp />
+    </AuthProvider>
+  </QueryClientProvider>
+);
 
 export default App;

@@ -150,21 +150,22 @@ React.useEffect(() => {
   const canViewSalary = isAdmin || isHR
 
 
-  // Map backend employees to your Employee type
+// Map backend employees to your Employee type
 const mappedEmployees: Employee[] = employees.map((emp: any) => ({
   id: emp._id,
-  employeeId: emp.employee_code,
-  name: emp.user_id ? `${emp.user_id.firstName} ${emp.user_id.lastName}` : "Unknown",
-  email: emp.user_id?.email || "",
-  department: emp.department_id?.name || "Unknown",
-  position: emp.job_profile,
-  status: emp.employment_status,
-  joinDate: emp.joining_date,
-  phone: emp.phone_number,
-  salary: emp.salary_id?.netSalary || 0,
-  experience: 0,
+  employeeId: emp.employee_code || emp.employeeId || `EMP-${emp._id?.slice(-4)}` || "N/A",
+  name: emp.user_id 
+    ? `${emp.user_id.firstName || ''} ${emp.user_id.lastName || ''}`.trim() 
+    : emp.name || "Unknown",
+  email: emp.user_id?.email || emp.email || "",
+  department: emp.department_id?.name || emp.department || "Unknown",
+  position: emp.job_profile || emp.position || emp.job_title || "Not specified",
+  status: emp.employment_status || "Active",
+  joinDate: emp.joining_date || emp.joinDate || "",
+  phone: emp.phone_number || emp.phone || "",
+  salary: emp.salary_id?.netSalary || emp.salary || emp.base_salary || 0,
+  experience: emp.experience || emp.years_of_experience || 0,
 }));
-
 
 // Filter employees based on search + filters
 const filteredEmployees = mappedEmployees.filter((employee) => {
@@ -174,6 +175,7 @@ const filteredEmployees = mappedEmployees.filter((employee) => {
     employee.email.toLowerCase().includes(search) ||
     employee.employeeId.toLowerCase().includes(search);
 
+  // FIX: Compare department names instead of IDs
   const matchesDepartment =
     selectedDepartment === "All Departments" ||
     employee.department === selectedDepartment;
@@ -578,7 +580,7 @@ const filteredEmployees = mappedEmployees.filter((employee) => {
   <SelectContent className="bg-card">
     <SelectItem value="All Departments">All Departments</SelectItem>
     {departments.map((dept) => (
-      <SelectItem key={dept._id} value={dept._id}>
+      <SelectItem key={dept._id} value={dept.name}>  {/* Use dept.name instead of dept._id */}
         {dept.name}
       </SelectItem>
     ))}

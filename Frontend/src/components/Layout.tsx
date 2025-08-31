@@ -1,16 +1,14 @@
-import { useAuth } from '../contexts/AuthContext';
-import { Sidebar } from './Sidebar';
-import { TopNav } from './TopNav';
+import { useAuth } from "../contexts/AuthContext";
+import { Sidebar } from "./Sidebar";
+import { TopNav } from "./TopNav";
+import { Outlet } from "react-router-dom";
 
-interface LayoutProps {
-  children: React.ReactNode;
-}
-
-const Layout = ({ children }: LayoutProps) => {
+const Layout = () => {
   const { user } = useAuth();
 
+  // Show loading or redirect if user is not ready
   if (!user) {
-    return <>{children}</>;
+    return <div>Loading...</div>;
   }
 
   return (
@@ -19,7 +17,8 @@ const Layout = ({ children }: LayoutProps) => {
       <div className="flex-1 flex flex-col overflow-hidden">
         <TopNav />
         <main className="flex-1 overflow-auto pt-16 px-4 md:px-6">
-          {children}
+          {/* THIS IS WHERE CHILD ROUTES WILL RENDER */}
+          <Outlet />
         </main>
       </div>
     </div>
