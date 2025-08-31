@@ -8,7 +8,6 @@ export interface ISalary extends Document {
     month: string;
     year: number;
     status: 'paid' | 'pending' | 'processing';
-    department: string;
 }
 export declare const Salary: mongoose.Model<ISalary, {}, {}, {}, mongoose.Document<unknown, {}, ISalary, {}, {}> & ISalary & Required<{
     _id: unknown;

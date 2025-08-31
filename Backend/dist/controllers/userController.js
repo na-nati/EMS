@@ -38,7 +38,7 @@ const registeruser = async (req, res) => {
 };
 exports.registeruser = registeruser;
 // Login
-const createAccessToken = (payload, expiresIn = '1m') => {
+const createAccessToken = (payload, expiresIn = '15m') => {
     const secret = process.env.JWT_SECRET;
     return jsonwebtoken_1.default.sign(payload, secret, { expiresIn });
 };

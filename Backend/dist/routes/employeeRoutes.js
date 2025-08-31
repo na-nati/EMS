@@ -22,5 +22,6 @@ router.get('/stats/all', (0, authMiddleware_1.authorizeRoles)('super_admin', 'hr
 router.get('/:id', (0, authMiddleware_1.authorizeRoles)('super_admin', 'hr', 'manager'), employeeController_1.getEmployeeById);
 router.put('/:id', (0, authMiddleware_1.authorizeRoles)('super_admin', 'hr'), employeeController_1.updateEmployee);
 router.delete('/:id', (0, authMiddleware_1.authorizeRoles)('super_admin', 'hr'), employeeController_1.deleteEmployee);
+router.patch('/:id/leave-status', (0, authMiddleware_1.authorizeRoles)('super_admin', 'hr'), employeeController_1.setEmployeeLeaveStatus);
 exports.default = router;
 //# sourceMappingURL=employeeRoutes.js.map

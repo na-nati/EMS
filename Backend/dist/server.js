@@ -27,6 +27,9 @@ const documentRequestRoutes_1 = __importDefault(require("./routes/documentReques
 const salaryRoutes_1 = __importDefault(require("./routes/salaryRoutes"));
 const managerRoutes_1 = __importDefault(require("./routes/managerRoutes"));
 const auditLogRoutes_1 = __importDefault(require("./routes/auditLogRoutes"));
+const companyRoutes_1 = __importDefault(require("./routes/companyRoutes"));
+const adminRoutes_1 = __importDefault(require("./routes/adminRoutes"));
+const moduleRoutes_1 = __importDefault(require("./routes/moduleRoutes"));
 const errorHandler_1 = require("./middleware/errorHandler");
 dotenv_1.default.config(); // Loads environment variables
 const app = (0, express_1.default)();
@@ -56,6 +59,9 @@ app.use('/api/document-requests', documentRequestRoutes_1.default);
 app.use('/api/salaries', salaryRoutes_1.default);
 app.use('/api/managers', managerRoutes_1.default);
 app.use('/api/audit-logs', auditLogRoutes_1.default);
+app.use('/api/companies', companyRoutes_1.default);
+app.use('/api/admins', adminRoutes_1.default);
+app.use('/api/modules', moduleRoutes_1.default);
 app.use(errorHandler_1.errorHandler);
 // Serve Swagger UI with YAML
 app.use('/api-docs', swagger_ui_express_1.default.serve, swagger_ui_express_1.default.setup(swaggerDocument));
